@@ -1,0 +1,424 @@
+version: "3.9"
+
+# ============================================================
+# PolyMarket — Application Services
+# All 18 microservices
+# Run: docker compose -f infra/docker-compose.services.yml up -d
+# Requires: infra/docker-compose.yml running first
+# ============================================================
+
+networks:
+  polymarket:
+    external: true
+
+services:
+
+  # ── API Gateway (Node.js / NestJS) ─────────────────────────
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    container_name: polymarket-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      AUTH_SERVICE_URL: http://auth-service:4001
+      LISTING_SERVICE_URL: http://listing-service:4002
+      SEARCH_SERVICE_URL: http://search-service:4003
+      IMAGE_SERVICE_URL: http://image-service:4004
+      NOTIFICATION_SERVICE_URL: http://notification-service:4005
+      PAYMENT_SERVICE_URL: http://payment-service:4006
+      PROFILE_SERVICE_URL: http://profile-service:4007
+      FEED_SERVICE_URL: http://feed-service:4008
+      REVIEW_SERVICE_URL: http://review-service:4009
+      ANALYTICS_SERVICE_URL: http://analytics-service:4010
+      CHAT_SERVICE_URL: http://chat-service:4011
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: api-gateway
+    networks:
+      - polymarket
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Auth Service (Elixir / Phoenix) ─────────────────────────
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: Dockerfile
+    container_name: polymarket-auth
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://polymarket:polymarket_dev@postgres:5432/polymarket_auth
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      KAFKA_BROKERS: kafka:29092
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private.pem
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      SECRET_KEY_BASE: "dev_secret_key_base_change_in_prod_very_long_string"
+      MIX_ENV: dev
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+
+  # ── Listing Service (Rust / Axum) ───────────────────────────
+  listing-service:
+    build:
+      context: ../services/listing-service
+      dockerfile: Dockerfile
+    container_name: polymarket-listing
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      MONGODB_URI: mongodb://polymarket:polymarket_dev@mongo:27017/polymarket?authSource=admin
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      KAFKA_BROKERS: kafka:29092
+      RUST_LOG: info
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    networks:
+      - polymarket
+    depends_on:
+      - mongo
+      - redis
+      - kafka
+
+  # ── Search Service (Java / Spring Boot) ─────────────────────
+  search-service:
+    build:
+      context: ../services/search-service
+      dockerfile: Dockerfile
+    container_name: polymarket-search
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      SERVER_PORT: 4003
+      SPRING_PROFILES_ACTIVE: dev
+      OPENSEARCH_URIS: http://opensearch:9200
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
+    networks:
+      - polymarket
+    depends_on:
+      - opensearch
+      - kafka
+
+  # ── Image Service (C++ / Drogon) ────────────────────────────
+  image-service:
+    build:
+      context: ../services/image-service
+      dockerfile: Dockerfile
+    container_name: polymarket-image
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    environment:
+      HTTP_PORT: 4004
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: miniominio
+      MINIO_BUCKET_IMAGES: listings-images
+      MINIO_BUCKET_AVATARS: avatars
+      KAFKA_BROKERS: kafka:29092
+      MAX_UPLOAD_SIZE_MB: 10
+    networks:
+      - polymarket
+    depends_on:
+      - minio
+      - kafka
+
+  # ── Notification Service (Elixir / Phoenix Channels) ────────
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile
+    container_name: polymarket-notification
+    restart: unless-stopped
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      KAFKA_BROKERS: kafka:29092
+      SECRET_KEY_BASE: "dev_notif_secret_base_change_in_prod"
+      MIX_ENV: dev
+    networks:
+      - polymarket
+    depends_on:
+      - redis
+      - kafka
+
+  # ── Payment Service (C# / ASP.NET Core) ─────────────────────
+  payment-service:
+    build:
+      context: ../services/payment-service
+      dockerfile: Dockerfile
+    container_name: polymarket-payment
+    restart: unless-stopped
+    ports:
+      - "4006:4006"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:4006
+      ConnectionStrings__Postgres: "Host=postgres;Database=polymarket_payments;Username=polymarket;Password=polymarket_dev"
+      Stripe__SecretKey: "${STRIPE_SECRET_KEY}"
+      Stripe__WebhookSecret: "${STRIPE_WEBHOOK_SECRET}"
+      Kafka__BootstrapServers: kafka:29092
+      OTEL__Endpoint: http://otel-collector:4317
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+      - kafka
+
+  # ── Profile Service (Kotlin / Ktor) ─────────────────────────
+  profile-service:
+    build:
+      context: ../services/profile-service
+      dockerfile: Dockerfile
+    container_name: polymarket-profile
+    restart: unless-stopped
+    ports:
+      - "4007:4007"
+    environment:
+      PORT: 4007
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/polymarket_profiles
+      POSTGRES_USER: polymarket
+      POSTGRES_PASSWORD: polymarket_dev
+      IMAGE_SERVICE_URL: http://image-service:4004
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+
+  # ── Feed Service (Go / chi) ──────────────────────────────────
+  feed-service:
+    build:
+      context: ../services/feed-service
+      dockerfile: Dockerfile
+    container_name: polymarket-feed
+    restart: unless-stopped
+    ports:
+      - "4008:4008"
+    environment:
+      PORT: 4008
+      SURREALDB_URL: ws://surrealdb:8000/rpc
+      SURREALDB_USER: polymarket
+      SURREALDB_PASS: polymarket_dev
+      SURREALDB_NS: polymarket
+      SURREALDB_DB: feed
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      KAFKA_BROKERS: kafka:29092
+    networks:
+      - polymarket
+    depends_on:
+      - surrealdb
+      - redis
+      - kafka
+
+  # ── Review Service (PHP / Laravel) ──────────────────────────
+  review-service:
+    build:
+      context: ../services/review-service
+      dockerfile: Dockerfile
+    container_name: polymarket-review
+    restart: unless-stopped
+    ports:
+      - "4009:4009"
+    environment:
+      APP_ENV: local
+      APP_KEY: "base64:dev_key_change_in_prod_32_chars=="
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: polymarket_reviews
+      DB_USERNAME: polymarket
+      DB_PASSWORD: polymarket_dev
+      KAFKA_BROKERS: kafka:29092
+    networks:
+      - polymarket
+    depends_on:
+      - mysql
+      - kafka
+
+  # ── Analytics Service (Python / FastAPI) ────────────────────
+  analytics-service:
+    build:
+      context: ../services/analytics-service
+      dockerfile: Dockerfile
+    container_name: polymarket-analytics
+    restart: unless-stopped
+    ports:
+      - "4010:4010"
+    environment:
+      PORT: 4010
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USER: polymarket
+      CLICKHOUSE_PASSWORD: polymarket_dev
+      CLICKHOUSE_DB: polymarket_analytics
+      KAFKA_BROKERS: kafka:29092
+    networks:
+      - polymarket
+    depends_on:
+      - clickhouse
+      - kafka
+
+  # ── Chat Service (Elixir / Phoenix) ─────────────────────────
+  chat-service:
+    build:
+      context: ../services/chat-service
+      dockerfile: Dockerfile
+    container_name: polymarket-chat
+    restart: unless-stopped
+    ports:
+      - "4011:4011"
+    environment:
+      PORT: 4011
+      DATABASE_URL: postgresql://polymarket:polymarket_dev@postgres:5432/polymarket_chat
+      REDIS_URL: redis://:polymarket_dev@redis:6379
+      KAFKA_BROKERS: kafka:29092
+      SECRET_KEY_BASE: "dev_chat_secret_base_change_in_prod"
+      MIX_ENV: dev
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+
+  # ── ML Service (Python / FastAPI) ───────────────────────────
+  ml-service:
+    build:
+      context: ../services/ml-service
+      dockerfile: Dockerfile
+    container_name: polymarket-ml
+    restart: unless-stopped
+    ports:
+      - "4012:4012"
+    environment:
+      PORT: 4012
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: polymarket_dev
+      KAFKA_BROKERS: kafka:29092
+    networks:
+      - polymarket
+    depends_on:
+      - neo4j
+      - kafka
+
+  # ── Stream Processor (Scala / Akka Streams) ─────────────────
+  stream-processor:
+    build:
+      context: ../services/stream-processor
+      dockerfile: Dockerfile
+    container_name: polymarket-stream
+    restart: unless-stopped
+    ports:
+      - "4013:4013"
+    environment:
+      HTTP_PORT: 4013
+      KAFKA_BROKERS: kafka:29092
+      TIMESCALE_URL: jdbc:postgresql://timescale:5432/polymarket_metrics
+      TIMESCALE_USER: polymarket
+      TIMESCALE_PASSWORD: polymarket_dev
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+    networks:
+      - polymarket
+    depends_on:
+      - kafka
+      - timescale
+      - clickhouse
+
+  # ── Config Service (F# / Giraffe) ───────────────────────────
+  config-service:
+    build:
+      context: ../services/config-service
+      dockerfile: Dockerfile
+    container_name: polymarket-config
+    restart: unless-stopped
+    ports:
+      - "4014:4014"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:4014
+      ConnectionStrings__Postgres: "Host=postgres;Database=polymarket_config;Username=polymarket;Password=polymarket_dev"
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+
+  # ── Contract Validator (Haskell / Servant) ──────────────────
+  contract-validator:
+    build:
+      context: ../services/contract-validator
+      dockerfile: Dockerfile
+    container_name: polymarket-contract
+    restart: unless-stopped
+    ports:
+      - "4015:4015"
+    environment:
+      PORT: 4015
+      # Validates OpenAPI specs at deploy time
+      SPECS_DIR: /app/contracts
+    volumes:
+      - ../contracts:/app/contracts:ro
+    networks:
+      - polymarket
+
+  # ── Admin Panel (Ruby / Rails) ───────────────────────────────
+  admin-panel:
+    build:
+      context: ../services/admin-panel
+      dockerfile: Dockerfile
+    container_name: polymarket-admin
+    restart: unless-stopped
+    ports:
+      - "4016:4016"
+    environment:
+      RAILS_ENV: development
+      PORT: 4016
+      DATABASE_URL: postgresql://polymarket:polymarket_dev@postgres:5432/polymarket_admin
+      RAILS_MASTER_KEY: "${RAILS_MASTER_KEY}"
+      AUTH_SERVICE_URL: http://auth-service:4001
+    networks:
+      - polymarket
+    depends_on:
+      - postgres
+
+  # ── Frontend (Next.js) ───────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend/apps/web
+      dockerfile: Dockerfile
+    container_name: polymarket-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_WS_URL: ws://localhost:4000
+      NEXT_PUBLIC_STRIPE_PK: "${STRIPE_PUBLISHABLE_KEY}"
+      NODE_ENV: development
+    networks:
+      - polymarket
+    depends_on:
+      - api-gateway

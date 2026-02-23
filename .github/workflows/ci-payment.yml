@@ -1,0 +1,60 @@
+name: CI — Payment Service (C# / ASP.NET Core)
+
+on:
+  push:
+    paths:
+      - 'services/payment-service/**'
+      - '.github/workflows/ci-payment.yml'
+  pull_request:
+    paths:
+      - 'services/payment-service/**'
+
+jobs:
+  test:
+    name: Build, Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polymarket
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: polymarket_payments_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: cd services/payment-service && dotnet restore
+
+      - name: Format check
+        run: cd services/payment-service && dotnet format --verify-no-changes
+
+      - name: Build
+        run: cd services/payment-service && dotnet build --no-restore -warnaserror
+
+      - name: Test
+        env:
+          ConnectionStrings__Postgres: "Host=localhost;Database=polymarket_payments_test;Username=polymarket;Password=test"
+          Stripe__SecretKey: "sk_test_placeholder"
+          Stripe__WebhookSecret: "whsec_placeholder"
+        run: cd services/payment-service && dotnet test --no-build --logger trx
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t polymarket/payment-service:${{ github.sha }} services/payment-service/

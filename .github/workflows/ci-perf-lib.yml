@@ -1,0 +1,48 @@
+name: CI — Perf Lib (Zig + C + ASM + WASM)
+
+on:
+  push:
+    paths:
+      - 'libs/perf-lib/**'
+      - '.github/workflows/ci-perf-lib.yml'
+  pull_request:
+    paths:
+      - 'libs/perf-lib/**'
+
+jobs:
+  test:
+    name: Build, Test & WASM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.13.0
+
+      - name: Format check
+        run: cd libs/perf-lib && zig fmt --check src/
+
+      - name: Build (native)
+        run: cd libs/perf-lib && zig build
+
+      - name: Test
+        run: cd libs/perf-lib && zig build test
+
+      - name: Build WASM target
+        run: |
+          cd libs/perf-lib
+          zig build -Dtarget=wasm32-freestanding -Doptimize=ReleaseSmall
+
+      - name: Verify WASM output
+        run: |
+          ls -lh libs/perf-lib/zig-out/lib/perf.wasm
+          # Check it's a valid WASM file (magic bytes: 00 61 73 6d)
+          xxd libs/perf-lib/zig-out/lib/perf.wasm | head -1
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-wasm-${{ github.sha }}
+          path: libs/perf-lib/zig-out/lib/perf.wasm

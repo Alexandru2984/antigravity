@@ -1,0 +1,60 @@
+name: CI — Review Service (PHP / Laravel)
+
+on:
+  push:
+    paths:
+      - 'services/review-service/**'
+      - '.github/workflows/ci-review.yml'
+  pull_request:
+    paths:
+      - 'services/review-service/**'
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.3
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: polymarket_reviews_test
+          MYSQL_USER: polymarket
+          MYSQL_PASSWORD: test
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_mysql, mbstring, bcmath, json
+          coverage: xdebug
+      - name: Composer install
+        run: cd services/review-service && composer install --no-interaction --prefer-dist
+      - name: PHPStan (static analysis)
+        run: cd services/review-service && vendor/bin/phpstan analyse src
+      - name: Laravel Pint (lint)
+        run: cd services/review-service && vendor/bin/pint --test
+      - name: Run migrations + tests
+        env:
+          APP_ENV: testing
+          DB_HOST: localhost
+          DB_DATABASE: polymarket_reviews_test
+          DB_USERNAME: polymarket
+          DB_PASSWORD: test
+        run: |
+          cd services/review-service
+          php artisan migrate --force
+          vendor/bin/phpunit --coverage-text
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t polymarket/review-service:${{ github.sha }} services/review-service/

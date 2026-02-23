@@ -1,0 +1,32 @@
+name: CI — Stream Processor (Scala / Akka)
+
+on:
+  push:
+    paths:
+      - 'services/stream-processor/**'
+      - '.github/workflows/ci-scala.yml'
+  pull_request:
+    paths:
+      - 'services/stream-processor/**'
+
+jobs:
+  test:
+    name: Build, Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - name: Cache SBT
+        uses: coursier/cache-action@v6
+      - name: scalafmt check
+        run: cd services/stream-processor && sbt scalafmtCheckAll
+      - name: Compile + test
+        run: cd services/stream-processor && sbt test
+      - name: Assembly (fat jar)
+        run: cd services/stream-processor && sbt assembly
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/stream-processor:${{ github.sha }} services/stream-processor/

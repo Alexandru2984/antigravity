@@ -1,0 +1,143 @@
+# ===========================
+# PolyMarket — .gitignore
+# Covers: Node.js, Elixir, Rust, Java, C++, C#, Kotlin, Go,
+#         PHP, Python, Scala, F#, Haskell, Ruby, Zig, ASM
+# ===========================
+
+# Secrets / ENV
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# ─── Node.js ──────────────────────────────────────────────
+node_modules/
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+coverage/
+.cache/
+
+# ─── Elixir / Mix ─────────────────────────────────────────
+_build/
+deps/
+*.beam
+.elixir_ls/
+priv/plts/
+
+# ─── Rust ─────────────────────────────────────────────────
+target/
+Cargo.lock
+*.rlib
+
+# ─── Java / Maven / Gradle ────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+build/
+out/
+*.iml
+.idea/
+target/
+
+# ─── C++ / CMake ──────────────────────────────────────────
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+Makefile.in
+
+# ─── C# / .NET ────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.csproj.user
+*.fsproj.user
+packages/
+*.nupkg
+.vs/
+
+# ─── Kotlin / Gradle ──────────────────────────────────────
+.kotlin/
+*.gradle
+local.properties
+
+# ─── Go ───────────────────────────────────────────────────
+*.test
+vendor/
+go.sum.bak
+
+# ─── PHP / Composer ───────────────────────────────────────
+vendor/
+composer.lock
+.phpunit.result.cache
+storage/logs/
+public/storage
+
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Scala / SBT ──────────────────────────────────────────
+.bsp/
+.metals/
+project/target/
+project/project/
+*.class
+
+# ─── Haskell / Stack / Cabal ──────────────────────────────
+.stack-work/
+dist-newstyle/
+*.hi
+*.o
+
+# ─── Ruby / Bundler ───────────────────────────────────────
+.bundle/
+vendor/bundle/
+Gemfile.lock
+*.gem
+db/*.sqlite3
+log/
+tmp/
+
+# ─── Zig ──────────────────────────────────────────────────
+zig-out/
+zig-cache/
+*.wasm.map
+
+# ─── OS / Editor ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Docker ───────────────────────────────────────────────
+.docker/
+
+# ─── Misc ─────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak

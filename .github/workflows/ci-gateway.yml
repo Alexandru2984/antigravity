@@ -1,0 +1,42 @@
+name: CI — Gateway (Node.js / NestJS)
+
+on:
+  push:
+    paths:
+      - 'services/api-gateway/**'
+      - '.github/workflows/ci-gateway.yml'
+  pull_request:
+    paths:
+      - 'services/api-gateway/**'
+
+jobs:
+  test:
+    name: Lint, Type-check & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'services/api-gateway/package-lock.json'
+      - name: Install
+        run: cd services/api-gateway && npm ci
+      - name: Lint
+        run: cd services/api-gateway && npm run lint
+      - name: Type-check
+        run: cd services/api-gateway && npm run typecheck
+      - name: Test
+        run: cd services/api-gateway && npm test -- --coverage
+      - name: Audit
+        run: cd services/api-gateway && npm audit --audit-level=high
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -t polymarket/api-gateway:${{ github.sha }} services/api-gateway/

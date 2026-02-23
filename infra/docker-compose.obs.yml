@@ -1,0 +1,126 @@
+version: "3.9"
+
+# ============================================================
+# PolyMarket — Observability Stack
+# Prometheus + Grafana + Loki + Promtail + Jaeger + OTEL Collector
+# Run: docker compose -f infra/docker-compose.obs.yml up -d
+# ============================================================
+
+networks:
+  polymarket:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+
+services:
+
+  # ── OpenTelemetry Collector ─────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    container_name: polymarket-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics (self)
+    networks:
+      - polymarket
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+
+  # ── Jaeger ──────────────────────────────────────────────────
+  # Distributed tracing — follow a request across all services
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: polymarket-jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "14250:14250"   # gRPC (collector)
+    networks:
+      - polymarket
+
+  # ── Prometheus ──────────────────────────────────────────────
+  # Metrics scraping from all services (/metrics endpoints)
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: polymarket-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - polymarket
+
+  # ── Grafana ─────────────────────────────────────────────────
+  # Dashboards for metrics (Prometheus) + logs (Loki) + traces (Jaeger)
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: polymarket-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: polymarket
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_DOMAIN: localhost
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - polymarket
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+
+  # ── Loki ────────────────────────────────────────────────────
+  # Log aggregation (structured JSON logs from all services)
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: polymarket-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml:ro
+    ports:
+      - "3100:3100"
+    networks:
+      - polymarket
+
+  # ── Promtail ────────────────────────────────────────────────
+  # Scrapes Docker container logs → ships to Loki
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: polymarket-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - polymarket
+    depends_on:
+      - loki

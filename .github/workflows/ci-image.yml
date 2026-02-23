@@ -1,0 +1,49 @@
+name: CI — Image Service (C++ / Drogon)
+
+on:
+  push:
+    paths:
+      - 'services/image-service/**'
+      - '.github/workflows/ci-image.yml'
+  pull_request:
+    paths:
+      - 'services/image-service/**'
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libboost-all-dev libssl-dev libjsoncpp-dev \
+            uuid-dev zlib1g-dev libpq-dev libjpeg-dev libvips-dev clang-tidy
+
+      - name: Configure CMake
+        run: |
+          cd services/image-service
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: clang-tidy (lint)
+        run: |
+          cd services/image-service
+          clang-tidy src/*.cc -p build -- -Isrc -Ibuild/_deps/drogon-src/lib/inc 2>&1 | head -50
+
+      - name: Build
+        run: cd services/image-service && cmake --build build --parallel 4
+
+      - name: Run tests
+        run: cd services/image-service && ./build/tests/image_service_tests
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (multi-stage)
+        run: docker build -t polymarket/image-service:${{ github.sha }} services/image-service/

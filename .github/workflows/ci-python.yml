@@ -1,0 +1,57 @@
+name: CI — Analytics + ML Services (Python / FastAPI)
+
+on:
+  push:
+    paths:
+      - 'services/analytics-service/**'
+      - 'services/ml-service/**'
+      - '.github/workflows/ci-python.yml'
+  pull_request:
+    paths:
+      - 'services/analytics-service/**'
+      - 'services/ml-service/**'
+
+jobs:
+  analytics:
+    name: Analytics Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: pip install uv
+      - name: Install deps
+        run: cd services/analytics-service && uv pip install --system -e ".[dev]"
+      - name: ruff lint
+        run: cd services/analytics-service && ruff check .
+      - name: mypy type check
+        run: cd services/analytics-service && mypy app/
+      - name: pytest
+        run: cd services/analytics-service && pytest --cov=app --cov-report=term-missing -q
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/analytics-service:${{ github.sha }} services/analytics-service/
+
+  ml:
+    name: ML Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: pip install uv
+      - name: Install deps
+        run: cd services/ml-service && uv pip install --system -e ".[dev]"
+      - name: ruff lint
+        run: cd services/ml-service && ruff check .
+      - name: mypy type check
+        run: cd services/ml-service && mypy app/
+      - name: pytest
+        run: cd services/ml-service && pytest --cov=app -q
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/ml-service:${{ github.sha }} services/ml-service/

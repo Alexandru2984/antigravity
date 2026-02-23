@@ -1,0 +1,107 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: polymarket
+    env: dev
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── PolyMarket Services ──────────────────────────────────────
+  - job_name: api-gateway
+    static_configs:
+      - targets: ['api-gateway:4000']
+    metrics_path: /metrics
+
+  - job_name: auth-service
+    static_configs:
+      - targets: ['auth-service:4001']
+    metrics_path: /metrics
+
+  - job_name: listing-service
+    static_configs:
+      - targets: ['listing-service:4002']
+    metrics_path: /metrics
+
+  - job_name: search-service
+    static_configs:
+      - targets: ['search-service:4003']
+    metrics_path: /actuator/prometheus
+
+  - job_name: image-service
+    static_configs:
+      - targets: ['image-service:4004']
+    metrics_path: /metrics
+
+  - job_name: notification-service
+    static_configs:
+      - targets: ['notification-service:4005']
+    metrics_path: /metrics
+
+  - job_name: payment-service
+    static_configs:
+      - targets: ['payment-service:4006']
+    metrics_path: /metrics
+
+  - job_name: profile-service
+    static_configs:
+      - targets: ['profile-service:4007']
+    metrics_path: /metrics
+
+  - job_name: feed-service
+    static_configs:
+      - targets: ['feed-service:4008']
+    metrics_path: /metrics
+
+  - job_name: review-service
+    static_configs:
+      - targets: ['review-service:4009']
+    metrics_path: /metrics
+
+  - job_name: analytics-service
+    static_configs:
+      - targets: ['analytics-service:4010']
+    metrics_path: /metrics
+
+  - job_name: chat-service
+    static_configs:
+      - targets: ['chat-service:4011']
+    metrics_path: /metrics
+
+  - job_name: ml-service
+    static_configs:
+      - targets: ['ml-service:4012']
+    metrics_path: /metrics
+
+  - job_name: stream-processor
+    static_configs:
+      - targets: ['stream-processor:4013']
+    metrics_path: /metrics
+
+  - job_name: config-service
+    static_configs:
+      - targets: ['config-service:4014']
+    metrics_path: /metrics
+
+  # ── Infrastructure ───────────────────────────────────────────
+  - job_name: kafka
+    static_configs:
+      - targets: ['kafka:9101']   # JMX exporter port
+
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: redis
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ['otel-collector:8888']

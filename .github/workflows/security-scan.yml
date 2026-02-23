@@ -1,0 +1,127 @@
+name: Security Scan — All Services
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'   # Every Monday 02:00 UTC
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+
+  trivy-images:
+    name: Trivy (Container Scanning)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - listing-service
+          - search-service
+          - image-service
+          - payment-service
+          - profile-service
+          - feed-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image to scan
+        run: docker build -t polymarket/${{ matrix.service }}:scan services/${{ matrix.service }}/
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: polymarket/${{ matrix.service }}:scan
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+          exit-code: 1
+      - name: Upload results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+
+  semgrep-sast:
+    name: Semgrep SAST (All Languages)
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config=auto \
+            --config=p/owasp-top-ten \
+            --config=p/secrets \
+            --config=p/jwt \
+            --sarif > semgrep.sarif \
+            --error \
+            services/ libs/ frontend/
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+  dependency-checks:
+    name: Dependency Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node.js / frontend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm audit (gateway)
+        run: cd services/api-gateway && npm audit --audit-level=high
+        continue-on-error: true
+      - name: npm audit (frontend)
+        run: cd frontend/apps/web && npm audit --audit-level=high
+        continue-on-error: true
+
+      # Rust
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo-audit (listing)
+        run: |
+          cargo install cargo-audit
+          cd services/listing-service && cargo audit
+        continue-on-error: true
+
+      # Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: pip-audit (analytics + ml)
+        run: |
+          pip install pip-audit
+          pip-audit -r services/analytics-service/requirements.txt || true
+          pip-audit -r services/ml-service/requirements.txt || true
+        continue-on-error: true
+
+      # PHP
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: local-php-security-checker
+        run: |
+          curl -sL https://github.com/fabpot/local-php-security-checker/releases/download/v2.0.6/local-php-security-checker_linux_amd64 \
+            -o /usr/local/bin/local-php-security-checker
+          chmod +x /usr/local/bin/local-php-security-checker
+          cd services/review-service && local-php-security-checker
+        continue-on-error: true
+
+  secret-detection:
+    name: Secret Detection (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

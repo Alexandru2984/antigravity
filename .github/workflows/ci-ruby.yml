@@ -1,0 +1,44 @@
+name: CI — Admin Panel (Ruby / Rails)
+
+on:
+  push:
+    paths:
+      - 'services/admin-panel/**'
+      - '.github/workflows/ci-ruby.yml'
+  pull_request:
+    paths:
+      - 'services/admin-panel/**'
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polymarket
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: polymarket_admin_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: services/admin-panel
+      - name: RuboCop
+        run: cd services/admin-panel && bundle exec rubocop
+      - name: DB setup + RSpec
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgresql://polymarket:test@localhost:5432/polymarket_admin_test
+        run: |
+          cd services/admin-panel
+          bundle exec rails db:schema:load
+          bundle exec rspec
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/admin-panel:${{ github.sha }} services/admin-panel/

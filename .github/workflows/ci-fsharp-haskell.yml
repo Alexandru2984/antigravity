@@ -1,0 +1,73 @@
+name: CI — Config Service (F# / Giraffe) + Contract Validator (Haskell / Servant)
+
+on:
+  push:
+    paths:
+      - 'services/config-service/**'
+      - 'services/contract-validator/**'
+      - '.github/workflows/ci-fsharp-haskell.yml'
+  pull_request:
+    paths:
+      - 'services/config-service/**'
+      - 'services/contract-validator/**'
+
+jobs:
+
+  config-service-fsharp:
+    name: Config Service (F#)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: polymarket
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: polymarket_config_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: cd services/config-service && dotnet restore
+      - name: fantomas (format check)
+        run: |
+          cd services/config-service
+          dotnet tool restore
+          dotnet fantomas --check src/
+      - name: Build
+        run: cd services/config-service && dotnet build --no-restore -warnaserror
+      - name: Test
+        env:
+          ConnectionStrings__Postgres: "Host=localhost;Database=polymarket_config_test;Username=polymarket;Password=test"
+        run: cd services/config-service && dotnet test --no-build
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/config-service:${{ github.sha }} services/config-service/
+
+  contract-validator-haskell:
+    name: Contract Validator (Haskell)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6'
+          enable-stack: true
+          stack-version: 'latest'
+      - name: Cache Stack
+        uses: actions/cache@v4
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-${{ hashFiles('services/contract-validator/stack.yaml.lock') }}
+      - name: hlint
+        run: cd services/contract-validator && stack exec -- hlint src/
+      - name: Build
+        run: cd services/contract-validator && stack build
+      - name: Test
+        run: cd services/contract-validator && stack test
+      - name: Build Docker
+        if: github.ref == 'refs/heads/main'
+        run: docker build -t polymarket/contract-validator:${{ github.sha }} services/contract-validator/
