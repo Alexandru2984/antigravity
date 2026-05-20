@@ -12,8 +12,8 @@ WORKDIR /app
 RUN useradd -r -s /bin/false app && chown app:app /app
 USER app
 COPY --from=builder /publish .
-ENV ASPNETCORE_URLS=http://0.0.0.0:4014
-EXPOSE 4014
+ENV ASPNETCORE_URLS=http://0.0.0.0:4034
+EXPOSE 4034
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4014/health || exit 1
+    CMD wget -qO- http://localhost:4034/health || exit 1
 ENTRYPOINT ["dotnet", "ConfigService.dll"]

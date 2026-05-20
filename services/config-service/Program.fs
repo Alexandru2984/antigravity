@@ -70,6 +70,6 @@ let main args =
     let app = builder.Build()
     app.UseGiraffe(webApp)
 
-    let port = Environment.GetEnvironmentVariable("PORT") |> Option.ofObj |> Option.defaultValue "4014"
+    let port = Environment.GetEnvironmentVariable("PORT") |> Option.ofObj |> Option.defaultValue "4034"
     app.Run($"http://0.0.0.0:{port}")
     0

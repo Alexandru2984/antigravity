@@ -174,7 +174,7 @@ services:
       CHAT_SERVICE_URL:    http://chat-service:4031
       ANALYTICS_SERVICE_URL: http://analytics-service:4030
       ML_SERVICE_URL:      http://ml-service:4032
-      CONFIG_SERVICE_URL:  http://config-service:4014
+      CONFIG_SERVICE_URL:  http://config-service:4034
     networks: [frontend, backend]
     ports:
       - "4021:4021"
@@ -335,7 +335,7 @@ services:
       postgres: {condition: service_healthy}
     environment:
       DATABASE_URL: Host=postgres;Port=5432;Database=config;Username=polymarket;Password=${POSTGRES_PASSWORD:-polymarket}
-      PORT: 4014
+      PORT: 4034
     networks: [backend]
 
   contract-validator:
