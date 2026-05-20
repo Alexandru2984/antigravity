@@ -8,7 +8,7 @@ info:
     Users can register, log in, refresh tokens, and log out.
 
 servers:
-  - url: http://localhost:4001
+  - url: http://localhost:4020
     description: Local development
   - url: https://api.polymarket.ro/auth
     description: Production (via API Gateway)

@@ -151,7 +151,7 @@ services:
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       JWT_PUBLIC_KEY:  ${JWT_PUBLIC_KEY}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-changeme_in_production}
-      PORT: 4000
+      PORT: 4020
     networks: [backend]
 
   api-gateway:
@@ -163,7 +163,7 @@ services:
       REDIS_URL:         redis://redis:6379
       JWT_PUBLIC_KEY:    ${JWT_PUBLIC_KEY}
       FRONTEND_URL:      ${FRONTEND_URL:-http://localhost:3000}
-      AUTH_SERVICE_URL:  http://auth-service:4000
+      AUTH_SERVICE_URL:  http://auth-service:4020
       LISTING_SERVICE_URL: http://listing-service:4002
       SEARCH_SERVICE_URL:  http://search-service:4003
       IMAGE_SERVICE_URL:   http://image-service:4004
