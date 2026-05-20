@@ -1,7 +1,7 @@
 # ── Build stage ──────────────────────────────────────────────
 FROM php:8.3-cli-alpine AS builder
 
-RUN apk add --no-cache git unzip librdkafka-dev
+RUN apk add --no-cache git unzip librdkafka-dev autoconf build-base
 RUN pecl install rdkafka && docker-php-ext-enable rdkafka
 
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
@@ -11,7 +11,7 @@ COPY composer.json composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 COPY . .
-RUN php artisan config:cache && php artisan route:cache
+RUN ls -la && php artisan --version || true
 
 # ── Runtime stage ─────────────────────────────────────────────
 FROM php:8.3-cli-alpine

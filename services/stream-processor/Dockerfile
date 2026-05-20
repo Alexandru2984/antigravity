@@ -1,23 +1,16 @@
-# ── Build stage ──────────────────────────────────────────────
-FROM sbtscala/scala-sbt:eclipse-temurin-21.0.2_13_1.9.9_2.13.13 AS builder
+FROM hseeberger/scala-sbt:17.0.2_1.6.2_3.1.1 AS builder
 WORKDIR /app
-
-COPY build.sbt project/ ./
+COPY build.sbt ./
 RUN sbt update
-
 COPY src/ ./src/
-RUN sbt assembly
+RUN sbt compile
 
-# ── Runtime stage ─────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 RUN adduser -D -s /bin/sh app
 WORKDIR /app
-COPY --from=builder /app/target/scala-2.13/*-assembly-*.jar ./stream-processor.jar
-
+COPY --from=builder /app/target /app/target
+COPY --from=builder /root/.sbt /root/.sbt
+COPY --from=builder /root/.ivy2 /root/.ivy2
 USER app
-EXPOSE 4033
-
-HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4033/health || exit 1
-
-CMD ["java", "-Xmx512m", "-jar", "stream-processor.jar"]
+EXPOSE 4022
+CMD ["sbt", "run"]

@@ -3,6 +3,7 @@ module ConfigService.Program
 open System
 open System.Text.Json
 open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Giraffe
@@ -10,47 +11,43 @@ open ConfigService.FeatureFlags
 
 // ── Handlers ──────────────────────────────────────────────────
 
-let health: HttpHandler =
-    fun _ ctx -> task {
-        ctx.Response.ContentType <- "application/json"
+let health : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
         let json = """{"status":"ok","service":"config-service"}"""
-        do! ctx.Response.WriteAsync(json)
-        return Some ctx
-    }
+        ctx.SetContentType "application/json"
+        text json next ctx
 
-let getAllFlags: HttpHandler =
-    fun _ ctx -> task {
+let getAllFlags : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
         let flags = getAll ()
-        return! json flags ctx
-    }
+        json flags next ctx
 
-let getFlagByName (name: string): HttpHandler =
-    fun _ ctx -> task {
+let getFlagByName (name: string) : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
         match getByName name with
-        | Some flag -> return! json flag ctx
-        | None      -> return! RequestErrors.NOT_FOUND "Not found" ctx
-    }
+        | Some flag -> json flag next ctx
+        | None      -> RequestErrors.NOT_FOUND "Not found" next ctx
 
-let upsertFlag (name: string): HttpHandler =
-    fun req ctx -> task {
-        let! body  = ctx.ReadBodyFromRequestAsync()
-        let parsed = JsonSerializer.Deserialize<{| enabled: bool; description: string |}>(body)
-        upsert name parsed.enabled parsed.description
-        return! json {| updated = name |} ctx
-    }
+let upsertFlag (name: string) : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
+        task {
+            let! body  = ctx.ReadBodyFromRequestAsync()
+            let parsed = JsonSerializer.Deserialize<{| enabled: bool; description: string |}>(body)
+            upsert name parsed.enabled parsed.description
+            return! json {| updated = name |} next ctx
+        }
 
-let isEnabled (name: string): HttpHandler =
-    fun _ ctx -> task {
+let isEnabled (name: string) : HttpHandler =
+    fun (next : HttpFunc) (ctx : HttpContext) ->
         let enabled =
             match getByName name with
             | Some f -> f.Enabled
             | None   -> false
-        return! json {| name = name; enabled = enabled |} ctx
-    }
+        json {| name = name; enabled = enabled |} next ctx
 
 // ── Routes ────────────────────────────────────────────────────
 
-let webApp: HttpHandler =
+let webApp : HttpHandler =
     choose [
         GET  >=> route "/health"                 >=> health
         GET  >=> route "/ready"                  >=> health

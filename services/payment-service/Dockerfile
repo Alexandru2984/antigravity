@@ -13,7 +13,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
 # Non-root user
-RUN useradd -r -s /bin/false app && chown app:app /app
+RUN id -u app >/dev/null 2>&1 || (useradd -r -s /bin/false app && chown app:app /app)
 USER app
 
 COPY --from=builder /publish .

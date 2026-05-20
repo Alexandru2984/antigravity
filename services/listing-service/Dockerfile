@@ -1,5 +1,5 @@
 # ── Stage 1: Chef (dependency caching) ─────────────────────────
-FROM lukemathwalker/cargo-chef:latest-rust-1.81-alpine AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.85-alpine AS chef
 WORKDIR /app
 
 FROM chef AS planner

@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Cache dependencies
 COPY package.yaml stack.yaml* ./
-RUN stack setup && stack build --only-dependencies
+RUN stack setup --install-ghc && stack build --only-dependencies
 
 COPY app/ ./app/
 COPY src/  ./src/

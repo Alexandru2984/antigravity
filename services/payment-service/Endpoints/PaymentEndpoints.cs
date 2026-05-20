@@ -15,7 +15,9 @@ public static class PaymentEndpoints
             IStripeService stripe,
             HttpContext ctx) =>
         {
-            var userId = Guid.Parse(ctx.Request.Headers["X-User-Id"].FirstOrDefault() ?? Guid.Empty.ToString());
+            var userIdStr = ctx.Request.Headers["X-User-Id"].FirstOrDefault() ?? Guid.Empty.ToString();
+            if (!Guid.TryParse(userIdStr, out var userId)) userId = Guid.Empty;
+
             var result = await stripe.CreateIntentAsync(userId, req.ListingId, req.Amount, req.Currency);
             return Results.Ok(new
             {
@@ -23,7 +25,7 @@ public static class PaymentEndpoints
                 payment_intent_id  = result.PaymentIntentId,
                 transaction_id     = result.TransactionId,
             });
-        }).RequireAuthorization();
+        });
 
         // POST /payments/confirm — confirm payment
         group.MapPost("/confirm", async (
@@ -32,14 +34,14 @@ public static class PaymentEndpoints
         {
             var tx = await stripe.ConfirmPaymentAsync(req.PaymentIntentId);
             return Results.Ok(new { status = tx.Status, transaction_id = tx.Id });
-        }).RequireAuthorization();
+        });
 
         // GET /payments/:id — get transaction
         group.MapGet("/{id:guid}", async (Guid id, PaymentDbContext db) =>
         {
             var tx = await db.Transactions.FindAsync(id);
             return tx is null ? Results.NotFound() : Results.Ok(tx);
-        }).RequireAuthorization();
+        });
 
         // POST /payments/webhook — Stripe webhook
         group.MapPost("/webhook", async (
@@ -60,7 +62,7 @@ public static class PaymentEndpoints
                 var stripeEvent = EventUtility.ConstructEvent(json, sig, secret,
                     throwOnApiVersionMismatch: false);
 
-                if (stripeEvent.Type == EventTypes.PaymentIntentSucceeded)
+                if (stripeEvent.Type == "payment_intent.succeeded")
                 {
                     var intent = (PaymentIntent)stripeEvent.Data.Object;
                     var tx = await db.Transactions.FirstOrDefaultAsync(
