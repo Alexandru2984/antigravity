@@ -18,9 +18,9 @@ RUN useradd -r -s /bin/false app
 COPY --from=builder /usr/local/bin/contract-validator /usr/local/bin/contract-validator
 
 USER app
-EXPOSE 4015
+EXPOSE 4035
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4015/health || exit 1
+    CMD wget -qO- http://localhost:4035/health || exit 1
 
 ENTRYPOINT ["contract-validator"]

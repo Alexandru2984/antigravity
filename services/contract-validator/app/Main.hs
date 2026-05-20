@@ -76,6 +76,6 @@ api = Proxy
 
 main :: IO ()
 main = do
-  let port = 4015 :: Int
+  let port = 4035 :: Int
   putStrLn $ "contract-validator running on :" <> show port
   run port (serve api server)

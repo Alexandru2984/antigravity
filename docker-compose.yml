@@ -342,7 +342,7 @@ services:
     build: ./services/contract-validator
     restart: unless-stopped
     environment:
-      PORT: 4015
+      PORT: 4035
     networks: [backend]
 
   admin-panel:
