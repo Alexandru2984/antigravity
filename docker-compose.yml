@@ -178,6 +178,9 @@ services:
     restart: unless-stopped
     environment:
       NEO4J_AUTH: neo4j/polymarket123!
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
     volumes:
       - neo4j_data:/data
     networks: [data]

@@ -1,26 +1,16 @@
-# ── Build stage ──────────────────────────────────────────────
 FROM haskell:9.6 AS builder
 WORKDIR /app
-
-# Cache dependencies
-COPY package.yaml stack.yaml* ./
+COPY package.yaml stack.yaml ./
 RUN stack setup --install-ghc && stack build --only-dependencies
+COPY . .
+RUN stack build --copy-bins --local-bin-path /app/bin
 
-COPY app/ ./app/
-COPY src/  ./src/
-RUN stack build --copy-bins --local-bin-path /usr/local/bin
-
-# ── Runtime stage ─────────────────────────────────────────────
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y libgmp10 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libgmp10 netcat-openbsd && rm -rf /var/lib/apt/lists/*
 RUN useradd -r -s /bin/false app
-
-COPY --from=builder /usr/local/bin/contract-validator /usr/local/bin/contract-validator
-
+WORKDIR /app
+COPY --from=builder /app/bin/contract-validator-exe /app/contract-validator
+RUN chown -R app:app /app
 USER app
 EXPOSE 4035
-
-HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4035/health || exit 1
-
-ENTRYPOINT ["contract-validator"]
+CMD ["/app/contract-validator"]
