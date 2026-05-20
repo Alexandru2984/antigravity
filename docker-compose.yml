@@ -166,7 +166,7 @@ services:
       AUTH_SERVICE_URL:  http://auth-service:4020
       LISTING_SERVICE_URL: http://listing-service:4022
       SEARCH_SERVICE_URL:  http://search-service:4023
-      IMAGE_SERVICE_URL:   http://image-service:4004
+      IMAGE_SERVICE_URL:   http://image-service:4024
       PROFILE_SERVICE_URL: http://profile-service:4027
       PAYMENT_SERVICE_URL: http://payment-service:4026
       REVIEW_SERVICE_URL:  http://review-service:4009
@@ -214,7 +214,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       KAFKA_BROKERS:    kafka:9092
-      PORT: 4004
+      PORT: 4024
     networks: [backend]
 
   profile-service:

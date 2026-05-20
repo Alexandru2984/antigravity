@@ -3,7 +3,7 @@
 
 int main() {
     // Load config from environment
-    auto port = std::stoi(drogon::utils::getEnvOrDefault("PORT", "4004"));
+    auto port = std::stoi(drogon::utils::getEnvOrDefault("PORT", "4024"));
 
     drogon::app()
         .addListener("0.0.0.0", port)
