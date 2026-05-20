@@ -173,7 +173,7 @@ services:
       FEED_SERVICE_URL:    http://feed-service:4008
       CHAT_SERVICE_URL:    http://chat-service:4031
       ANALYTICS_SERVICE_URL: http://analytics-service:4030
-      ML_SERVICE_URL:      http://ml-service:4012
+      ML_SERVICE_URL:      http://ml-service:4032
       CONFIG_SERVICE_URL:  http://config-service:4014
     networks: [frontend, backend]
     ports:
@@ -313,7 +313,7 @@ services:
       NEO4J_URI:      bolt://neo4j:7687
       NEO4J_USER:     neo4j
       NEO4J_PASSWORD: ${NEO4J_PASSWORD:-neo4j}
-      PORT: 4012
+      PORT: 4032
     networks: [backend]
 
   stream-processor:

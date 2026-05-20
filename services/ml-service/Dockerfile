@@ -14,9 +14,9 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/app  /app/app
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
-EXPOSE 4012
+EXPOSE 4032
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4012/health || exit 1
+    CMD wget -qO- http://localhost:4032/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4012"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4032"]
