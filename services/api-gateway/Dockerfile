@@ -25,8 +25,8 @@ COPY --from=builder /app/dist ./dist
 RUN addgroup -S polymarket && adduser -S gateway -G polymarket
 USER gateway
 
-EXPOSE 4000
+EXPOSE 4021
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4000/health || exit 1
+  CMD wget -qO- http://localhost:4021/health || exit 1
 
 CMD ["node", "dist/main"]

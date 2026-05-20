@@ -177,7 +177,7 @@ services:
       CONFIG_SERVICE_URL:  http://config-service:4014
     networks: [frontend, backend]
     ports:
-      - "4001:4001"
+      - "4021:4021"
 
   listing-service:
     build: ./services/listing-service
