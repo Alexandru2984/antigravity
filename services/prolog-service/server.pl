@@ -13,6 +13,8 @@ handle_fraud(Request) :-
     reply_json_dict(Reply).
 
 server(Port) :-
-    http_server(http_dispatch, [port(Port)]).
+    http_server(http_dispatch, [port(Port)]),
+    thread_get_message(_).
 
 :- initialization(server(4055)).
+

@@ -15,5 +15,5 @@ COPY --from=builder --chown=search:polymarket /app/target/search-service-0.1.0.j
 USER search
 EXPOSE 4023
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4023/health || exit 1
+  CMD wget -qO- http://127.0.0.1:4023/api/search/health || exit 1
 CMD ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

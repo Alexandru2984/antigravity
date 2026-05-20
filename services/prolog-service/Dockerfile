@@ -1,5 +1,6 @@
 FROM swipl:latest
 WORKDIR /app
-COPY rules.pl .
+COPY . .
 EXPOSE 4055
-CMD ["swipl", "rules.pl", "--foreground"]
+CMD ["swipl", "server.pl", "--foreground"]
+

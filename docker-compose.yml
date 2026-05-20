@@ -225,7 +225,7 @@ services:
       auth-service: {condition: service_started}
       redis: {condition: service_healthy}
     environment:
-      PORT:              4001
+      PORT:              4021
       REDIS_URL:         redis://redis:6379
       JWT_PUBLIC_KEY:    ${JWT_PUBLIC_KEY}
       FRONTEND_URL:      ${FRONTEND_URL:-http://localhost:3000}
@@ -497,6 +497,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL:    http://api-gateway:4001
       NEXT_PUBLIC_WS_URL:     ws://chat-service:4031
+      HOSTNAME:               "0.0.0.0"
     networks: [frontend]
     depends_on:
       api-gateway: {condition: service_started}
@@ -523,7 +524,7 @@ services:
         limits:
           memory: 100M
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 30s
       retries: 3
 
@@ -567,7 +568,7 @@ services:
 
   julia-service:
     build: ./services/julia-service
-    ports: ["4054:4024"]
+    ports: ["4054:4054"]
     restart: unless-stopped
     networks: [backend]
     deploy:

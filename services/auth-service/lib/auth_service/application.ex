@@ -5,7 +5,7 @@ defmodule AuthService.Application do
   @impl true
   def start(_type, _args) do
     # Start OpenTelemetry BEFORE anything else
-    :opentelemetry_exporter.setup()
+    # :opentelemetry_exporter.setup()
     OpentelemetryPhoenix.setup(adapter: :cowboy2)
     OpentelemetryEcto.setup([:auth_service, :repo])
 

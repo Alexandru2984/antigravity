@@ -9,7 +9,13 @@ defmodule AuthService.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: [
+        auth_service: [
+          include_executables_for: [:unix],
+          validate_compile_env: false
+        ]
+      ]
     ]
   end
 
