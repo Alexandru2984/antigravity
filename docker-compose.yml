@@ -165,7 +165,7 @@ services:
       FRONTEND_URL:      ${FRONTEND_URL:-http://localhost:3000}
       AUTH_SERVICE_URL:  http://auth-service:4020
       LISTING_SERVICE_URL: http://listing-service:4022
-      SEARCH_SERVICE_URL:  http://search-service:4003
+      SEARCH_SERVICE_URL:  http://search-service:4023
       IMAGE_SERVICE_URL:   http://image-service:4004
       PROFILE_SERVICE_URL: http://profile-service:4027
       PAYMENT_SERVICE_URL: http://payment-service:4026
@@ -200,7 +200,7 @@ services:
       OPENSEARCH_URL:  http://opensearch:9200
       KAFKA_BROKERS:   kafka:9092
       JWT_PUBLIC_KEY:  ${JWT_PUBLIC_KEY}
-      PORT: 4003
+      PORT: 4023
     networks: [backend]
 
   image-service:

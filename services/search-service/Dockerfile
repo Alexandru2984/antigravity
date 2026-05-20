@@ -13,7 +13,7 @@ RUN addgroup -S polymarket && adduser -S search -G polymarket
 WORKDIR /app
 COPY --from=builder --chown=search:polymarket /app/target/search-service-0.1.0.jar ./app.jar
 USER search
-EXPOSE 4009
+EXPOSE 4023
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4009/health || exit 1
+  CMD wget -qO- http://localhost:4023/health || exit 1
 CMD ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
