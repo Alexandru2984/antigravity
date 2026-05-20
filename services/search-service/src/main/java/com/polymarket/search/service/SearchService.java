@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,7 +22,7 @@ public class SearchService {
 
     private final OpenSearchClient client;
 
-    public List<MarketDocument> searchMarkets(String text, String category, String status) throws IOException {
+    public List<MarketDocument> search(String text, String category, Long minVolume, Long maxVolume, int page, int size) throws IOException {
         BoolQuery.Builder bool = new BoolQuery.Builder();
 
         if (text != null && !text.isEmpty()) {
@@ -32,18 +33,31 @@ public class SearchService {
             bool.filter(f -> f.term(t -> t.field("category").value(FieldValue.of(category))));
         }
 
-        if (status != null && !status.isEmpty()) {
-            bool.filter(f -> f.term(t -> t.field("status").value(FieldValue.of(status))));
-        }
-
         SearchResponse<MarketDocument> response = client.search(s -> s
                         .index("markets")
-                        .query(new Query(bool.build())),
+                        .query(new Query(bool.build()))
+                        .from(page * size)
+                        .size(size),
                 MarketDocument.class
         );
 
         return response.hits().hits().stream()
                 .map(hit -> hit.source())
                 .collect(Collectors.toList());
+    }
+
+    public void indexListing(String id, Map<String, Object> data) throws IOException {
+        client.index(i -> i
+            .index("markets")
+            .id(id)
+            .document(data)
+        );
+    }
+
+    public void removeListing(String id) throws IOException {
+        client.delete(d -> d
+            .index("markets")
+            .id(id)
+        );
     }
 }
