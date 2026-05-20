@@ -168,7 +168,7 @@ func main() {
 		r.Delete("/follow/{sellerID}",   app.unfollowSeller)
 	})
 
-	port := getEnv("PORT", "4008")
+	port := getEnv("PORT", "4028")
 	log.Printf("🚀 feed-service running on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("Server error: %v", err)

@@ -170,7 +170,7 @@ services:
       PROFILE_SERVICE_URL: http://profile-service:4027
       PAYMENT_SERVICE_URL: http://payment-service:4026
       REVIEW_SERVICE_URL:  http://review-service:4009
-      FEED_SERVICE_URL:    http://feed-service:4008
+      FEED_SERVICE_URL:    http://feed-service:4028
       CHAT_SERVICE_URL:    http://chat-service:4031
       ANALYTICS_SERVICE_URL: http://analytics-service:4030
       ML_SERVICE_URL:      http://ml-service:4032
@@ -259,7 +259,7 @@ services:
       redis: {condition: service_healthy}
     environment:
       REDIS_URL: redis:6379
-      PORT: 4008
+      PORT: 4028
     networks: [backend]
 
   review-service:
