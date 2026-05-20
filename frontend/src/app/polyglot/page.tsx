@@ -10,51 +10,56 @@ export default function PolyglotDashboard() {
       const res = await fetch('http://polyglot.micutu.com/api/v1/polyglot-status');
       const data = await res.json();
       setStatus(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white p-8 font-sans">
-      <header className="mb-12 text-center">
-        <h1 className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-600 mb-4">
-          Polyglot Command Center
+    <div className="min-h-screen gradient-bg p-6 md:p-12">
+      <header className="max-w-7xl mx-auto mb-16 relative">
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <h1 className="text-6xl font-black tracking-tighter mb-4">
+          POLYGLOT <span className="text-cyan-400 neon-text">NEXUS</span>
         </h1>
-        <p className="text-gray-400 text-lg">Monitoring 63+ containers across 27+ languages</p>
+        <div className="flex items-center gap-4">
+          <div className="h-1 w-24 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"></div>
+          <p className="text-gray-400 font-mono tracking-widest uppercase text-sm">Distributed Infrastructure v2.0.4</p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {status.map((s) => (
-          <div key={s.name} className="bg-[#16161a] border border-gray-800 rounded-xl p-6 hover:border-cyan-500 transition-all duration-300 shadow-xl group">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-100 group-hover:text-cyan-400 transition-colors">{s.name}</h3>
-              <span className={`px-2 py-1 rounded-full text-xs font-bold ${s.status === 'online' ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-red-900/30 text-red-400 border border-red-800'}`}>
-                {s.status.toUpperCase()}
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Port</span>
-                <span className="text-gray-300">{s.port}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Latency</span>
-                <span className="text-gray-300">{s.latency || '--'}ms</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-800">
-                <p className="text-xs text-gray-500 mb-1 uppercase font-semibold">Service Response</p>
-                <div className="bg-black/40 rounded p-2 text-xs font-mono text-cyan-300 overflow-hidden text-ellipsis whitespace-nowrap">
-                  {typeof s.response === 'string' ? s.response : JSON.stringify(s.response) || 'No data'}
+          <div key={s.name} className="glass-card p-6 flex flex-col justify-between min-h-[220px]">
+            <div>
+              <div className="flex justify-between items-start mb-6">
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10 group-hover:border-cyan-500/50">
+                   <div className="w-8 h-8 flex items-center justify-center font-bold text-xl text-cyan-400">
+                     {s.name[0]}
+                   </div>
                 </div>
+                <div className="flex flex-col items-end">
+                  <div className={`w-2 h-2 rounded-full ${s.status === 'online' ? 'bg-green-400 animate-ping' : 'bg-red-500'}`}></div>
+                  <span className={`text-[10px] font-bold mt-1 ${s.status === 'online' ? 'text-green-400' : 'text-red-500'}`}>
+                    {s.status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold mb-1 tracking-tight">{s.name}</h3>
+              <p className="text-gray-500 text-xs font-mono">NODE_PORT: {s.port}</p>
+            </div>
+
+            <div className="mt-8">
+              <div className="bg-black/50 rounded-lg p-3 border border-white/5 overflow-hidden">
+                <p className="text-[10px] text-gray-500 uppercase mb-2 font-bold tracking-widest">Live Output</p>
+                <code className="text-xs text-cyan-300/80 block truncate">
+                  {s.response ? (typeof s.response === 'string' ? s.response : JSON.stringify(s.response)) : '> NO_DATA'}
+                </code>
               </div>
             </div>
           </div>

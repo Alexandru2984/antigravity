@@ -1,10 +1,24 @@
-using Sockets
+using HTTP
+using JSON
+using Statistics
 
-server = listen(4024)
-println("Julia Mathematical Service running on :4024")
+println("Julia Statistics Engine starting on port 4054...")
 
-while true
-    sock = accept(server)
-    write(sock, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nJulia Math Result: PI is $(pi), 2^10 is $(2^10)\n")
-    close(sock)
+HTTP.serve("0.0.0.0", 4054) do request::HTTP.Request
+    if request.method == "POST"
+        try
+            data = JSON.parse(String(request.body))
+            vals = data["values"]
+            result = Dict(
+                "mean" => mean(vals),
+                "std" => std(vals),
+                "engine" => "Julia High-Performance"
+            )
+            return HTTP.Response(200, JSON.json(result))
+        catch e
+            return HTTP.Response(400, "Error processing numbers")
+        end
+    else
+        return HTTP.Response(200, "Julia Engine Active")
+    end
 end

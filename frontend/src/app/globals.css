@@ -1,21 +1,41 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-}
-
-html {
-  scroll-behavior: smooth;
+  --bg-primary: #050505;
+  --bg-secondary: #0f0f12;
+  --accent-cyan: #00f2ff;
+  --accent-purple: #bc13fe;
+  --accent-green: #39ff14;
+  --text-main: #e0e0e0;
+  --glass-bg: rgba(20, 20, 25, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  overflow-x: hidden;
 }
 
-/* Card hover lift */
-.card-lift {
-  @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg;
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.gradient-bg {
+  background: radial-gradient(circle at top right, rgba(188, 19, 254, 0.1), transparent),
+              radial-gradient(circle at bottom left, rgba(0, 242, 255, 0.1), transparent);
 }
