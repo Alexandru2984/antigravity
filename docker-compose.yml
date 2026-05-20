@@ -325,7 +325,7 @@ services:
     environment:
       KAFKA_BROKERS:       kafka:9092
       CLICKHOUSE_JDBC_URL: jdbc:clickhouse://clickhouse:8123/analytics
-      PORT: 4013
+      PORT: 4033
     networks: [backend]
 
   config-service:

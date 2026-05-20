@@ -15,9 +15,9 @@ WORKDIR /app
 COPY --from=builder /app/target/scala-2.13/*-assembly-*.jar ./stream-processor.jar
 
 USER app
-EXPOSE 4013
+EXPOSE 4033
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4013/health || exit 1
+    CMD wget -qO- http://localhost:4033/health || exit 1
 
 CMD ["java", "-Xmx512m", "-jar", "stream-processor.jar"]

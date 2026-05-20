@@ -75,7 +75,7 @@ object StreamProcessor extends App {
     get { complete("""{"status":"ok","service":"stream-processor"}""") }
   }
 
-  val port = sys.env.getOrElse("PORT", "4013").toInt
+  val port = sys.env.getOrElse("PORT", "4033").toInt
   Http().newServerAt("0.0.0.0", port).bind(route)
   system.log.info(s"Stream processor running on port $port")
 }
