@@ -171,7 +171,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:4026
       REVIEW_SERVICE_URL:  http://review-service:4009
       FEED_SERVICE_URL:    http://feed-service:4008
-      CHAT_SERVICE_URL:    http://chat-service:4011
+      CHAT_SERVICE_URL:    http://chat-service:4031
       ANALYTICS_SERVICE_URL: http://analytics-service:4030
       ML_SERVICE_URL:      http://ml-service:4012
       CONFIG_SERVICE_URL:  http://config-service:4014
@@ -301,7 +301,7 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-changeme_in_production}
       FRONTEND_URL:    ${FRONTEND_URL:-http://localhost:3000}
       PHX_HOST:        chat-service
-      PORT: 4011
+      PORT: 4031
     networks: [backend, frontend]
 
   ml-service:
@@ -362,7 +362,7 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL:    http://api-gateway:4001
-      NEXT_PUBLIC_WS_URL:     ws://chat-service:4011
+      NEXT_PUBLIC_WS_URL:     ws://chat-service:4031
     networks: [frontend]
     depends_on: [api-gateway]
 
