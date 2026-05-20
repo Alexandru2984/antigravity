@@ -1,41 +1,49 @@
 :root {
-  --bg-primary: #050505;
-  --bg-secondary: #0f0f12;
-  --accent-cyan: #00f2ff;
-  --accent-purple: #bc13fe;
-  --accent-green: #39ff14;
-  --text-main: #e0e0e0;
-  --glass-bg: rgba(20, 20, 25, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --bg: #0a0a0a;
+  --panel: #111111;
+  --border: #222222;
+  --text: #e0e0e0;
+  --accent: #00ff41; /* Classic Terminal Green */
+  --muted: #666666;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-main);
-  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   margin: 0;
   overflow-x: hidden;
 }
 
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  transition: all 0.3s ease;
+.terminal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px;
+  background-color: var(--border);
+  border: 1px solid var(--border);
 }
 
-.glass-card:hover {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
-  transform: translateY(-5px);
+.node-card {
+  background-color: var(--panel);
+  padding: 1.5rem;
+  transition: background 0.2s;
 }
 
-.neon-text {
-  text-shadow: 0 0 10px var(--accent-cyan);
+.node-card:hover {
+  background-color: #161616;
 }
 
-.gradient-bg {
-  background: radial-gradient(circle at top right, rgba(188, 19, 254, 0.1), transparent),
-              radial-gradient(circle at bottom left, rgba(0, 242, 255, 0.1), transparent);
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+}
+
+.online { background-color: var(--accent); box-shadow: 0 0 5px var(--accent); }
+.offline { background-color: #ff3e3e; }
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 2rem;
+  background: #000;
 }
