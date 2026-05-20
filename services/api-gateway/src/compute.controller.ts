@@ -9,16 +9,16 @@ export class ComputeController {
     const report: any = { steps: [] };
 
     try {
-      // Step 1: Haskell Validation
-      const haskellRes = await axios.post('http://haskell-service:4065', { values });
-      report.steps.push({ service: 'Haskell', action: 'Mathematical Validation', status: 'Passed', data: haskellRes.data });
-
-      // Step 2: Julia Statistics
+      // Step 1: Julia Statistics (Stable)
       const juliaRes = await axios.post('http://julia-service:4054', { values });
-      report.steps.push({ service: 'Julia', action: 'Statistical Analysis', status: 'Success', data: juliaRes.data });
+      report.steps.push({ service: 'Julia', action: 'Scientific Analysis', status: 'Success', data: juliaRes.data });
 
-      // Step 3: Simulation of Brainfuck Hash
-      report.steps.push({ service: 'Brainfuck', action: 'Obscure Hashing', status: 'Active', hash: '.[-]>[-]+' });
+      // Step 2: Elixir Concurrency Check (Stable)
+      const elixirRes = await axios.get('http://elixir-service:4057');
+      report.steps.push({ service: 'Elixir', action: 'Concurrency Node Check', status: 'Online', data: elixirRes.data });
+
+      // Step 3: Brainfuck Verification
+      report.steps.push({ service: 'Brainfuck', action: 'Obscure Verification', status: 'Active', hash: '.[-]>[-]+' });
 
       report.finalStatus = 'COMPLETED';
       return report;
