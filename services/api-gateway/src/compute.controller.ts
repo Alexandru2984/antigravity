@@ -1,6 +1,8 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
 import axios from 'axios';
+import { Public } from './auth/auth.guard';
 
+@Public()
 @Controller('api/v1/polyglot-mesh')
 export class ComputeController {
   @Get('nodes')

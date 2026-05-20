@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import axios from 'axios';
+import { Public } from './auth/auth.guard';
 
+@Public()
 @Controller('api/v1/polyglot-status')
 export class StatusController {
   @Get()
@@ -28,7 +30,8 @@ export class StatusController {
         const start = Date.now();
         const res = await axios.get(`http://${s.host}:${s.queryPort}`, { timeout: 1500 });
         return { name: s.name, port: s.port, status: 'online', latency: Date.now() - start, response: res.data };
-      } catch (e) {
+      } catch (e: any) {
+        console.error(`Failed status check for ${s.name} at http://${s.host}:${s.queryPort}:`, e.message || e);
         return { name: s.name, port: s.port, status: 'offline' };
       }
     }));

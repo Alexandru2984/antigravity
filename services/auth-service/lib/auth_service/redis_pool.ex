@@ -40,14 +40,13 @@ end
 defmodule AuthService.RedisWorker do
   use GenServer
 
-  @redis_url Application.compile_env(:auth_service, :redis_url, "redis://localhost:6379")
-
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], [])
   end
 
   def init(_) do
-    uri = URI.parse(@redis_url)
+    redis_url = Application.get_env(:auth_service, :redis_url, "redis://localhost:6379")
+    uri = URI.parse(redis_url)
     host = uri.host || "localhost"
     port = uri.port || 6379
     password = case uri.userinfo do

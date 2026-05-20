@@ -7,16 +7,16 @@ defmodule AuthService.Kafka.Producer do
   require Logger
 
   @client_id :auth_service_kafka
-  @brokers Application.compile_env(:auth_service, :kafka_brokers, [{"localhost", 9092}])
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   def init(_) do
-    case :brod.start_client(@brokers, @client_id, auto_start_producers: true) do
+    brokers = Application.get_env(:auth_service, :kafka_brokers, [{"localhost", 9092}])
+    case :brod.start_client(brokers, @client_id, auto_start_producers: true) do
       :ok ->
-        Logger.info("[Kafka] Producer connected to #{inspect(@brokers)}")
+        Logger.info("[Kafka] Producer connected to #{inspect(brokers)}")
         {:ok, %{}}
 
       {:error, {:already_started, _}} ->
