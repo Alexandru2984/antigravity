@@ -172,7 +172,7 @@ services:
       REVIEW_SERVICE_URL:  http://review-service:4009
       FEED_SERVICE_URL:    http://feed-service:4008
       CHAT_SERVICE_URL:    http://chat-service:4011
-      ANALYTICS_SERVICE_URL: http://analytics-service:4010
+      ANALYTICS_SERVICE_URL: http://analytics-service:4030
       ML_SERVICE_URL:      http://ml-service:4012
       CONFIG_SERVICE_URL:  http://config-service:4014
     networks: [frontend, backend]
@@ -288,7 +288,7 @@ services:
       KAFKA_BROKERS:      kafka:9092
       CLICKHOUSE_HOST:    clickhouse
       CLICKHOUSE_PORT:    9000
-      PORT: 4010
+      PORT: 4030
     networks: [backend]
 
   chat-service:

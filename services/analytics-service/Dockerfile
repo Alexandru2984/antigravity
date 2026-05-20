@@ -16,9 +16,9 @@ COPY app/ ./app/
 
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
-EXPOSE 4010
+EXPOSE 4030
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4010/health || exit 1
+    CMD wget -qO- http://localhost:4030/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4010"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "4030"]
