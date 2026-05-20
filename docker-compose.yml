@@ -528,40 +528,138 @@ services:
       retries: 3
 
 
+
   brainfuck-service:
-    build:
-      context: ./services/brainfuck-service
-    ports:
-      - "4020:4020"
+    build: ./services/brainfuck-service
+    ports: ["4050:4020"]
     restart: unless-stopped
-    networks:
-      - backend
+    networks: [backend]
     deploy:
       resources:
-        limits:
-          memory: 64M
-          cpus: '0.1'
+        limits: {memory: 64M}
 
   assembly-service:
     build: ./services/assembly-service
-    ports:
-      - "4021:4021"
+    ports: ["4051:4021"]
     restart: unless-stopped
-    networks:
-      - backend
+    networks: [backend]
     deploy:
       resources:
-        limits:
-          memory: 128M
+        limits: {memory: 128M}
 
   cobol-service:
     build: ./services/cobol-service
-    ports:
-      - "4022:4022"
+    ports: ["4052:4022"]
     restart: unless-stopped
-    networks:
-      - backend
+    networks: [backend]
     deploy:
       resources:
-        limits:
-          memory: 64M
+        limits: {memory: 64M}
+
+  clojure-service:
+    build: ./services/clojure-service
+    ports: ["4053:4023"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 400M}
+
+  julia-service:
+    build: ./services/julia-service
+    ports: ["4054:4024"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 400M}
+
+  prolog-service:
+    build: ./services/prolog-service
+    ports: ["4055:4055"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 128M}
+
+  elixir-service:
+    build: ./services/elixir-service
+    ports: ["4057:4057"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 200M}
+
+  scala-service:
+    build: ./services/scala-service
+    ports: ["4058:4058"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 512M}
+
+  lua-service:
+    build: ./services/lua-service
+    ports: ["4059:4059"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 64M}
+
+  r-service:
+    build: ./services/r-service
+    ports: ["4060:4060"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 512M}
+
+  php-service:
+    build: ./services/php-service
+    ports: ["4061:4061"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 128M}
+
+  zig-service:
+    build: ./services/zig-service
+    ports: ["4062:4062"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 64M}
+
+  nim-service:
+    build: ./services/nim-service
+    ports: ["4064:4064"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 128M}
+
+  swift-service:
+    build: ./services/swift-service
+    ports: ["4063:4063"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 512M}
+
+  haskell-service:
+    build: ./services/haskell-service
+    ports: ["4065:4065"]
+    restart: unless-stopped
+    networks: [backend]
+    deploy:
+      resources:
+        limits: {memory: 128M}
