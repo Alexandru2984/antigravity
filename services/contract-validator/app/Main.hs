@@ -6,6 +6,8 @@
 module Main where
 
 import Data.Aeson
+import Data.Aeson.KeyMap (keys)
+import qualified Data.Aeson.Key as K
 import GHC.Generics
 import Network.Wai.Handler.Warp (run)
 import Servant
@@ -51,19 +53,19 @@ validate :: ValidateRequest -> Handler ValidationResult
 validate req =
   case payload req of
     Object obj ->
-      let missing = filter (not . (`elem` keys)) requiredFields
-          keys = map show (toList obj)
+      let currentKeys = map (show . K.toText) (keys obj)
           requiredFields = requiredFor (schemaName req)
+          missing = filter (\f -> not (f `elem` currentKeys)) requiredFields
           errs = map (\f -> "Missing required field: " <> f) missing
       in return ValidationResult { valid = null errs, errors = errs }
     _ -> return ValidationResult { valid = False, errors = ["Payload must be a JSON object"] }
 
 -- Required fields per schema
 requiredFor :: String -> [String]
-requiredFor "listing"  = ["\"title\"", "\"price\"", "\"category\"", "\"seller_id\""]
-requiredFor "user"     = ["\"email\"", "\"username\""]
-requiredFor "payment"  = ["\"amount\"", "\"currency\"", "\"user_id\""]
-requiredFor "review"   = ["\"listing_id\"", "\"rating\"", "\"body\""]
+requiredFor "listing"  = ["title", "price", "category", "seller_id"]
+requiredFor "user"     = ["email", "username"]
+requiredFor "payment"  = ["amount", "currency", "user_id"]
+requiredFor "review"   = ["listing_id", "rating", "body"]
 requiredFor _          = []
 
 -- ── Server ───────────────────────────────────────────────────
