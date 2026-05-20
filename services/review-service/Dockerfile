@@ -25,9 +25,9 @@ COPY --from=builder /app /app
 
 WORKDIR /app
 USER app
-EXPOSE 4009
+EXPOSE 4029
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4009/health || exit 1
+    CMD wget -qO- http://localhost:4029/health || exit 1
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=4009"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=4029"]

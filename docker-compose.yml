@@ -275,7 +275,7 @@ services:
       DB_PASSWORD:   ${POSTGRES_PASSWORD:-polymarket}
       KAFKA_BROKERS: kafka:9092
       APP_KEY:       ${REVIEW_APP_KEY:-base64:changeme}
-      PORT: 4009
+      PORT: 4029
     networks: [backend]
 
   analytics-service:
