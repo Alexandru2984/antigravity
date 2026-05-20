@@ -54,4 +54,4 @@ app.MapGet("/ready",  () => Results.Ok(new { status = "ready" }));
 // ── Payment Endpoints ─────────────────────────────────────────
 app.MapGroup("/payments").MapPaymentEndpoints();
 
-app.Run($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "4006"}");
+app.Run($"http://0.0.0.0:{Environment.GetEnvironmentVariable("PORT") ?? "4026"}");

@@ -168,7 +168,7 @@ services:
       SEARCH_SERVICE_URL:  http://search-service:4003
       IMAGE_SERVICE_URL:   http://image-service:4004
       PROFILE_SERVICE_URL: http://profile-service:4005
-      PAYMENT_SERVICE_URL: http://payment-service:4006
+      PAYMENT_SERVICE_URL: http://payment-service:4026
       REVIEW_SERVICE_URL:  http://review-service:4009
       FEED_SERVICE_URL:    http://feed-service:4008
       CHAT_SERVICE_URL:    http://chat-service:4011
@@ -239,7 +239,7 @@ services:
       STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       KAFKA_BROKERS:         kafka:9092
-      PORT: 4006
+      PORT: 4026
     networks: [backend]
 
   notification-service:
