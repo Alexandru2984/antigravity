@@ -62,7 +62,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: polymarket_dev
       MONGO_INITDB_DATABASE: polymarket
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
       - ./db/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
@@ -86,7 +86,7 @@ services:
       MYSQL_USER: polymarket
       MYSQL_PASSWORD: polymarket_dev
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -235,10 +235,11 @@ services:
   surrealdb:
     image: surrealdb/surrealdb:v1.5.4
     container_name: polymarket-surrealdb
+    user: root
     restart: unless-stopped
     command: start --user polymarket --pass polymarket_dev file:/data/polymarket.db
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
       - surrealdb_data:/data
     networks:
@@ -311,7 +312,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: polymarket
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     ports:
-      - "8080:8080"
+      - "8085:8080"
     networks:
       - polymarket
 
@@ -326,7 +327,7 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: miniominio
     ports:
-      - "9000:9000"   # S3 API  ← NOTE: conflicts with ClickHouse native if both on 9000
+      - "9002:9000"   # S3 API (mapped to host port 9002 to avoid ClickHouse collision)
       - "9001:9001"   # Console
     volumes:
       - minio_data:/data

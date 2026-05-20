@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:4009}
+
+spring:
+  application:
+    name: search-service
+  security:
+    enabled: false   # Security handled by api-gateway
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    consumer:
+      group-id: search-service-indexer
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+opensearch:
+  uri: ${OPENSEARCH_URI:http://localhost:9200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.polymarket: DEBUG

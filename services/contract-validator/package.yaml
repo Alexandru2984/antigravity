@@ -1,0 +1,31 @@
+name: contract-validator
+version: 0.1.0.0
+github: "polymarket/contract-validator"
+license: MIT
+
+ghc-options: -Wall
+
+dependencies:
+  - base >= 4.17 && < 5
+  - servant-server >= 0.20
+  - servant >= 0.20
+  - warp >= 3.3
+  - aeson >= 2.1
+  - text >= 2.0
+  - bytestring >= 0.11
+  - openapi3 >= 3.2
+  - containers >= 0.6
+
+library:
+  source-dirs: src
+
+executables:
+  contract-validator:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - contract-validator
