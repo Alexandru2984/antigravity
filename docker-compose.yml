@@ -164,7 +164,7 @@ services:
       JWT_PUBLIC_KEY:    ${JWT_PUBLIC_KEY}
       FRONTEND_URL:      ${FRONTEND_URL:-http://localhost:3000}
       AUTH_SERVICE_URL:  http://auth-service:4020
-      LISTING_SERVICE_URL: http://listing-service:4002
+      LISTING_SERVICE_URL: http://listing-service:4022
       SEARCH_SERVICE_URL:  http://search-service:4003
       IMAGE_SERVICE_URL:   http://image-service:4004
       PROFILE_SERVICE_URL: http://profile-service:4005
@@ -189,7 +189,7 @@ services:
       MONGODB_URI:    mongodb://polymarket:${MONGO_PASSWORD:-polymarket}@mongo:27017
       KAFKA_BROKERS:  kafka:9092
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      PORT: 4002
+      PORT: 4022
     networks: [backend]
 
   search-service:

@@ -27,9 +27,9 @@ RUN addgroup -S polymarket && adduser -S listing -G polymarket
 COPY --from=builder --chown=listing:polymarket /app/target/release/listing-service ./listing-service
 
 USER listing
-EXPOSE 4002
+EXPOSE 4022
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4002/health || exit 1
+  CMD wget -qO- http://localhost:4022/health || exit 1
 
 CMD ["./listing-service"]
