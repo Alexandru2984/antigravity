@@ -7,15 +7,15 @@
 set -e
 
 CONTAINERS=(
-  "polymarket-postgres"
-  "polymarket-mongo"
-  "polymarket-mysql"
-  "polymarket-redis"
-  "polymarket-clickhouse"
-  "polymarket-timescale"
-  "polymarket-neo4j"
-  "polymarket-surrealdb"
-  "polymarket-kafka"
+   "postgres"
+   "mongo"
+   "mysql"
+   "redis"
+   "clickhouse"
+   "timescale"
+   "neo4j"
+   "surrealdb"
+   "kafka"
 )
 
 MAX_RETRIES=30
