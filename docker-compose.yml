@@ -509,8 +509,8 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "4040:80"
+      - "4041:443"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infra/nginx/ssl:/etc/nginx/ssl:ro
@@ -526,3 +526,42 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost/health"]
       interval: 30s
       retries: 3
+
+
+  brainfuck-service:
+    build:
+      context: ./services/brainfuck-service
+    ports:
+      - "4020:4020"
+    restart: unless-stopped
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+
+  assembly-service:
+    build: ./services/assembly-service
+    ports:
+      - "4021:4021"
+    restart: unless-stopped
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  cobol-service:
+    build: ./services/cobol-service
+    ports:
+      - "4022:4022"
+    restart: unless-stopped
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 64M
