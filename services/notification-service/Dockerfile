@@ -17,7 +17,7 @@ RUN addgroup -S polymarket && adduser -S notification -G polymarket
 WORKDIR /app
 COPY --from=builder --chown=notification:polymarket /app/_build/prod/rel/notification_service ./
 USER notification
-EXPOSE 4005
+EXPOSE 4025
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4005/health || exit 1
+  CMD wget -qO- http://localhost:4025/health || exit 1
 CMD ["/app/bin/notification_service", "start"]
