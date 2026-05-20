@@ -167,7 +167,7 @@ services:
       LISTING_SERVICE_URL: http://listing-service:4022
       SEARCH_SERVICE_URL:  http://search-service:4003
       IMAGE_SERVICE_URL:   http://image-service:4004
-      PROFILE_SERVICE_URL: http://profile-service:4005
+      PROFILE_SERVICE_URL: http://profile-service:4027
       PAYMENT_SERVICE_URL: http://payment-service:4026
       REVIEW_SERVICE_URL:  http://review-service:4009
       FEED_SERVICE_URL:    http://feed-service:4008
@@ -225,7 +225,7 @@ services:
     environment:
       DATABASE_URL:   jdbc:postgresql://postgres:5432/polymarket
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      PORT: 4005
+      PORT: 4027
     networks: [backend]
 
   payment-service:
