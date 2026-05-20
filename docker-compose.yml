@@ -354,7 +354,7 @@ services:
       DATABASE_URL:    postgresql://polymarket:${POSTGRES_PASSWORD:-polymarket}@postgres:5432/polymarket
       SECRET_KEY_BASE: ${ADMIN_SECRET_KEY_BASE:-changeme_in_production}
       RAILS_ENV:       production
-      PORT: 4016
+      PORT: 4036
     networks: [backend, frontend]
 
   frontend:

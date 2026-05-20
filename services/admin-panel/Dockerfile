@@ -23,11 +23,11 @@ COPY --from=builder /app .
 RUN chown -R app:app /app
 USER app
 
-ENV PORT=4016 RAILS_ENV=production SECRET_KEY_BASE=changeme
+ENV PORT=4036 RAILS_ENV=production SECRET_KEY_BASE=changeme
 
-EXPOSE 4016
+EXPOSE 4036
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4016/health || exit 1
+    CMD wget -qO- http://localhost:4036/health || exit 1
 
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "4016"]
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "4036"]
