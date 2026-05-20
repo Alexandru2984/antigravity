@@ -2,16 +2,10 @@
 #include "ImageController.h"
 
 int main() {
-    // Load config from environment
-    auto port = std::stoi(drogon::utils::getEnvOrDefault("PORT", "4024"));
-
+    auto port = 4024;
+    LOG_INFO << "Starting image-service on port " << port;
     drogon::app()
         .addListener("0.0.0.0", port)
-        .setThreadNum(8)
-        .setLogLevel(trantor::Logger::kInfo)
-        .setLogPath("./")
-        .registerController<ImageController>()
         .run();
-
     return 0;
 }
