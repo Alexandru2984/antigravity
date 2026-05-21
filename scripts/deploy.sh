@@ -29,7 +29,19 @@ if [[ -f .env ]]; then
 fi
 
 # ── Validate required secrets ──────────────────────────────────
-REQUIRED=(STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET POSTGRES_PASSWORD)
+REQUIRED=(
+    STRIPE_SECRET_KEY
+    STRIPE_WEBHOOK_SECRET
+    POSTGRES_PASSWORD
+    MONGO_PASSWORD
+    MINIO_ROOT_USER
+    MINIO_ROOT_PASSWORD
+    NEO4J_PASSWORD
+    SECRET_KEY_BASE
+    ADMIN_SECRET_KEY_BASE
+    REVIEW_APP_KEY
+    FRONTEND_URL
+)
 for var in "${REQUIRED[@]}"; do
     if [[ -z "${!var:-}" ]]; then
         echo "❌ ERROR: $var is not set. Add it to .env"
@@ -71,8 +83,7 @@ $COMPOSE up -d nginx
 
 echo ""
 echo "✅ Deploy complete!"
-echo "   → API Gateway: http://localhost:4001"
-echo "   → Frontend:    http://localhost:3000"
-echo "   → Admin:       http://localhost:4016/admin"
+echo "   → Public HTTP:  http://localhost:${NGINX_HTTP_PORT:-80}"
+echo "   → Public HTTPS: https://localhost:${NGINX_HTTPS_PORT:-443}"
 echo ""
 echo "Run './scripts/health-check.sh' to verify all services."
