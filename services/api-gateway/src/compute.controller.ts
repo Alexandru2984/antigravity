@@ -32,11 +32,24 @@ export class ComputeController {
 
   @Post('transaction')
   async executeTransaction(@Body() body: any) {
+    // Ensure sellerId is a valid UUID, generate a deterministic one if not
+    let sellerId = body.sellerId || '00000000-0000-0000-0000-000000000100';
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(sellerId)) {
+      if (sellerId.includes('vendor') || sellerId.includes('premium')) {
+        sellerId = '11111111-1111-1111-1111-111111111111';
+      } else if (sellerId.includes('seller') || sellerId.includes('100')) {
+        sellerId = '22222222-2222-2222-2222-222222222222';
+      } else {
+        sellerId = '00000000-0000-0000-0000-000000000100';
+      }
+    }
+
     const listing = {
       title: body.title || 'Demo Listing Item',
       price: Number(body.price) || 250,
       category: body.category || 'electronics',
-      seller_id: body.sellerId || 'seller_100',
+      seller_id: sellerId,
       location: body.location || 'Bucuresti'
     };
 
@@ -74,7 +87,6 @@ export class ComputeController {
     // Step 3: Julia Statistics Analysis
     let juliaReport = { service: 'Julia-Stats', status: 'offline', data: null as any };
     try {
-      // Pass synthetic historical listing price points
       const prices = [listing.price, Math.round(listing.price * 0.9), Math.round(listing.price * 1.15), Math.round(listing.price * 0.85)];
       const res = await axios.post('http://julia-service:4054', { data: prices }, { timeout: 1500 });
       juliaReport.status = 'online';
@@ -150,12 +162,53 @@ export class ComputeController {
     }
     reports.push(bfReport);
 
+    // Step 10: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    let rustReport = { service: 'Rust-Persist-Core', status: 'offline', data: null as any };
+    const isContractValid = haskellReport.status === 'online' && haskellReport.data?.valid === true;
+
+    if (isContractValid) {
+      try {
+        const listingServiceUrl = process.env.LISTING_SERVICE_URL || 'http://listing-service:4022';
+        const rustRes = await axios.post(`${listingServiceUrl}/listings`, {
+          title: listing.title,
+          description: body.description || `Mesh validated transaction. Timestamp: ${new Date().toISOString()}`,
+          price: Math.round(listing.price * 100), // convert to cents/bani
+          currency: body.currency || 'RON',
+          category: listing.category,
+          subcategory: body.subcategory || 'general',
+          location: {
+            city: listing.location,
+            county: body.county || 'Bucuresti',
+            lat: body.lat ? Number(body.lat) : 44.4268,
+            lng: body.lng ? Number(body.lng) : 26.1025
+          },
+          image_ids: body.imageIds || [],
+          attributes: body.attributes || {}
+        }, {
+          headers: {
+            'x-user-id': sellerId,
+            'Content-Type': 'application/json'
+          },
+          timeout: 3000
+        });
+        rustReport.status = 'online';
+        rustReport.data = rustRes.data;
+      } catch (e: any) {
+        rustReport.status = 'error';
+        rustReport.data = { error: e.message, details: e.response?.data || null };
+      }
+      reports.push(rustReport);
+    }
+
     const duration = Date.now() - startTime;
 
     return {
-      status: 'PROCESSED',
+      status: rustReport.status === 'online' ? 'SUCCESS_PERSISTED' : 'PARTIAL_SUCCESS',
       timestamp: new Date().toISOString(),
-      transactionDetails: listing,
+      transactionDetails: {
+        ...listing,
+        mongo_id: rustReport.data?.id || null
+      },
       durationMs: duration,
       nodeReports: reports
     };

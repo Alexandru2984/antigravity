@@ -256,11 +256,11 @@ services:
       mongo:  {condition: service_healthy}
       kafka:  {condition: service_healthy}
     environment:
-      MONGODB_URI:    mongodb://polymarket:${MONGO_PASSWORD:-polymarket}@mongo:27017
+      MONGO_URI:      mongodb://polymarket:${MONGO_PASSWORD:-polymarket}@mongo:27017/polymarket?authSource=admin
       KAFKA_BROKERS:  kafka:9092
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       PORT: 4022
-    networks: [backend]
+    networks: [backend, data]
     deploy:
       resources:
         limits:

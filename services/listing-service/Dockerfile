@@ -1,5 +1,5 @@
 # ── Stage 1: Chef (dependency caching) ─────────────────────────
-FROM lukemathwalker/cargo-chef:latest-rust-1.85-alpine AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-alpine AS chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -8,7 +8,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 # ── Stage 2: Build ──────────────────────────────────────────────
 FROM chef AS builder
-RUN apk add --no-cache musl-dev cmake make gcc g++ pkgconfig librdkafka-dev
+RUN apk add --no-cache musl-dev cmake make gcc g++ pkgconfig librdkafka-dev curl-dev zlib-dev zlib-static zstd-dev zstd-static
 
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies first (cached layer)

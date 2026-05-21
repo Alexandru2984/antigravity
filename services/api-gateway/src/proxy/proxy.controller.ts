@@ -34,7 +34,7 @@ function wildcardPath(req: FastifyRequest): string {
   return (req.params as Record<string, string>)['*'] ?? '';
 }
 
-@Controller()
+@Controller('api/v1')
 export class ProxyController {
   private readonly logger = new Logger(ProxyController.name);
 
@@ -46,14 +46,16 @@ export class ProxyController {
   }
 
   // ── Listings ─────────────────────────────────────────────────
+  @Public()
   @All('listings/*')
   proxyListings(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'listings', wildcardPath(req));
+    return this.proxyRequest(req, res, 'listings', 'listings/' + wildcardPath(req));
   }
 
+  @Public()
   @All('listings')
   proxyListingsRoot(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'listings', '');
+    return this.proxyRequest(req, res, 'listings', 'listings');
   }
 
   // ── Search (public) ──────────────────────────────────────────

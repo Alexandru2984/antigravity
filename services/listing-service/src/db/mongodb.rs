@@ -13,6 +13,14 @@ use crate::models::{CreateListingRequest, Listing, ListingStatus, ListingQuery, 
 
 pub const COLLECTION: &str = "listings";
 
+fn uuid_to_bson_binary(uuid: Uuid) -> bson::Bson {
+    let bytes = uuid.as_bytes().to_vec();
+    bson::Bson::Binary(bson::Binary {
+        subtype: bson::spec::BinarySubtype::Generic,
+        bytes,
+    })
+}
+
 #[derive(Clone)]
 pub struct MongoRepo {
     col: Collection<Listing>,
@@ -41,7 +49,7 @@ impl MongoRepo {
                 .options(IndexOptions::builder().background(true).build())
                 .build(),
             IndexModel::builder()
-                .keys(doc! { "location": "2dsphere" })
+                .keys(doc! { "location.city": 1 })
                 .options(IndexOptions::builder().background(true).build())
                 .build(),
             IndexModel::builder()
@@ -110,7 +118,7 @@ impl MongoRepo {
             filter.insert("status", status.clone());
         }
         if let Some(seller) = &query.seller_id {
-            filter.insert("seller_id", seller.to_string());
+            filter.insert("seller_id", uuid_to_bson_binary(*seller));
         }
 
         let total = self.col.count_documents(filter.clone()).await?;
@@ -129,7 +137,7 @@ impl MongoRepo {
 
     pub async fn update(&self, id: &str, seller_id: Uuid, update: Document) -> Result<Option<Listing>> {
         let oid    = bson::oid::ObjectId::parse_str(id)?;
-        let filter = doc! { "_id": oid, "seller_id": seller_id.to_string() };
+        let filter = doc! { "_id": oid, "seller_id": uuid_to_bson_binary(seller_id) };
         let opts   = mongodb::options::FindOneAndUpdateOptions::builder()
             .return_document(mongodb::options::ReturnDocument::After)
             .build();
@@ -142,7 +150,7 @@ impl MongoRepo {
         let filter = if is_admin {
             doc! { "_id": oid }
         } else {
-            doc! { "_id": oid, "seller_id": seller_id.to_string() }
+            doc! { "_id": oid, "seller_id": uuid_to_bson_binary(seller_id) }
         };
 
         let result = self.col
