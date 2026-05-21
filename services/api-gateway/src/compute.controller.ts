@@ -1,12 +1,42 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import axios from 'axios';
 import { Public } from './auth/auth.guard';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
+const DEFAULT_MAX_CONCURRENT_TRANSACTIONS = 2;
+const MAX_STRING_LENGTH = 160;
+const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_IMAGE_IDS = 10;
+const MAX_ATTRIBUTES_BYTES = 4096;
+
+interface MeshTransactionRequest {
+  title?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  sellerId?: string;
+  location?: string;
+  currency?: string;
+  subcategory?: string;
+  county?: string;
+  lat?: number;
+  lng?: number;
+  imageIds?: string[];
+  attributes?: Record<string, unknown>;
+}
 
 @Public()
 @Controller('api/v1/polyglot-mesh')
 export class ComputeController {
+  private activeTransactions = 0;
+
   @Get('nodes')
   async getMeshNodes() {
     return [
@@ -128,7 +158,20 @@ export class ComputeController {
   }
 
   @Post('transaction')
-  async executeTransaction(@Body() body: any) {
+  async executeTransaction(@Body() body: unknown) {
+    if (!this.isMeshEnabled()) {
+      throw new ServiceUnavailableException('Polyglot mesh is disabled');
+    }
+
+    const releaseSlot = this.acquireTransactionSlot();
+    try {
+      return await this.executeTransactionCore(this.normalizeBody(body));
+    } finally {
+      releaseSlot();
+    }
+  }
+
+  private async executeTransactionCore(body: MeshTransactionRequest) {
     // Ensure sellerId is a valid UUID, generate a deterministic one if not
     let sellerId = body.sellerId || '00000000-0000-0000-0000-000000000100';
     const uuidRegex =
@@ -394,5 +437,149 @@ export class ComputeController {
       durationMs: duration,
       nodeReports: reports,
     };
+  }
+
+  private isMeshEnabled(): boolean {
+    return process.env.POLYGLOT_MESH_ENABLED === 'true';
+  }
+
+  private acquireTransactionSlot(): () => void {
+    const maxConcurrent = this.maxConcurrentTransactions();
+    if (this.activeTransactions >= maxConcurrent) {
+      throw new ServiceUnavailableException('Polyglot mesh is busy');
+    }
+
+    this.activeTransactions += 1;
+    return () => {
+      this.activeTransactions = Math.max(0, this.activeTransactions - 1);
+    };
+  }
+
+  private maxConcurrentTransactions(): number {
+    const raw = Number(process.env.POLYGLOT_MESH_MAX_CONCURRENCY);
+    if (!Number.isInteger(raw) || raw < 1) {
+      return DEFAULT_MAX_CONCURRENT_TRANSACTIONS;
+    }
+
+    return Math.min(raw, 10);
+  }
+
+  private normalizeBody(body: unknown): MeshTransactionRequest {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new BadRequestException('Request body must be a JSON object');
+    }
+
+    const input = body as Record<string, unknown>;
+    const normalized: MeshTransactionRequest = {
+      title: this.optionalString(input.title, 'title', MAX_STRING_LENGTH),
+      description: this.optionalString(
+        input.description,
+        'description',
+        MAX_DESCRIPTION_LENGTH,
+      ),
+      price: this.optionalPrice(input.price),
+      category: this.optionalString(input.category, 'category', 64),
+      sellerId: this.optionalString(input.sellerId, 'sellerId', 80),
+      location: this.optionalString(input.location, 'location', 80),
+      currency: this.optionalString(input.currency, 'currency', 8),
+      subcategory: this.optionalString(input.subcategory, 'subcategory', 64),
+      county: this.optionalString(input.county, 'county', 80),
+      lat: this.optionalCoordinate(input.lat, 'lat', -90, 90),
+      lng: this.optionalCoordinate(input.lng, 'lng', -180, 180),
+      imageIds: this.optionalStringArray(input.imageIds, 'imageIds'),
+      attributes: this.optionalAttributes(input.attributes),
+    };
+
+    return normalized;
+  }
+
+  private optionalString(
+    value: unknown,
+    field: string,
+    maxLength: number,
+  ): string | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    if (typeof value !== 'string') {
+      throw new BadRequestException(`${field} must be a string`);
+    }
+
+    const trimmed = value.trim();
+    if (trimmed.length > maxLength) {
+      throw new BadRequestException(`${field} is too long`);
+    }
+
+    return trimmed;
+  }
+
+  private optionalPrice(value: unknown): number | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const price = Number(value);
+    if (!Number.isFinite(price) || price <= 0 || price > 1_000_000) {
+      throw new BadRequestException('price must be between 0 and 1000000');
+    }
+
+    return price;
+  }
+
+  private optionalCoordinate(
+    value: unknown,
+    field: string,
+    min: number,
+    max: number,
+  ): number | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const coordinate = Number(value);
+    if (!Number.isFinite(coordinate) || coordinate < min || coordinate > max) {
+      throw new BadRequestException(`${field} is out of range`);
+    }
+
+    return coordinate;
+  }
+
+  private optionalStringArray(
+    value: unknown,
+    field: string,
+  ): string[] | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (!Array.isArray(value) || value.length > MAX_IMAGE_IDS) {
+      throw new BadRequestException(`${field} must be a small string array`);
+    }
+
+    return value.map((item) => {
+      if (typeof item !== 'string' || item.length > MAX_STRING_LENGTH) {
+        throw new BadRequestException(`${field} contains an invalid item`);
+      }
+      return item;
+    });
+  }
+
+  private optionalAttributes(
+    value: unknown,
+  ): Record<string, unknown> | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value !== 'object' || Array.isArray(value)) {
+      throw new BadRequestException('attributes must be an object');
+    }
+
+    if (JSON.stringify(value).length > MAX_ATTRIBUTES_BYTES) {
+      throw new BadRequestException('attributes payload is too large');
+    }
+
+    return value as Record<string, unknown>;
   }
 }

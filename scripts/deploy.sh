@@ -43,6 +43,7 @@ REQUIRED=(
     INTERNAL_SERVICE_TOKEN
     FRONTEND_URL
     CORS_ORIGINS
+    POLYGLOT_MESH_ENABLED
 )
 for var in "${REQUIRED[@]}"; do
     if [[ -z "${!var:-}" ]]; then
