@@ -18,6 +18,21 @@ volumes:
   neo4j_data:
   opensearch_data:
 
+x-stateful-security: &stateful_security
+  security_opt:
+    - no-new-privileges:true
+
+x-app-security: &app_security
+  <<: *stateful_security
+  cap_drop:
+    - ALL
+
+x-readonly-app-security: &readonly_app_security
+  <<: *app_security
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,nodev
+
 services:
 
 # ═══════════════════════════════════════════════════════════════
@@ -25,6 +40,7 @@ services:
 # ═══════════════════════════════════════════════════════════════
 
   postgres:
+    <<: *stateful_security
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -46,6 +62,7 @@ services:
       retries: 5
 
   mongo:
+    <<: *stateful_security
     image: mongo:7
     restart: unless-stopped
     environment:
@@ -64,6 +81,7 @@ services:
       retries: 5
 
   redis:
+    <<: *stateful_security
     image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -80,6 +98,7 @@ services:
       retries: 5
 
   zookeeper:
+    <<: *stateful_security
     image: confluentinc/cp-zookeeper:7.7.0
     restart: unless-stopped
     environment:
@@ -97,6 +116,7 @@ services:
       retries: 5
 
   kafka:
+    <<: *stateful_security
     image: confluentinc/cp-kafka:7.7.0
     restart: unless-stopped
     depends_on:
@@ -120,6 +140,7 @@ services:
       retries: 5
 
   opensearch:
+    <<: *stateful_security
     image: opensearchproject/opensearch:2.11.0
     restart: unless-stopped
     environment:
@@ -139,6 +160,7 @@ services:
       retries: 10
 
   minio:
+    <<: *stateful_security
     image: minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -158,6 +180,7 @@ services:
       retries: 5
 
   clickhouse:
+    <<: *stateful_security
     image: clickhouse/clickhouse-server:24.11
     restart: unless-stopped
     volumes:
@@ -174,6 +197,7 @@ services:
       retries: 5
 
   neo4j:
+    <<: *stateful_security
     image: neo4j:5.25
     restart: unless-stopped
     environment:
@@ -198,6 +222,7 @@ services:
 # ═══════════════════════════════════════════════════════════════
 
   auth-service:
+    <<: *app_security
     build: ./services/auth-service
     restart: unless-stopped
     depends_on:
@@ -219,6 +244,7 @@ services:
           memory: 300M
 
   api-gateway:
+    <<: *readonly_app_security
     build: ./services/api-gateway
     restart: unless-stopped
     depends_on:
@@ -252,6 +278,7 @@ services:
           memory: 200M
 
   listing-service:
+    <<: *readonly_app_security
     build: ./services/listing-service
     restart: unless-stopped
     depends_on:
@@ -271,6 +298,7 @@ services:
           memory: 300M
 
   search-service:
+    <<: *app_security
     build: ./services/search-service
     restart: unless-stopped
     depends_on:
@@ -288,6 +316,7 @@ services:
           memory: 700M
 
   image-service:
+    <<: *readonly_app_security
     build: ./services/image-service
     restart: unless-stopped
     depends_on:
@@ -306,6 +335,7 @@ services:
           memory: 400M
 
   profile-service:
+    <<: *app_security
     build: ./services/profile-service
     restart: unless-stopped
     depends_on:
@@ -321,6 +351,7 @@ services:
           memory: 600M
 
   payment-service:
+    <<: *app_security
     build: ./services/payment-service
     restart: unless-stopped
     depends_on:
@@ -339,6 +370,7 @@ services:
           memory: 200M
 
   notification-service:
+    <<: *app_security
     build: ./services/notification-service
     restart: unless-stopped
     depends_on:
@@ -355,6 +387,7 @@ services:
           memory: 300M
 
   feed-service:
+    <<: *readonly_app_security
     build: ./services/feed-service
     restart: unless-stopped
     depends_on:
@@ -369,6 +402,7 @@ services:
           memory: 200M
 
   review-service:
+    <<: *app_security
     build: ./services/review-service
     restart: unless-stopped
     depends_on:
@@ -389,6 +423,7 @@ services:
           memory: 250M
 
   analytics-service:
+    <<: *app_security
     build: ./services/analytics-service
     restart: unless-stopped
     depends_on:
@@ -406,6 +441,7 @@ services:
           memory: 300M
 
   chat-service:
+    <<: *app_security
     build: ./services/chat-service
     restart: unless-stopped
     depends_on:
@@ -423,6 +459,7 @@ services:
           memory: 400M
 
   ml-service:
+    <<: *app_security
     build: ./services/ml-service
     restart: unless-stopped
     depends_on:
@@ -439,6 +476,7 @@ services:
           memory: 500M
 
   stream-processor:
+    <<: *app_security
     build: ./services/stream-processor
     restart: unless-stopped
     depends_on:
@@ -455,6 +493,7 @@ services:
           memory: 600M
 
   config-service:
+    <<: *app_security
     build: ./services/config-service
     restart: unless-stopped
     depends_on:
@@ -469,6 +508,7 @@ services:
           memory: 200M
 
   contract-validator:
+    <<: *readonly_app_security
     build: ./services/contract-validator
     restart: unless-stopped
     environment:
@@ -480,6 +520,7 @@ services:
           memory: 500M
 
   admin-panel:
+    <<: *app_security
     build: ./services/admin-panel
     restart: unless-stopped
     depends_on:
@@ -496,6 +537,7 @@ services:
           memory: 400M
 
   frontend:
+    <<: *app_security
     build: ./frontend
     restart: unless-stopped
     environment:
@@ -511,6 +553,7 @@ services:
           memory: 300M
 
   nginx:
+    <<: *stateful_security
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
@@ -535,6 +578,7 @@ services:
 
 
   brainfuck-service:
+    <<: *readonly_app_security
     build: ./services/brainfuck-service
     restart: unless-stopped
     networks: [backend]
@@ -543,6 +587,7 @@ services:
         limits: {memory: 64M}
 
   assembly-service:
+    <<: *readonly_app_security
     build: ./services/assembly-service
     restart: unless-stopped
     networks: [backend]
@@ -551,6 +596,7 @@ services:
         limits: {memory: 128M}
 
   cobol-service:
+    <<: *readonly_app_security
     build: ./services/cobol-service
     restart: unless-stopped
     networks: [backend]
@@ -559,6 +605,7 @@ services:
         limits: {memory: 64M}
 
   clojure-service:
+    <<: *app_security
     build: ./services/clojure-service
     restart: unless-stopped
     networks: [backend]
@@ -567,6 +614,7 @@ services:
         limits: {memory: 400M}
 
   julia-service:
+    <<: *app_security
     build: ./services/julia-service
     restart: unless-stopped
     networks: [backend]
@@ -575,6 +623,7 @@ services:
         limits: {memory: 400M}
 
   prolog-service:
+    <<: *app_security
     build: ./services/prolog-service
     restart: unless-stopped
     networks: [backend]
@@ -583,6 +632,7 @@ services:
         limits: {memory: 128M}
 
   elixir-service:
+    <<: *app_security
     build: ./services/elixir-service
     restart: unless-stopped
     networks: [backend]
@@ -591,6 +641,7 @@ services:
         limits: {memory: 200M}
 
   scala-service:
+    <<: *app_security
     build: ./services/scala-service
     restart: unless-stopped
     networks: [backend]
@@ -599,6 +650,7 @@ services:
         limits: {memory: 512M}
 
   lua-service:
+    <<: *readonly_app_security
     build: ./services/lua-service
     restart: unless-stopped
     networks: [backend]
@@ -607,6 +659,7 @@ services:
         limits: {memory: 64M}
 
   r-service:
+    <<: *app_security
     build: ./services/r-service
     restart: unless-stopped
     networks: [backend]
@@ -615,6 +668,7 @@ services:
         limits: {memory: 512M}
 
   php-service:
+    <<: *readonly_app_security
     build: ./services/php-service
     restart: unless-stopped
     networks: [backend]
@@ -623,6 +677,7 @@ services:
         limits: {memory: 128M}
 
   zig-service:
+    <<: *readonly_app_security
     build: ./services/zig-service
     restart: unless-stopped
     networks: [backend]
@@ -631,6 +686,7 @@ services:
         limits: {memory: 64M}
 
   nim-service:
+    <<: *readonly_app_security
     build: ./services/nim-service
     restart: unless-stopped
     networks: [backend]
@@ -639,6 +695,7 @@ services:
         limits: {memory: 128M}
 
   swift-service:
+    <<: *app_security
     build: ./services/swift-service
     restart: unless-stopped
     networks: [backend]
@@ -647,6 +704,7 @@ services:
         limits: {memory: 512M}
 
   haskell-service:
+    <<: *readonly_app_security
     build: ./services/haskell-service
     restart: unless-stopped
     networks: [backend]
