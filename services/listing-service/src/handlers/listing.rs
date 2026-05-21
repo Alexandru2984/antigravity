@@ -8,9 +8,9 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
-    AppState,
     error::{AppError, Result},
     models::{CreateListingRequest, ListingQuery, ListingResponse, ListingsResponse},
+    AppState,
 };
 
 fn extract_user_id(headers: &HeaderMap) -> Result<Uuid> {
@@ -38,7 +38,7 @@ pub async fn list(
 ) -> Result<Json<ListingsResponse>> {
     let (listings, total) = state.mongo.list(&query).await?;
 
-    let page  = query.page.unwrap_or(1);
+    let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(20);
 
     Ok(Json(ListingsResponse {
@@ -56,25 +56,33 @@ pub async fn create(
     headers: HeaderMap,
     Json(req): Json<CreateListingRequest>,
 ) -> Result<(StatusCode, Json<ListingResponse>)> {
-    req.validate().map_err(|e| AppError::Validation(e.to_string()))?;
+    req.validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
 
     let seller_id = extract_user_id(&headers)?;
     let listing = state.mongo.create(seller_id, req).await?;
 
     // Kafka event
-    let listing_id = listing.id.as_ref().map(|id| id.to_hex()).unwrap_or_default();
-    let _ = state.kafka.produce(
-        "polymarket.listings.created",
-        &listing_id,
-        &json!({
-            "event":     "listing.created",
-            "id":        listing_id,
-            "seller_id": seller_id,
-            "category":  listing.category,
-            "price":     listing.price,
-            "ts":        chrono::Utc::now().to_rfc3339(),
-        }),
-    ).await;
+    let listing_id = listing
+        .id
+        .as_ref()
+        .map(|id| id.to_hex())
+        .unwrap_or_default();
+    let _ = state
+        .kafka
+        .produce(
+            "polymarket.listings.created",
+            &listing_id,
+            &json!({
+                "event":     "listing.created",
+                "id":        listing_id,
+                "seller_id": seller_id,
+                "category":  listing.category,
+                "price":     listing.price,
+                "ts":        chrono::Utc::now().to_rfc3339(),
+            }),
+        )
+        .await;
 
     Ok((StatusCode::CREATED, Json(ListingResponse::from(listing))))
 }
@@ -84,7 +92,8 @@ pub async fn get_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<ListingResponse>> {
-    let listing = state.mongo
+    let listing = state
+        .mongo
         .find_by_id(&id)
         .await?
         .ok_or(AppError::NotFound)?;
@@ -106,7 +115,8 @@ pub async fn update(
     Path(id): Path<String>,
     Json(req): Json<CreateListingRequest>,
 ) -> Result<Json<ListingResponse>> {
-    req.validate().map_err(|e| AppError::Validation(e.to_string()))?;
+    req.validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
 
     let seller_id = extract_user_id(&headers)?;
     let update_doc = bson::doc! {
@@ -116,7 +126,8 @@ pub async fn update(
         "updated_at":  chrono::Utc::now().to_rfc3339(),
     };
 
-    let listing = state.mongo
+    let listing = state
+        .mongo
         .update(&id, seller_id, update_doc)
         .await?
         .ok_or(AppError::NotFound)?;
@@ -131,7 +142,7 @@ pub async fn delete(
     Path(id): Path<String>,
 ) -> Result<StatusCode> {
     let seller_id = extract_user_id(&headers)?;
-    let admin     = is_admin(&headers);
+    let admin = is_admin(&headers);
 
     let deleted = state.mongo.delete(&id, seller_id, admin).await?;
     if !deleted {
@@ -139,11 +150,14 @@ pub async fn delete(
     }
 
     // Kafka event
-    let _ = state.kafka.produce(
-        "polymarket.listings.deleted",
-        &id,
-        &json!({ "event": "listing.deleted", "id": id, "ts": chrono::Utc::now().to_rfc3339() }),
-    ).await;
+    let _ = state
+        .kafka
+        .produce(
+            "polymarket.listings.deleted",
+            &id,
+            &json!({ "event": "listing.deleted", "id": id, "ts": chrono::Utc::now().to_rfc3339() }),
+        )
+        .await;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -155,7 +169,8 @@ pub async fn mark_sold(
     Path(id): Path<String>,
 ) -> Result<Json<ListingResponse>> {
     let seller_id = extract_user_id(&headers)?;
-    let listing = state.mongo
+    let listing = state
+        .mongo
         .mark_sold(&id, seller_id)
         .await?
         .ok_or(AppError::NotFound)?;

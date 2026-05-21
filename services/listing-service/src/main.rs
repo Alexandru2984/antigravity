@@ -1,7 +1,12 @@
 use anyhow::Result;
-use axum::{routing::{get, post}, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 use std::sync::Arc;
+use std::time::Duration;
+use tower::ServiceBuilder;
 use tower_http::{
     cors::{Any, CorsLayer},
     request_id::MakeRequestUuid,
@@ -9,8 +14,6 @@ use tower_http::{
     trace::TraceLayer,
     ServiceBuilderExt,
 };
-use tower::ServiceBuilder;
-use std::time::Duration;
 
 mod config;
 mod db;
@@ -26,8 +29,8 @@ use kafka::KafkaProducer;
 pub type AppState = Arc<AppStateInner>;
 
 pub struct AppStateInner {
-    pub mongo:  MongoRepo,
-    pub kafka:  KafkaProducer,
+    pub mongo: MongoRepo,
+    pub kafka: KafkaProducer,
 }
 
 #[tokio::main]
@@ -60,13 +63,22 @@ async fn main() -> Result<()> {
 
     let app = Router::new()
         // ── Health ──────────────────────────────────────────────
-        .route("/health",       get(handlers::health::health))
+        .route("/health", get(handlers::health::health))
         // ── Listings ────────────────────────────────────────────
-        .route("/listings",     get(handlers::listing::list).post(handlers::listing::create))
-        .route("/listings/:id", get(handlers::listing::get_by_id)
-                                .put(handlers::listing::update)
-                                .delete(handlers::listing::delete))
-        .route("/listings/:id/mark-sold", post(handlers::listing::mark_sold))
+        .route(
+            "/listings",
+            get(handlers::listing::list).post(handlers::listing::create),
+        )
+        .route(
+            "/listings/:id",
+            get(handlers::listing::get_by_id)
+                .put(handlers::listing::update)
+                .delete(handlers::listing::delete),
+        )
+        .route(
+            "/listings/:id/mark-sold",
+            post(handlers::listing::mark_sold),
+        )
         .with_state(state)
         .layer(
             ServiceBuilder::new()
@@ -74,7 +86,7 @@ async fn main() -> Result<()> {
                 .layer(cors)
                 .layer(TimeoutLayer::new(Duration::from_secs(30)))
                 .set_x_request_id(MakeRequestUuid)
-                .propagate_x_request_id()
+                .propagate_x_request_id(),
         );
 
     let addr = format!("0.0.0.0:{}", cfg.port);

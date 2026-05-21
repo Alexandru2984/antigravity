@@ -1,15 +1,14 @@
 use anyhow::Result;
 use bson::{doc, Document};
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use futures::TryStreamExt;
 use mongodb::{
-    Client, Collection, Database,
     options::{FindOptions, IndexOptions},
-    IndexModel,
+    Client, Collection, Database, IndexModel,
 };
 use uuid::Uuid;
 
-use crate::models::{CreateListingRequest, Listing, ListingStatus, ListingQuery, Location};
+use crate::models::{CreateListingRequest, Listing, ListingQuery, ListingStatus, Location};
 
 pub const COLLECTION: &str = "listings";
 
@@ -54,10 +53,12 @@ impl MongoRepo {
                 .build(),
             IndexModel::builder()
                 .keys(doc! { "expires_at": 1 })
-                .options(IndexOptions::builder()
-                    .expire_after(std::time::Duration::from_secs(0))
-                    .background(true)
-                    .build())
+                .options(
+                    IndexOptions::builder()
+                        .expire_after(std::time::Duration::from_secs(0))
+                        .background(true)
+                        .build(),
+                )
                 .build(),
         ];
 
@@ -68,28 +69,28 @@ impl MongoRepo {
     pub async fn create(&self, seller_id: Uuid, req: CreateListingRequest) -> Result<Listing> {
         let now = Utc::now();
         let listing = Listing {
-            id:          None,
-            title:       req.title,
+            id: None,
+            title: req.title,
             description: req.description.unwrap_or_default(),
-            price:       req.price,
-            currency:    req.currency.unwrap_or("RON".into()),
-            category:    req.category,
+            price: req.price,
+            currency: req.currency.unwrap_or("RON".into()),
+            category: req.category,
             subcategory: req.subcategory,
             seller_id,
-            images:      vec![], // populated by image-service
-            location:    Location {
-                city:    req.location.city,
-                county:  req.location.county,
+            images: vec![], // populated by image-service
+            location: Location {
+                city: req.location.city,
+                county: req.location.county,
                 address: None,
-                lat:     req.location.lat,
-                lng:     req.location.lng,
+                lat: req.location.lat,
+                lng: req.location.lng,
             },
-            attributes:  req.attributes.unwrap_or(serde_json::json!({})),
-            status:      ListingStatus::Active,
-            views:       0,
-            created_at:  now,
-            expires_at:  now + Duration::days(30),
-            updated_at:  now,
+            attributes: req.attributes.unwrap_or(serde_json::json!({})),
+            status: ListingStatus::Active,
+            views: 0,
+            created_at: now,
+            expires_at: now + Duration::days(30),
+            updated_at: now,
         };
 
         let result = self.col.insert_one(&listing).await?;
@@ -106,9 +107,9 @@ impl MongoRepo {
     }
 
     pub async fn list(&self, query: &ListingQuery) -> Result<(Vec<Listing>, u64)> {
-        let page  = query.page.unwrap_or(1).max(1);
+        let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).min(100);
-        let skip  = (page - 1) * limit;
+        let skip = (page - 1) * limit;
 
         let mut filter = doc! { "status": "active" };
         if let Some(cat) = &query.category {
@@ -135,25 +136,35 @@ impl MongoRepo {
         Ok((listings, total))
     }
 
-    pub async fn update(&self, id: &str, seller_id: Uuid, update: Document) -> Result<Option<Listing>> {
-        let oid    = bson::oid::ObjectId::parse_str(id)?;
+    pub async fn update(
+        &self,
+        id: &str,
+        seller_id: Uuid,
+        update: Document,
+    ) -> Result<Option<Listing>> {
+        let oid = bson::oid::ObjectId::parse_str(id)?;
         let filter = doc! { "_id": oid, "seller_id": uuid_to_bson_binary(seller_id) };
-        let opts   = mongodb::options::FindOneAndUpdateOptions::builder()
+        let opts = mongodb::options::FindOneAndUpdateOptions::builder()
             .return_document(mongodb::options::ReturnDocument::After)
             .build();
 
-        Ok(self.col.find_one_and_update(filter, doc! { "$set": update }).with_options(opts).await?)
+        Ok(self
+            .col
+            .find_one_and_update(filter, doc! { "$set": update })
+            .with_options(opts)
+            .await?)
     }
 
     pub async fn delete(&self, id: &str, seller_id: Uuid, is_admin: bool) -> Result<bool> {
-        let oid    = bson::oid::ObjectId::parse_str(id)?;
+        let oid = bson::oid::ObjectId::parse_str(id)?;
         let filter = if is_admin {
             doc! { "_id": oid }
         } else {
             doc! { "_id": oid, "seller_id": uuid_to_bson_binary(seller_id) }
         };
 
-        let result = self.col
+        let result = self
+            .col
             .update_one(filter, doc! { "$set": { "status": "deleted" } })
             .await?;
 
