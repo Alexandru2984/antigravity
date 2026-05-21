@@ -37,8 +37,7 @@ let upsertFlag (name: string) : HttpHandler =
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
 
-            let parsed =
-                JsonSerializer.Deserialize<UpsertPayload>(body)
+            let parsed = JsonSerializer.Deserialize<UpsertPayload>(body)
 
             upsert name parsed.enabled parsed.description
             return! json {| updated = name |} next ctx

@@ -55,8 +55,8 @@ validate req =
     Object obj ->
       let currentKeys = map K.toString (keys obj)
           requiredFields = requiredFor (schemaName req)
-          missing = filter (\f -> not (f `elem` currentKeys)) requiredFields
-          errs = map (\f -> "Missing required field: " <> f) missing
+          missing = filter (`notElem` currentKeys) requiredFields
+          errs = map ("Missing required field: " <>) missing
       in return ValidationResult { valid = null errs, errors = errs }
     _ -> return ValidationResult { valid = False, errors = ["Payload must be a JSON object"] }
 

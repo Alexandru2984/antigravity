@@ -7,6 +7,7 @@ pub struct Config {
     pub mongo_uri: String,
     pub mongo_db: String,
     pub kafka_brokers: String,
+    #[allow(dead_code)]
     pub redis_url: String,
 }
 

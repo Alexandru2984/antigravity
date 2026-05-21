@@ -30,6 +30,6 @@ try {
 }
 process.on('SIGTERM', () => {
   try {
-    sdk.shutdown();
+    sdk.shutdown().catch(() => {});
   } catch {}
 });

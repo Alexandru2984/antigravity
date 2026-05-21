@@ -10,6 +10,7 @@ pub enum AppError {
     #[error("Not found")]
     NotFound,
     #[error("Forbidden")]
+    #[allow(dead_code)]
     Forbidden,
     #[error("Validation error: {0}")]
     Validation(String),
