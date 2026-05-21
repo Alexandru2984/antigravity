@@ -1,5 +1,6 @@
 use anyhow::Result;
 use axum::{
+    http::{header, HeaderName, HeaderValue, Method},
     routing::{get, post},
     Router,
 };
@@ -8,7 +9,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tower::ServiceBuilder;
 use tower_http::{
-    cors::{Any, CorsLayer},
+    cors::{AllowOrigin, CorsLayer},
     request_id::MakeRequestUuid,
     timeout::TimeoutLayer,
     trace::TraceLayer,
@@ -31,6 +32,19 @@ pub type AppState = Arc<AppStateInner>;
 pub struct AppStateInner {
     pub mongo: MongoRepo,
     pub kafka: KafkaProducer,
+}
+
+fn cors_origins() -> Result<Vec<HeaderValue>> {
+    let configured = std::env::var("CORS_ORIGINS")
+        .or_else(|_| std::env::var("FRONTEND_URL"))
+        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+    configured
+        .split(',')
+        .map(str::trim)
+        .filter(|origin| !origin.is_empty())
+        .map(|origin| origin.parse::<HeaderValue>().map_err(Into::into))
+        .collect()
 }
 
 #[tokio::main]
@@ -57,9 +71,24 @@ async fn main() -> Result<()> {
     let state: AppState = Arc::new(AppStateInner { mongo, kafka });
 
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_origin(AllowOrigin::list(cors_origins()?))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            header::AUTHORIZATION,
+            header::CONTENT_TYPE,
+            HeaderName::from_static("x-request-id"),
+            HeaderName::from_static("x-user-id"),
+            HeaderName::from_static("x-user-email"),
+            HeaderName::from_static("x-user-roles"),
+        ])
+        .allow_credentials(true)
+        .max_age(Duration::from_secs(600));
 
     let app = Router::new()
         // ── Health ──────────────────────────────────────────────

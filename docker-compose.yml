@@ -229,6 +229,7 @@ services:
       REDIS_URL:         redis://redis:6379
       JWT_PUBLIC_KEY:    ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       FRONTEND_URL:      ${FRONTEND_URL:?FRONTEND_URL is required}
+      CORS_ORIGINS:      ${CORS_ORIGINS:?CORS_ORIGINS is required}
       AUTH_SERVICE_URL:  http://auth-service:4020
       LISTING_SERVICE_URL: http://listing-service:4022
       SEARCH_SERVICE_URL:  http://search-service:4023
@@ -257,6 +258,7 @@ services:
       MONGO_URI:      mongodb://polymarket:${MONGO_PASSWORD:?MONGO_PASSWORD is required}@mongo:27017/polymarket?authSource=admin
       KAFKA_BROKERS:  kafka:9092
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
+      CORS_ORIGINS:   ${CORS_ORIGINS:?CORS_ORIGINS is required}
       PORT: 4022
     networks: [backend, data]
     deploy:

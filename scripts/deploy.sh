@@ -41,6 +41,7 @@ REQUIRED=(
     ADMIN_SECRET_KEY_BASE
     REVIEW_APP_KEY
     FRONTEND_URL
+    CORS_ORIGINS
 )
 for var in "${REQUIRED[@]}"; do
     if [[ -z "${!var:-}" ]]; then
