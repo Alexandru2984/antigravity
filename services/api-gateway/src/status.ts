@@ -15,18 +15,28 @@ const SERVICES = [
   { name: 'Zig', port: 4062 },
   { name: 'Swift', port: 4063 },
   { name: 'Nim', port: 4064 },
-  { name: 'Odin', port: 4065 }
+  { name: 'Odin', port: 4065 },
 ];
 
 export const getPolyglotStatus = async () => {
-  const results = await Promise.all(SERVICES.map(async (s) => {
-    try {
-      const start = Date.now();
-      const res = await axios.get(`http://${s.name.toLowerCase()}-service:${s.port}`, { timeout: 2000 });
-      return { ...s, status: 'online', latency: Date.now() - start, response: res.data };
-    } catch (e) {
-      return { ...s, status: 'offline', response: null };
-    }
-  }));
+  const results = await Promise.all(
+    SERVICES.map(async (s) => {
+      try {
+        const start = Date.now();
+        const res = await axios.get(
+          `http://${s.name.toLowerCase()}-service:${s.port}`,
+          { timeout: 2000 },
+        );
+        return {
+          ...s,
+          status: 'online',
+          latency: Date.now() - start,
+          response: res.data,
+        };
+      } catch (e) {
+        return { ...s, status: 'offline', response: null };
+      }
+    }),
+  );
   return results;
 };

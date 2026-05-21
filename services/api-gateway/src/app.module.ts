@@ -7,8 +7,8 @@ import { HealthModule } from './health/health.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { AuthGuard } from './auth/auth.guard';
 import { RedisModule } from './redis/redis.module';
-import { StatusController } from "./status.controller";
-import { ComputeController } from "./compute.controller";
+import { StatusController } from './status.controller';
+import { ComputeController } from './compute.controller';
 import appConfig from './config/app.config';
 
 @Module({

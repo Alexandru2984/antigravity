@@ -3,11 +3,14 @@ import { Public } from '../auth/auth.guard';
 
 @Controller()
 export class HealthController {
-
   @Public()
   @Get('health')
   health() {
-    return { status: 'ok', service: 'api-gateway', ts: new Date().toISOString() };
+    return {
+      status: 'ok',
+      service: 'api-gateway',
+      ts: new Date().toISOString(),
+    };
   }
 
   @Public()

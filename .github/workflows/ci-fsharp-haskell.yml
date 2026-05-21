@@ -64,7 +64,7 @@ jobs:
           key: ${{ runner.os }}-stack-${{ hashFiles('services/contract-validator/stack.yaml.lock') }}
       - name: Install hlint
         run: |
-          curl -sSL https://github.com/ndmitry/hlint/releases/download/v3.8/hlint-3.8-x86_64-linux.tar.gz | tar xz
+          curl -sSL https://github.com/ndmitchell/hlint/releases/download/v3.8/hlint-3.8-x86_64-linux.tar.gz | tar xz
           echo "$PWD/hlint-3.8" >> $GITHUB_PATH
       - name: hlint
         run: hlint services/contract-validator/src/ services/contract-validator/app/

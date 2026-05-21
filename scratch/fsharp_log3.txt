@@ -1,0 +1,328 @@
+﻿2026-05-21T12:00:06.3056577Z Current runner version: '2.334.0'
+2026-05-21T12:00:06.3081989Z ##[group]Runner Image Provisioner
+2026-05-21T12:00:06.3082752Z Hosted Compute Agent
+2026-05-21T12:00:06.3083563Z Version: 20260213.493
+2026-05-21T12:00:06.3084332Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-05-21T12:00:06.3085058Z Build Date: 2026-02-13T00:28:41Z
+2026-05-21T12:00:06.3085732Z Worker ID: {0de08c2c-8ad7-40c2-bfcd-4149e9bd8b9b}
+2026-05-21T12:00:06.3086490Z Azure Region: eastus2
+2026-05-21T12:00:06.3087071Z ##[endgroup]
+2026-05-21T12:00:06.3088353Z ##[group]Operating System
+2026-05-21T12:00:06.3089071Z Ubuntu
+2026-05-21T12:00:06.3089564Z 24.04.4
+2026-05-21T12:00:06.3090049Z LTS
+2026-05-21T12:00:06.3090521Z ##[endgroup]
+2026-05-21T12:00:06.3091068Z ##[group]Runner Image
+2026-05-21T12:00:06.3091656Z Image: ubuntu-24.04
+2026-05-21T12:00:06.3092181Z Version: 20260518.149.1
+2026-05-21T12:00:06.3093671Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260518.149/images/ubuntu/Ubuntu2404-Readme.md
+2026-05-21T12:00:06.3095906Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260518.149
+2026-05-21T12:00:06.3097246Z ##[endgroup]
+2026-05-21T12:00:06.3098949Z ##[group]GITHUB_TOKEN Permissions
+2026-05-21T12:00:06.3101513Z Contents: read
+2026-05-21T12:00:06.3102342Z Metadata: read
+2026-05-21T12:00:06.3103300Z Packages: read
+2026-05-21T12:00:06.3104247Z ##[endgroup]
+2026-05-21T12:00:06.3106642Z Secret source: Actions
+2026-05-21T12:00:06.3107585Z Prepare workflow directory
+2026-05-21T12:00:06.3696680Z Prepare all required actions
+2026-05-21T12:00:06.3749198Z Getting action download info
+2026-05-21T12:00:06.7352420Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-05-21T12:00:06.8323170Z Download action repository 'actions/setup-dotnet@v4' (SHA:67a3573c9a986a3f9c594539f4ab511d57bb3ce9)
+2026-05-21T12:00:07.2049013Z Complete job name: Config Service (F#)
+2026-05-21T12:00:07.2555140Z ##[group]Checking docker version
+2026-05-21T12:00:07.2568524Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-05-21T12:00:07.3354688Z '1.48'
+2026-05-21T12:00:07.3372660Z Docker daemon API version: '1.48'
+2026-05-21T12:00:07.3374167Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-05-21T12:00:07.3557573Z '1.48'
+2026-05-21T12:00:07.3574887Z Docker client API version: '1.48'
+2026-05-21T12:00:07.3581152Z ##[endgroup]
+2026-05-21T12:00:07.3585833Z ##[group]Clean up resources from previous jobs
+2026-05-21T12:00:07.3593293Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=67d5ac"
+2026-05-21T12:00:07.3758386Z ##[command]/usr/bin/docker network prune --force --filter "label=67d5ac"
+2026-05-21T12:00:07.3894736Z ##[endgroup]
+2026-05-21T12:00:07.3895290Z ##[group]Create local container network
+2026-05-21T12:00:07.3906114Z ##[command]/usr/bin/docker network create --label 67d5ac github_network_0836f535ddfd4898a7c426281d08df91
+2026-05-21T12:00:07.4487693Z 767e06d601d93a7aab3d7447f7f9f42604958ca1597cfc2ef1d7670820638fbe
+2026-05-21T12:00:07.4506016Z ##[endgroup]
+2026-05-21T12:00:07.4531250Z ##[group]Starting postgres service container
+2026-05-21T12:00:07.4553456Z ##[command]/usr/bin/docker pull postgres:16-alpine
+2026-05-21T12:00:08.4636094Z 16-alpine: Pulling from library/postgres
+2026-05-21T12:00:11.9391215Z 6a0ac1617861: Already exists
+2026-05-21T12:00:11.9415915Z cdda83573b7e: Pulling fs layer
+2026-05-21T12:00:11.9416537Z bba062d0aaf6: Pulling fs layer
+2026-05-21T12:00:11.9416981Z 2eeda6440fdc: Pulling fs layer
+2026-05-21T12:00:11.9417406Z 377e1ef4f477: Pulling fs layer
+2026-05-21T12:00:11.9417827Z 3709d6f016e4: Pulling fs layer
+2026-05-21T12:00:11.9418277Z d9c20c681f9b: Pulling fs layer
+2026-05-21T12:00:11.9418716Z 7b77effdbf0f: Pulling fs layer
+2026-05-21T12:00:11.9419187Z ae6182536390: Pulling fs layer
+2026-05-21T12:00:11.9419621Z 24c411bedd9e: Pulling fs layer
+2026-05-21T12:00:11.9420048Z ca93057fc4d5: Pulling fs layer
+2026-05-21T12:00:11.9420538Z 7b77effdbf0f: Waiting
+2026-05-21T12:00:11.9420980Z 24c411bedd9e: Waiting
+2026-05-21T12:00:11.9421934Z ca93057fc4d5: Waiting
+2026-05-21T12:00:11.9422344Z ae6182536390: Waiting
+2026-05-21T12:00:11.9422739Z 377e1ef4f477: Waiting
+2026-05-21T12:00:11.9423247Z 3709d6f016e4: Waiting
+2026-05-21T12:00:11.9423598Z d9c20c681f9b: Waiting
+2026-05-21T12:00:12.4950675Z cdda83573b7e: Download complete
+2026-05-21T12:00:12.5465133Z bba062d0aaf6: Verifying Checksum
+2026-05-21T12:00:12.5465662Z bba062d0aaf6: Download complete
+2026-05-21T12:00:12.5949427Z 2eeda6440fdc: Verifying Checksum
+2026-05-21T12:00:12.5950020Z 2eeda6440fdc: Download complete
+2026-05-21T12:00:12.9719875Z 377e1ef4f477: Verifying Checksum
+2026-05-21T12:00:12.9720812Z 377e1ef4f477: Download complete
+2026-05-21T12:00:13.2657482Z d9c20c681f9b: Verifying Checksum
+2026-05-21T12:00:13.2658041Z d9c20c681f9b: Download complete
+2026-05-21T12:00:13.2829564Z cdda83573b7e: Pull complete
+2026-05-21T12:00:13.3738754Z bba062d0aaf6: Pull complete
+2026-05-21T12:00:13.3868030Z 2eeda6440fdc: Pull complete
+2026-05-21T12:00:13.3941131Z 7b77effdbf0f: Verifying Checksum
+2026-05-21T12:00:13.3942478Z 7b77effdbf0f: Download complete
+2026-05-21T12:00:13.4172433Z 377e1ef4f477: Pull complete
+2026-05-21T12:00:13.6146438Z 3709d6f016e4: Verifying Checksum
+2026-05-21T12:00:13.6146937Z 3709d6f016e4: Download complete
+2026-05-21T12:00:13.6811914Z 24c411bedd9e: Verifying Checksum
+2026-05-21T12:00:13.6812579Z 24c411bedd9e: Download complete
+2026-05-21T12:00:13.7386985Z ae6182536390: Verifying Checksum
+2026-05-21T12:00:13.7387458Z ae6182536390: Download complete
+2026-05-21T12:00:13.8458180Z ca93057fc4d5: Download complete
+2026-05-21T12:00:15.9829541Z 3709d6f016e4: Pull complete
+2026-05-21T12:00:15.9939539Z d9c20c681f9b: Pull complete
+2026-05-21T12:00:16.0031122Z 7b77effdbf0f: Pull complete
+2026-05-21T12:00:16.0109929Z ae6182536390: Pull complete
+2026-05-21T12:00:16.0206982Z 24c411bedd9e: Pull complete
+2026-05-21T12:00:16.0289582Z ca93057fc4d5: Pull complete
+2026-05-21T12:00:16.0325321Z Digest: sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229
+2026-05-21T12:00:16.0338765Z Status: Downloaded newer image for postgres:16-alpine
+2026-05-21T12:00:16.0347436Z docker.io/library/postgres:16-alpine
+2026-05-21T12:00:16.0420553Z ##[command]/usr/bin/docker create --name 35ae7153edb84409a7b278718f1a6633_postgres16alpine_e8355c --label 67d5ac --network github_network_0836f535ddfd4898a7c426281d08df91 --network-alias postgres -p 5432:5432 --health-cmd pg_isready --health-interval 10s -e "POSTGRES_USER=polymarket" -e "POSTGRES_PASSWORD=test" -e "POSTGRES_DB=polymarket_config_test" -e GITHUB_ACTIONS=true -e CI=true postgres:16-alpine
+2026-05-21T12:00:16.0670340Z 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:16.0691862Z ##[command]/usr/bin/docker start 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:16.2497413Z 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:16.2521139Z ##[command]/usr/bin/docker ps --all --filter id=90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-05-21T12:00:16.2654406Z 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222 Up Less than a second (health: starting)
+2026-05-21T12:00:16.2676144Z ##[command]/usr/bin/docker port 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:16.2813339Z 5432/tcp -> 0.0.0.0:5432
+2026-05-21T12:00:16.2813777Z 5432/tcp -> [::]:5432
+2026-05-21T12:00:16.2862695Z ##[endgroup]
+2026-05-21T12:00:16.2871743Z ##[group]Waiting for all services to be ready
+2026-05-21T12:00:16.2885826Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:16.3006413Z starting
+2026-05-21T12:00:16.3025888Z postgres service is starting, waiting 2 seconds before checking again.
+2026-05-21T12:00:18.3025780Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:18.3151264Z starting
+2026-05-21T12:00:18.3164169Z postgres service is starting, waiting 4 seconds before checking again.
+2026-05-21T12:00:22.7019223Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:22.7149611Z starting
+2026-05-21T12:00:22.7163666Z postgres service is starting, waiting 8 seconds before checking again.
+2026-05-21T12:00:31.5655012Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:31.5783503Z healthy
+2026-05-21T12:00:31.5800506Z postgres service is healthy.
+2026-05-21T12:00:31.5801124Z ##[endgroup]
+2026-05-21T12:00:31.6067835Z ##[group]Run actions/checkout@v4
+2026-05-21T12:00:31.6068301Z with:
+2026-05-21T12:00:31.6068533Z   repository: Alexandru2984/antigravity
+2026-05-21T12:00:31.6068944Z   token: ***
+2026-05-21T12:00:31.6069141Z   ssh-strict: true
+2026-05-21T12:00:31.6069328Z   ssh-user: git
+2026-05-21T12:00:31.6069527Z   persist-credentials: true
+2026-05-21T12:00:31.6069746Z   clean: true
+2026-05-21T12:00:31.6069937Z   sparse-checkout-cone-mode: true
+2026-05-21T12:00:31.6070191Z   fetch-depth: 1
+2026-05-21T12:00:31.6070378Z   fetch-tags: false
+2026-05-21T12:00:31.6070573Z   show-progress: true
+2026-05-21T12:00:31.6070757Z   lfs: false
+2026-05-21T12:00:31.6070928Z   submodules: false
+2026-05-21T12:00:31.6071107Z   set-safe-directory: true
+2026-05-21T12:00:31.6071473Z ##[endgroup]
+2026-05-21T12:00:31.7219916Z Syncing repository: Alexandru2984/antigravity
+2026-05-21T12:00:31.7222046Z ##[group]Getting Git version info
+2026-05-21T12:00:31.7222769Z Working directory is '/home/runner/work/antigravity/antigravity'
+2026-05-21T12:00:31.7223866Z [command]/usr/bin/git version
+2026-05-21T12:00:31.7265916Z git version 2.54.0
+2026-05-21T12:00:31.7291861Z ##[endgroup]
+2026-05-21T12:00:31.7307485Z Temporarily overriding HOME='/home/runner/work/_temp/7b241368-85dd-4303-85b6-84f38a8b599b' before making global git config changes
+2026-05-21T12:00:31.7308445Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-21T12:00:31.7323915Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:31.7369403Z Deleting the contents of '/home/runner/work/antigravity/antigravity'
+2026-05-21T12:00:31.7373355Z ##[group]Initializing the repository
+2026-05-21T12:00:31.7378198Z [command]/usr/bin/git init /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:31.7449477Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-05-21T12:00:31.7450711Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-05-21T12:00:31.7451248Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-05-21T12:00:31.7451641Z hint: call:
+2026-05-21T12:00:31.7451816Z hint:
+2026-05-21T12:00:31.7452257Z hint: 	git config --global init.defaultBranch <name>
+2026-05-21T12:00:31.7452753Z hint:
+2026-05-21T12:00:31.7455470Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-05-21T12:00:31.7456286Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-05-21T12:00:31.7456854Z hint:
+2026-05-21T12:00:31.7457085Z hint: 	git branch -m <name>
+2026-05-21T12:00:31.7457307Z hint:
+2026-05-21T12:00:31.7457615Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-05-21T12:00:31.7458136Z Initialized empty Git repository in /home/runner/work/antigravity/antigravity/.git/
+2026-05-21T12:00:31.7465893Z [command]/usr/bin/git remote add origin https://github.com/Alexandru2984/antigravity
+2026-05-21T12:00:31.7505543Z ##[endgroup]
+2026-05-21T12:00:31.7505976Z ##[group]Disabling automatic garbage collection
+2026-05-21T12:00:31.7510033Z [command]/usr/bin/git config --local gc.auto 0
+2026-05-21T12:00:31.7540838Z ##[endgroup]
+2026-05-21T12:00:31.7541456Z ##[group]Setting up auth
+2026-05-21T12:00:31.7548023Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-05-21T12:00:31.7581533Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-21T12:00:31.7899843Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-05-21T12:00:31.7930486Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-05-21T12:00:31.8165540Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-05-21T12:00:31.8197441Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-05-21T12:00:31.8443086Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-05-21T12:00:31.8479606Z ##[endgroup]
+2026-05-21T12:00:31.8480185Z ##[group]Fetching the repository
+2026-05-21T12:00:31.8488702Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d2866b9dddd5300eae0d1390fab5e1c7163677d8:refs/remotes/origin/main
+2026-05-21T12:00:32.1594338Z From https://github.com/Alexandru2984/antigravity
+2026-05-21T12:00:32.1595263Z  * [new ref]         d2866b9dddd5300eae0d1390fab5e1c7163677d8 -> origin/main
+2026-05-21T12:00:32.1634585Z ##[endgroup]
+2026-05-21T12:00:32.1635118Z ##[group]Determining the checkout info
+2026-05-21T12:00:32.1637179Z ##[endgroup]
+2026-05-21T12:00:32.1643824Z [command]/usr/bin/git sparse-checkout disable
+2026-05-21T12:00:32.1691299Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-05-21T12:00:32.1721151Z ##[group]Checking out the ref
+2026-05-21T12:00:32.1726419Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-05-21T12:00:32.1963186Z Switched to a new branch 'main'
+2026-05-21T12:00:32.1964969Z branch 'main' set up to track 'origin/main'.
+2026-05-21T12:00:32.1974317Z ##[endgroup]
+2026-05-21T12:00:32.2019466Z [command]/usr/bin/git log -1 --format=%H
+2026-05-21T12:00:32.2122145Z d2866b9dddd5300eae0d1390fab5e1c7163677d8
+2026-05-21T12:00:32.2244391Z ##[group]Run actions/setup-dotnet@v4
+2026-05-21T12:00:32.2244656Z with:
+2026-05-21T12:00:32.2244830Z   dotnet-version: 8.0.x
+2026-05-21T12:00:32.2245039Z   cache: false
+2026-05-21T12:00:32.2245215Z ##[endgroup]
+2026-05-21T12:00:32.4041286Z [command]/home/runner/work/_actions/actions/setup-dotnet/v4/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+2026-05-21T12:00:32.7002021Z dotnet-install: .NET Core Runtime with version '10.0.8' is already installed.
+2026-05-21T12:00:32.7031815Z [command]/home/runner/work/_actions/actions/setup-dotnet/v4/externals/install-dotnet.sh --skip-non-versioned-files --channel 8.0
+2026-05-21T12:00:32.9710524Z dotnet-install: .NET Core SDK with version '8.0.421' is already installed.
+2026-05-21T12:00:32.9856163Z ##[group]Run cd services/config-service && dotnet restore
+2026-05-21T12:00:32.9856657Z [36;1mcd services/config-service && dotnet restore[0m
+2026-05-21T12:00:32.9899083Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:32.9899333Z env:
+2026-05-21T12:00:32.9899522Z   DOTNET_ROOT: /usr/share/dotnet
+2026-05-21T12:00:32.9899766Z ##[endgroup]
+2026-05-21T12:00:39.1211143Z   Determining projects to restore...
+2026-05-21T12:00:42.1367673Z   Restored /home/runner/work/antigravity/antigravity/services/config-service/ConfigService.fsproj (in 1.99 sec).
+2026-05-21T12:00:42.1796129Z ##[group]Run cd services/config-service
+2026-05-21T12:00:42.1796485Z [36;1mcd services/config-service[0m
+2026-05-21T12:00:42.1796737Z [36;1mdotnet tool restore[0m
+2026-05-21T12:00:42.1797371Z [36;1mdotnet fantomas --check .[0m
+2026-05-21T12:00:42.1833694Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:42.1833947Z env:
+2026-05-21T12:00:42.1834131Z   DOTNET_ROOT: /usr/share/dotnet
+2026-05-21T12:00:42.1834382Z ##[endgroup]
+2026-05-21T12:00:44.9325022Z Tool 'fantomas' (version '6.3.0') was restored. Available commands: fantomas
+2026-05-21T12:00:44.9329924Z 
+2026-05-21T12:00:44.9332194Z A newer version of tool 'fantomas' is available (version '7.0.5'). Consider updating your manifest file.
+2026-05-21T12:00:44.9333065Z 
+2026-05-21T12:00:44.9334472Z Restore was successful.
+2026-05-21T12:00:47.2349080Z ##[group]Run cd services/config-service && dotnet build --no-restore -warnaserror
+2026-05-21T12:00:47.2349661Z [36;1mcd services/config-service && dotnet build --no-restore -warnaserror[0m
+2026-05-21T12:00:47.2387331Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:47.2387581Z env:
+2026-05-21T12:00:47.2387775Z   DOTNET_ROOT: /usr/share/dotnet
+2026-05-21T12:00:47.2388027Z ##[endgroup]
+2026-05-21T12:00:53.8782072Z ##[error]/home/runner/work/antigravity/antigravity/services/config-service/Program.fs(37,17): error FS3265: Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| description: string; enabled: bool |}'. Nullness warnings won't be reported correctly for such types. [/home/runner/work/antigravity/antigravity/services/config-service/ConfigService.fsproj]
+2026-05-21T12:00:54.7303346Z   ConfigService -> /home/runner/work/antigravity/antigravity/services/config-service/bin/Debug/net8.0/ConfigService.dll
+2026-05-21T12:00:54.7587332Z 
+2026-05-21T12:00:54.7594767Z Build FAILED.
+2026-05-21T12:00:54.7596178Z 
+2026-05-21T12:00:54.7600733Z ##[error]/home/runner/work/antigravity/antigravity/services/config-service/Program.fs(37,17): error FS3265: Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| description: string; enabled: bool |}'. Nullness warnings won't be reported correctly for such types. [/home/runner/work/antigravity/antigravity/services/config-service/ConfigService.fsproj]
+2026-05-21T12:00:54.7603346Z     0 Warning(s)
+2026-05-21T12:00:54.7603542Z     1 Error(s)
+2026-05-21T12:00:54.7603651Z 
+2026-05-21T12:00:54.7603766Z Time Elapsed 00:00:07.30
+2026-05-21T12:00:54.7858352Z ##[error]Process completed with exit code 1.
+2026-05-21T12:00:54.7966581Z Post job cleanup.
+2026-05-21T12:00:54.8980348Z [command]/usr/bin/git version
+2026-05-21T12:00:54.9017150Z git version 2.54.0
+2026-05-21T12:00:54.9057514Z Temporarily overriding HOME='/home/runner/work/_temp/06be2f8e-eb0d-4a7d-a86e-bb81fcb48f84' before making global git config changes
+2026-05-21T12:00:54.9058808Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-21T12:00:54.9070819Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:54.9106685Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-05-21T12:00:54.9140186Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-21T12:00:54.9383882Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-05-21T12:00:54.9409665Z http.https://github.com/.extraheader
+2026-05-21T12:00:54.9422048Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-05-21T12:00:54.9455128Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-05-21T12:00:54.9689458Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-05-21T12:00:54.9721943Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-05-21T12:00:55.0048287Z Print service container logs: 35ae7153edb84409a7b278718f1a6633_postgres16alpine_e8355c
+2026-05-21T12:00:55.0053893Z ##[command]/usr/bin/docker logs --details 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:55.0185496Z  sh: locale: not found
+2026-05-21T12:00:55.0186108Z  2026-05-21 12:00:16.755 UTC [35] WARNING:  no usable system locales were found
+2026-05-21T12:00:55.0186827Z  initdb: warning: enabling "trust" authentication for local connections
+2026-05-21T12:00:55.0187886Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-05-21T12:00:55.0189007Z  The files belonging to this database system will be owned by user "postgres".
+2026-05-21T12:00:55.0190077Z  2026-05-21 12:00:17.541 UTC [1] LOG:  starting PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-05-21T12:00:55.0191135Z  2026-05-21 12:00:17.541 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-05-21T12:00:55.0191851Z  2026-05-21 12:00:17.541 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-05-21T12:00:55.0192623Z  2026-05-21 12:00:17.542 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-05-21T12:00:55.0193672Z  2026-05-21 12:00:17.544 UTC [57] LOG:  database system was shut down at 2026-05-21 12:00:17 UTC
+2026-05-21T12:00:55.0194412Z  2026-05-21 12:00:17.548 UTC [1] LOG:  database system is ready to accept connections
+2026-05-21T12:00:55.0195065Z  2026-05-21 12:00:26.290 UTC [67] FATAL:  role "root" does not exist
+2026-05-21T12:00:55.0195605Z  2026-05-21 12:00:36.332 UTC [74] FATAL:  role "root" does not exist
+2026-05-21T12:00:55.0196176Z  2026-05-21 12:00:46.379 UTC [81] FATAL:  role "root" does not exist
+2026-05-21T12:00:55.0196679Z  This user must also own the server process.
+2026-05-21T12:00:55.0197049Z  
+2026-05-21T12:00:55.0197496Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-05-21T12:00:55.0198173Z  The default database encoding has accordingly been set to "UTF8".
+2026-05-21T12:00:55.0198816Z  The default text search configuration will be set to "english".
+2026-05-21T12:00:55.0199299Z  
+2026-05-21T12:00:55.0199551Z  Data page checksums are disabled.
+2026-05-21T12:00:55.0199919Z  
+2026-05-21T12:00:55.0200330Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-05-21T12:00:55.0200901Z  creating subdirectories ... ok
+2026-05-21T12:00:55.0201359Z  selecting dynamic shared memory implementation ... posix
+2026-05-21T12:00:55.0202034Z  selecting default max_connections ... 100
+2026-05-21T12:00:55.0202467Z  selecting default shared_buffers ... 128MB
+2026-05-21T12:00:55.0203011Z  selecting default time zone ... UTC
+2026-05-21T12:00:55.0203404Z  creating configuration files ... ok
+2026-05-21T12:00:55.0203779Z  running bootstrap script ... ok
+2026-05-21T12:00:55.0204128Z  performing post-bootstrap initialization ... ok
+2026-05-21T12:00:55.0204431Z  syncing data to disk ... ok
+2026-05-21T12:00:55.0204643Z  
+2026-05-21T12:00:55.0204787Z  
+2026-05-21T12:00:55.0205000Z  Success. You can now start the database server using:
+2026-05-21T12:00:55.0205264Z  
+2026-05-21T12:00:55.0205483Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-05-21T12:00:55.0205757Z  
+2026-05-21T12:00:55.0206271Z  waiting for server to start....2026-05-21 12:00:17.271 UTC [41] LOG:  starting PostgreSQL 16.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-05-21T12:00:55.0207001Z  2026-05-21 12:00:17.272 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-05-21T12:00:55.0207516Z  2026-05-21 12:00:17.274 UTC [44] LOG:  database system was shut down at 2026-05-21 12:00:17 UTC
+2026-05-21T12:00:55.0207970Z  2026-05-21 12:00:17.278 UTC [41] LOG:  database system is ready to accept connections
+2026-05-21T12:00:55.0208329Z   done
+2026-05-21T12:00:55.0208497Z  server started
+2026-05-21T12:00:55.0208682Z  CREATE DATABASE
+2026-05-21T12:00:55.0209305Z  
+2026-05-21T12:00:55.0209448Z  
+2026-05-21T12:00:55.0209744Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-05-21T12:00:55.0210099Z  
+2026-05-21T12:00:55.0210436Z  waiting for server to shut down....2026-05-21 12:00:17.419 UTC [41] LOG:  received fast shutdown request
+2026-05-21T12:00:55.0210943Z  2026-05-21 12:00:17.420 UTC [41] LOG:  aborting any active transactions
+2026-05-21T12:00:55.0211478Z  2026-05-21 12:00:17.423 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+2026-05-21T12:00:55.0211961Z  2026-05-21 12:00:17.424 UTC [42] LOG:  shutting down
+2026-05-21T12:00:55.0212315Z  2026-05-21 12:00:17.425 UTC [42] LOG:  checkpoint starting: shutdown immediate
+2026-05-21T12:00:55.0213592Z  2026-05-21 12:00:17.440 UTC [42] LOG:  checkpoint complete: wrote 926 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.013 s, sync=0.002 s, total=0.017 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4272 kB, estimate=4272 kB; lsn=0/191E940, redo lsn=0/191E940
+2026-05-21T12:00:55.0214618Z  2026-05-21 12:00:17.448 UTC [41] LOG:  database system is shut down
+2026-05-21T12:00:55.0214925Z   done
+2026-05-21T12:00:55.0215094Z  server stopped
+2026-05-21T12:00:55.0215268Z  
+2026-05-21T12:00:55.0215497Z  PostgreSQL init process complete; ready for start up.
+2026-05-21T12:00:55.0215774Z  
+2026-05-21T12:00:55.0221741Z Stop and remove container: 35ae7153edb84409a7b278718f1a6633_postgres16alpine_e8355c
+2026-05-21T12:00:55.0227164Z ##[command]/usr/bin/docker rm --force 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:55.1848584Z 90d5cbf2afc9b0c434fc4d67705f95368af1fde86c5bdffad382d85db932e222
+2026-05-21T12:00:55.1885582Z Remove container network: github_network_0836f535ddfd4898a7c426281d08df91
+2026-05-21T12:00:55.1889707Z ##[command]/usr/bin/docker network rm github_network_0836f535ddfd4898a7c426281d08df91
+2026-05-21T12:00:55.2888637Z github_network_0836f535ddfd4898a7c426281d08df91
+2026-05-21T12:00:55.2963210Z Cleaning up orphan processes
+2026-05-21T12:00:55.3307514Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-dotnet@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -14,19 +14,21 @@ import * as https from 'https';
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
-  'auth':         process.env.AUTH_SERVICE_URL         ?? 'http://auth-service:4001',
-  'listings':     process.env.LISTING_SERVICE_URL      ?? 'http://listing-service:4002',
-  'search':       process.env.SEARCH_SERVICE_URL       ?? 'http://search-service:4003',
-  'images':       process.env.IMAGE_SERVICE_URL        ?? 'http://image-service:4004',
-  'notifications':process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:4025',
-  'payments':     process.env.PAYMENT_SERVICE_URL      ?? 'http://payment-service:4006',
-  'profiles':     process.env.PROFILE_SERVICE_URL      ?? 'http://profile-service:4007',
-  'feed':         process.env.FEED_SERVICE_URL         ?? 'http://feed-service:4008',
-  'reviews':      process.env.REVIEW_SERVICE_URL       ?? 'http://review-service:4009',
-  'analytics':    process.env.ANALYTICS_SERVICE_URL    ?? 'http://analytics-service:4010',
-  'chat':         process.env.CHAT_SERVICE_URL         ?? 'http://chat-service:4011',
-  'ml':           process.env.ML_SERVICE_URL           ?? 'http://ml-service:4012',
-  'config':       process.env.CONFIG_SERVICE_URL       ?? 'http://config-service:4014',
+  auth: process.env.AUTH_SERVICE_URL ?? 'http://auth-service:4001',
+  listings: process.env.LISTING_SERVICE_URL ?? 'http://listing-service:4002',
+  search: process.env.SEARCH_SERVICE_URL ?? 'http://search-service:4003',
+  images: process.env.IMAGE_SERVICE_URL ?? 'http://image-service:4004',
+  notifications:
+    process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:4025',
+  payments: process.env.PAYMENT_SERVICE_URL ?? 'http://payment-service:4006',
+  profiles: process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:4007',
+  feed: process.env.FEED_SERVICE_URL ?? 'http://feed-service:4008',
+  reviews: process.env.REVIEW_SERVICE_URL ?? 'http://review-service:4009',
+  analytics:
+    process.env.ANALYTICS_SERVICE_URL ?? 'http://analytics-service:4010',
+  chat: process.env.CHAT_SERVICE_URL ?? 'http://chat-service:4011',
+  ml: process.env.ML_SERVICE_URL ?? 'http://ml-service:4012',
+  config: process.env.CONFIG_SERVICE_URL ?? 'http://config-service:4014',
 };
 
 // ── Helper to extract wildcard path from Fastify params ────────
@@ -49,7 +51,12 @@ export class ProxyController {
   @Public()
   @All('listings/*')
   proxyListings(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'listings', 'listings/' + wildcardPath(req));
+    return this.proxyRequest(
+      req,
+      res,
+      'listings',
+      'listings/' + wildcardPath(req),
+    );
   }
 
   @Public()
@@ -135,10 +142,15 @@ export class ProxyController {
   ): Promise<void> {
     const targetBase = SERVICE_MAP[service];
     if (!targetBase) {
-      throw new HttpException(`Unknown service: ${service}`, HttpStatus.BAD_GATEWAY);
+      throw new HttpException(
+        `Unknown service: ${service}`,
+        HttpStatus.BAD_GATEWAY,
+      );
     }
 
-    const qs = req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '';
+    const qs = req.url.includes('?')
+      ? '?' + req.url.split('?').slice(1).join('?')
+      : '';
     const targetUrl = new URL(`/${path}${qs}`, targetBase);
 
     this.logger.debug(`Proxying ${req.method} ${req.url} → ${targetUrl}`);
@@ -147,14 +159,14 @@ export class ProxyController {
       const protocol = targetUrl.protocol === 'https:' ? https : http;
       const options: http.RequestOptions = {
         hostname: targetUrl.hostname,
-        port:     targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
-        path:     targetUrl.pathname + targetUrl.search,
-        method:   req.method,
+        port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
+        path: targetUrl.pathname + targetUrl.search,
+        method: req.method,
         headers: {
           ...req.headers,
-          host:             targetUrl.host,
+          host: targetUrl.host,
           'x-forwarded-for': req.ip ?? '',
-          'x-request-id':   (req.headers['x-request-id'] as string) ?? '',
+          'x-request-id': (req.headers['x-request-id'] as string) ?? '',
         },
       };
 
@@ -172,8 +184,8 @@ export class ProxyController {
         if (!res.sent) {
           res.status(502).send({
             statusCode: 502,
-            error:      'Bad Gateway',
-            message:    `Service ${service} is unavailable`,
+            error: 'Bad Gateway',
+            message: `Service ${service} is unavailable`,
           });
         }
         resolve();

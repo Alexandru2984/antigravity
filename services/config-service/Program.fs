@@ -28,13 +28,17 @@ let getFlagByName (name: string) : HttpHandler =
         | Some flag -> json flag next ctx
         | None -> RequestErrors.NOT_FOUND "Not found" next ctx
 
+type UpsertPayload() =
+    member val enabled = false with get, set
+    member val description = "" with get, set
+
 let upsertFlag (name: string) : HttpHandler =
     fun (next: HttpFunc) (ctx: HttpContext) ->
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
 
             let parsed =
-                JsonSerializer.Deserialize<{| enabled: bool; description: string |}>(body)
+                JsonSerializer.Deserialize<UpsertPayload>(body)
 
             upsert name parsed.enabled parsed.description
             return! json {| updated = name |} next ctx

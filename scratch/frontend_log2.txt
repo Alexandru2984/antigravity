@@ -1,0 +1,225 @@
+﻿2026-05-21T12:00:08.2658900Z Current runner version: '2.334.0'
+2026-05-21T12:00:08.2688233Z ##[group]Runner Image Provisioner
+2026-05-21T12:00:08.2689400Z Hosted Compute Agent
+2026-05-21T12:00:08.2690373Z Version: 20260213.493
+2026-05-21T12:00:08.2690967Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-05-21T12:00:08.2691695Z Build Date: 2026-02-13T00:28:41Z
+2026-05-21T12:00:08.2692319Z Worker ID: {3058c4eb-3531-4f32-9c52-d48bb7f2cdc0}
+2026-05-21T12:00:08.2692988Z Azure Region: northcentralus
+2026-05-21T12:00:08.2693501Z ##[endgroup]
+2026-05-21T12:00:08.2695064Z ##[group]Operating System
+2026-05-21T12:00:08.2695659Z Ubuntu
+2026-05-21T12:00:08.2696099Z 24.04.4
+2026-05-21T12:00:08.2696638Z LTS
+2026-05-21T12:00:08.2697078Z ##[endgroup]
+2026-05-21T12:00:08.2697539Z ##[group]Runner Image
+2026-05-21T12:00:08.2698158Z Image: ubuntu-24.04
+2026-05-21T12:00:08.2698652Z Version: 20260513.135.3
+2026-05-21T12:00:08.2700259Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260513.135/images/ubuntu/Ubuntu2404-Readme.md
+2026-05-21T12:00:08.2701720Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260513.135
+2026-05-21T12:00:08.2702576Z ##[endgroup]
+2026-05-21T12:00:08.2703693Z ##[group]GITHUB_TOKEN Permissions
+2026-05-21T12:00:08.2705844Z Contents: read
+2026-05-21T12:00:08.2706410Z Metadata: read
+2026-05-21T12:00:08.2706921Z Packages: read
+2026-05-21T12:00:08.2707366Z ##[endgroup]
+2026-05-21T12:00:08.2710248Z Secret source: Actions
+2026-05-21T12:00:08.2711237Z Prepare workflow directory
+2026-05-21T12:00:08.3048771Z Prepare all required actions
+2026-05-21T12:00:08.3086342Z Getting action download info
+2026-05-21T12:00:08.7674341Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-05-21T12:00:08.8973308Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-05-21T12:00:09.0890778Z Complete job name: Lint, Type-check, Test & Build
+2026-05-21T12:00:09.1637909Z ##[group]Run actions/checkout@v4
+2026-05-21T12:00:09.1638828Z with:
+2026-05-21T12:00:09.1639253Z   repository: Alexandru2984/antigravity
+2026-05-21T12:00:09.1640314Z   token: ***
+2026-05-21T12:00:09.1640705Z   ssh-strict: true
+2026-05-21T12:00:09.1641111Z   ssh-user: git
+2026-05-21T12:00:09.1641532Z   persist-credentials: true
+2026-05-21T12:00:09.1641997Z   clean: true
+2026-05-21T12:00:09.1642408Z   sparse-checkout-cone-mode: true
+2026-05-21T12:00:09.1642898Z   fetch-depth: 1
+2026-05-21T12:00:09.1643299Z   fetch-tags: false
+2026-05-21T12:00:09.1643726Z   show-progress: true
+2026-05-21T12:00:09.1644141Z   lfs: false
+2026-05-21T12:00:09.1644522Z   submodules: false
+2026-05-21T12:00:09.1644943Z   set-safe-directory: true
+2026-05-21T12:00:09.1645687Z ##[endgroup]
+2026-05-21T12:00:09.2754250Z Syncing repository: Alexandru2984/antigravity
+2026-05-21T12:00:09.2756029Z ##[group]Getting Git version info
+2026-05-21T12:00:09.2756851Z Working directory is '/home/runner/work/antigravity/antigravity'
+2026-05-21T12:00:09.2757864Z [command]/usr/bin/git version
+2026-05-21T12:00:09.2832218Z git version 2.54.0
+2026-05-21T12:00:09.2858916Z ##[endgroup]
+2026-05-21T12:00:09.2875807Z Temporarily overriding HOME='/home/runner/work/_temp/2ed89af0-c9fa-42f4-a7fc-c96df3fc4491' before making global git config changes
+2026-05-21T12:00:09.2891147Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-21T12:00:09.2893901Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:09.2941396Z Deleting the contents of '/home/runner/work/antigravity/antigravity'
+2026-05-21T12:00:09.2945390Z ##[group]Initializing the repository
+2026-05-21T12:00:09.2950667Z [command]/usr/bin/git init /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:09.3060802Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-05-21T12:00:09.3062542Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-05-21T12:00:09.3063659Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-05-21T12:00:09.3064704Z hint: call:
+2026-05-21T12:00:09.3065517Z hint:
+2026-05-21T12:00:09.3066489Z hint: 	git config --global init.defaultBranch <name>
+2026-05-21T12:00:09.3067725Z hint:
+2026-05-21T12:00:09.3068774Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-05-21T12:00:09.3070374Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-05-21T12:00:09.3071153Z hint:
+2026-05-21T12:00:09.3071557Z hint: 	git branch -m <name>
+2026-05-21T12:00:09.3072033Z hint:
+2026-05-21T12:00:09.3072651Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-05-21T12:00:09.3073789Z Initialized empty Git repository in /home/runner/work/antigravity/antigravity/.git/
+2026-05-21T12:00:09.3083832Z [command]/usr/bin/git remote add origin https://github.com/Alexandru2984/antigravity
+2026-05-21T12:00:09.3137271Z ##[endgroup]
+2026-05-21T12:00:09.3138066Z ##[group]Disabling automatic garbage collection
+2026-05-21T12:00:09.3138743Z [command]/usr/bin/git config --local gc.auto 0
+2026-05-21T12:00:09.3169961Z ##[endgroup]
+2026-05-21T12:00:09.3170853Z ##[group]Setting up auth
+2026-05-21T12:00:09.3180731Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-05-21T12:00:09.3218825Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-21T12:00:09.3594320Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-05-21T12:00:09.3635371Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-05-21T12:00:09.3850318Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-05-21T12:00:09.3878608Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-05-21T12:00:09.4102846Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-05-21T12:00:09.4136017Z ##[endgroup]
+2026-05-21T12:00:09.4137061Z ##[group]Fetching the repository
+2026-05-21T12:00:09.4144915Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d2866b9dddd5300eae0d1390fab5e1c7163677d8:refs/remotes/origin/main
+2026-05-21T12:00:09.9761462Z From https://github.com/Alexandru2984/antigravity
+2026-05-21T12:00:09.9763730Z  * [new ref]         d2866b9dddd5300eae0d1390fab5e1c7163677d8 -> origin/main
+2026-05-21T12:00:09.9794891Z ##[endgroup]
+2026-05-21T12:00:09.9796005Z ##[group]Determining the checkout info
+2026-05-21T12:00:09.9797728Z ##[endgroup]
+2026-05-21T12:00:09.9802376Z [command]/usr/bin/git sparse-checkout disable
+2026-05-21T12:00:09.9845590Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-05-21T12:00:09.9872710Z ##[group]Checking out the ref
+2026-05-21T12:00:09.9876924Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-05-21T12:00:10.0108513Z Switched to a new branch 'main'
+2026-05-21T12:00:10.0110312Z branch 'main' set up to track 'origin/main'.
+2026-05-21T12:00:10.0119721Z ##[endgroup]
+2026-05-21T12:00:10.0158444Z [command]/usr/bin/git log -1 --format=%H
+2026-05-21T12:00:10.0180608Z d2866b9dddd5300eae0d1390fab5e1c7163677d8
+2026-05-21T12:00:10.0512508Z ##[group]Run actions/setup-node@v4
+2026-05-21T12:00:10.0513650Z with:
+2026-05-21T12:00:10.0514433Z   node-version: 20
+2026-05-21T12:00:10.0515280Z   cache: npm
+2026-05-21T12:00:10.0516313Z   cache-dependency-path: frontend/package-lock.json
+2026-05-21T12:00:10.0517686Z   always-auth: false
+2026-05-21T12:00:10.0518600Z   check-latest: false
+2026-05-21T12:00:10.0519992Z   token: ***
+2026-05-21T12:00:10.0520814Z ##[endgroup]
+2026-05-21T12:00:10.2354421Z Found in cache @ /opt/hostedtoolcache/node/20.20.2/x64
+2026-05-21T12:00:10.2362060Z ##[group]Environment details
+2026-05-21T12:00:13.3162029Z node: v20.20.2
+2026-05-21T12:00:13.3162598Z npm: 10.8.2
+2026-05-21T12:00:13.3162942Z yarn: 1.22.22
+2026-05-21T12:00:13.3164319Z ##[endgroup]
+2026-05-21T12:00:13.3185991Z [command]/opt/hostedtoolcache/node/20.20.2/x64/bin/npm config get cache
+2026-05-21T12:00:13.6805015Z /home/runner/.npm
+2026-05-21T12:00:13.8458354Z Cache hit for: node-cache-Linux-x64-npm-da56ed1cc9e9a2792522124e2b5a4a52ca1d615541fc5b312b38ee09006cef5c
+2026-05-21T12:00:15.0121041Z Received 96468992 of 116431249 (82.9%), 91.9 MBs/sec
+2026-05-21T12:00:15.1965489Z Received 116431249 of 116431249 (100.0%), 93.2 MBs/sec
+2026-05-21T12:00:15.1966888Z Cache Size: ~111 MB (116431249 B)
+2026-05-21T12:00:15.2084141Z [command]/usr/bin/tar -xf /home/runner/work/_temp/140f1ba8-fe2d-49c7-a052-984da1dd487d/cache.tzst -P -C /home/runner/work/antigravity/antigravity --use-compress-program unzstd
+2026-05-21T12:00:15.5028022Z Cache restored successfully
+2026-05-21T12:00:15.5088742Z Cache restored from key: node-cache-Linux-x64-npm-da56ed1cc9e9a2792522124e2b5a4a52ca1d615541fc5b312b38ee09006cef5c
+2026-05-21T12:00:15.5237095Z ##[group]Run cd frontend && npm ci
+2026-05-21T12:00:15.5237473Z [36;1mcd frontend && npm ci[0m
+2026-05-21T12:00:15.5286828Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:15.5287114Z ##[endgroup]
+2026-05-21T12:00:20.6440544Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-05-21T12:00:20.7822634Z npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+2026-05-21T12:00:20.7908718Z npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2026-05-21T12:00:20.9054772Z npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+2026-05-21T12:00:20.9066528Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-05-21T12:00:23.1147289Z npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-05-21T12:00:24.1046241Z npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2026-05-21T12:00:26.8382364Z npm warn deprecated next@14.2.5: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
+2026-05-21T12:00:27.1400472Z 
+2026-05-21T12:00:27.1401273Z added 579 packages, and audited 580 packages in 12s
+2026-05-21T12:00:27.1401807Z 
+2026-05-21T12:00:27.1402190Z 175 packages are looking for funding
+2026-05-21T12:00:27.1402777Z   run `npm fund` for details
+2026-05-21T12:00:27.4482897Z 
+2026-05-21T12:00:27.4483996Z 12 vulnerabilities (5 moderate, 6 high, 1 critical)
+2026-05-21T12:00:27.4484515Z 
+2026-05-21T12:00:27.4484966Z To address issues that do not require attention, run:
+2026-05-21T12:00:27.4485616Z   npm audit fix
+2026-05-21T12:00:27.4485841Z 
+2026-05-21T12:00:27.4486273Z To address all issues (including breaking changes), run:
+2026-05-21T12:00:27.4486902Z   npm audit fix --force
+2026-05-21T12:00:27.4487184Z 
+2026-05-21T12:00:27.4487408Z Run `npm audit` for details.
+2026-05-21T12:00:27.5157401Z ##[group]Run cd frontend && npm run lint || true
+2026-05-21T12:00:27.5158029Z [36;1mcd frontend && npm run lint || true[0m
+2026-05-21T12:00:27.5191498Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:27.5191751Z ##[endgroup]
+2026-05-21T12:00:27.6335984Z 
+2026-05-21T12:00:27.6336624Z > polymarket-frontend@0.1.0 lint
+2026-05-21T12:00:27.6337220Z > next lint
+2026-05-21T12:00:27.6337429Z 
+2026-05-21T12:00:28.0658782Z ? How would you like to configure ESLint? https://nextjs.org/docs/basic-features/eslint
+2026-05-21T12:00:28.0690535Z [?25l❯  Strict (recommended)
+2026-05-21T12:00:28.0691243Z    Base
+2026-05-21T12:00:28.0695245Z  ⚠ If you set up ESLint yourself, we recommend adding the Next.js ESLint plugin. See https://nextjs.org/docs/basic-features/eslint#migrating-existing-config
+2026-05-21T12:00:28.0833241Z    Cancel
+2026-05-21T12:00:28.0858891Z ##[group]Run cd frontend && npm run typecheck
+2026-05-21T12:00:28.0859249Z [36;1mcd frontend && npm run typecheck[0m
+2026-05-21T12:00:28.0893489Z shell: /usr/bin/bash -e {0}
+2026-05-21T12:00:28.0893743Z ##[endgroup]
+2026-05-21T12:00:28.2007254Z 
+2026-05-21T12:00:28.2008107Z > polymarket-frontend@0.1.0 typecheck
+2026-05-21T12:00:28.2008779Z > tsc --noEmit
+2026-05-21T12:00:28.2009045Z 
+2026-05-21T12:00:31.3038531Z ##[error]vitest.config.ts(5,13): error TS2769: No overload matches this call.
+2026-05-21T12:00:31.3046647Z   The last overload gave the following error.
+2026-05-21T12:00:31.3047160Z     Type 'Plugin<any>[]' is not assignable to type 'PluginOption'.
+2026-05-21T12:00:31.3047680Z       Type 'Plugin<any>[]' is not assignable to type 'PluginOption[]'.
+2026-05-21T12:00:31.3048166Z         Type 'Plugin<any>' is not assignable to type 'PluginOption'.
+2026-05-21T12:00:31.3049930Z           Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").Plugin<any>' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").Plugin<any>'.
+2026-05-21T12:00:31.3051121Z             Types of property 'apply' are incompatible.
+2026-05-21T12:00:31.3053782Z               Type '"serve" | "build" | ((this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined' is not assignable to type '"serve" | "build" | ((this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | und...'.
+2026-05-21T12:00:31.3056632Z                 Type '(this: void, config: UserConfig, env: ConfigEnv) => boolean' is not assignable to type '"serve" | "build" | ((this: void, config: UserConfig, env: ConfigEnv) => boolean) | undefined'.
+2026-05-21T12:00:31.3059782Z                   Type '(this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").ConfigEnv) => boolean' is not assignable to type '(this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean'.
+2026-05-21T12:00:31.3062051Z                     Types of parameters 'config' and 'config' are incompatible.
+2026-05-21T12:00:31.3063377Z                       Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig'.
+2026-05-21T12:00:31.3064558Z                         Types of property 'plugins' are incompatible.
+2026-05-21T12:00:31.3065961Z                           Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[] | undefined' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption[] | undefined'.
+2026-05-21T12:00:31.3068360Z                             Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[]' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption[]'.
+2026-05-21T12:00:31.3071016Z                               Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption'.
+2026-05-21T12:00:31.3072312Z                                 Type 'Plugin<any>' is not assignable to type 'PluginOption'.
+2026-05-21T12:00:31.3073666Z                                   Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").Plugin<any>' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").Plugin<any>'.
+2026-05-21T12:00:31.3074843Z                                     Types of property 'apply' are incompatible.
+2026-05-21T12:00:31.3077568Z                                       Type '"serve" | "build" | ((this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | und...' is not assignable to type '"serve" | "build" | ((this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined'.
+2026-05-21T12:00:31.3080834Z                                         Type '(this: void, config: UserConfig, env: ConfigEnv) => boolean' is not assignable to type '"serve" | "build" | ((this: void, config: UserConfig, env: ConfigEnv) => boolean) | undefined'.
+2026-05-21T12:00:31.3083773Z                                           Type '(this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean' is not assignable to type '(this: void, config: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig, env: import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").ConfigEnv) => boolean'.
+2026-05-21T12:00:31.3086053Z                                             Types of parameters 'config' and 'config' are incompatible.
+2026-05-21T12:00:31.3087419Z                                               Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").UserConfig' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig'.
+2026-05-21T12:00:31.3088632Z                                                 Types of property 'plugins' are incompatible.
+2026-05-21T12:00:31.3090337Z                                                   Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption[] | undefined' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[] | undefined'.
+2026-05-21T12:00:31.3092582Z                                                     Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption[]' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[]'.
+2026-05-21T12:00:31.3095051Z                                                       Type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vite/dist/node/index").PluginOption' is not assignable to type 'import("/home/runner/work/antigravity/antigravity/frontend/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption'.
+2026-05-21T12:00:31.3096541Z                                                         Type 'Promise<Plugin<any> | FalsyPlugin | PluginOption[]>' is not assignable to type 'PluginOption'.
+2026-05-21T12:00:31.3097586Z                                                           Type 'Promise<Plugin<any> | FalsyPlugin | PluginOption[]>' is not assignable to type 'Promise<false | Plugin<any> | PluginOption[] | null | undefined>'.
+2026-05-21T12:00:31.3098720Z                                                             Type 'Plugin<any> | FalsyPlugin | PluginOption[]' is not assignable to type 'false | Plugin<any> | PluginOption[] | null | undefined'.
+2026-05-21T12:00:31.3099908Z                                                               Type 'Plugin<any>' is not assignable to type 'false | Plugin<any> | PluginOption[] | null | undefined'.
+2026-05-21T12:00:31.3381723Z ##[error]Process completed with exit code 2.
+2026-05-21T12:00:31.3501199Z Post job cleanup.
+2026-05-21T12:00:31.4498740Z [command]/usr/bin/git version
+2026-05-21T12:00:31.4536369Z git version 2.54.0
+2026-05-21T12:00:31.4581937Z Temporarily overriding HOME='/home/runner/work/_temp/ce01c70d-1aa7-4667-b7b8-e57ff985660f' before making global git config changes
+2026-05-21T12:00:31.4583566Z Adding repository directory to the temporary git global config as a safe directory
+2026-05-21T12:00:31.4588808Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/antigravity/antigravity
+2026-05-21T12:00:31.4631402Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-05-21T12:00:31.4664256Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-05-21T12:00:31.4888649Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-05-21T12:00:31.4912468Z http.https://github.com/.extraheader
+2026-05-21T12:00:31.4925669Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-05-21T12:00:31.4957645Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-05-21T12:00:31.5191655Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-05-21T12:00:31.5228619Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-05-21T12:00:31.5584606Z Cleaning up orphan processes
+2026-05-21T12:00:31.5959172Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
