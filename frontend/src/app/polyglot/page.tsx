@@ -10,8 +10,15 @@ export default function PolyglotDashboard() {
   const fetchStatus = async () => {
     try {
       const res = await fetch('http://polyglot.micutu.com/api/v1/polyglot-status');
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const data = await res.json();
-      setStatus(data);
+      if (Array.isArray(data)) {
+        setStatus(data);
+      } else {
+        console.error('Expected array from polyglot-status, got:', data);
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -49,7 +56,7 @@ export default function PolyglotDashboard() {
           <p className="text-gray-400 font-mono tracking-widest uppercase text-xs">Cross-Language Orchestration Platform</p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-bold text-cyan-400">{status.filter(s => s.status === 'online').length} / {status.length}</p>
+          <p className="text-3xl font-bold text-cyan-400">{Array.isArray(status) ? status.filter(s => s.status === 'online').length : 0} / {Array.isArray(status) ? status.length : 0}</p>
           <p className="text-[10px] text-gray-500 uppercase tracking-widest">Active Nodes</p>
         </div>
       </header>
@@ -101,7 +108,7 @@ export default function PolyglotDashboard() {
 
         {/* Nodes Grid */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {status.map((s) => (
+          {Array.isArray(status) && status.map((s) => (
             <div key={s.name} className="glass-card p-5 hover:bg-white/5 transition-all">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm font-bold tracking-widest text-gray-400">{s.name}</span>

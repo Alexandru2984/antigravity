@@ -4,4 +4,4 @@ WORKDIR /app
 COPY billing.cob .
 RUN cobc -x billing.cob -o billing
 EXPOSE 4022
-CMD while true; do (echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"; ./billing) | nc -lkp 4022; done
+CMD while true; do (printf "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n"; ./billing) | nc -lp 4022 -N; done

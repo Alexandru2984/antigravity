@@ -41,8 +41,15 @@ export default function PolyMarketDashboard() {
     setIsFetchingStatus(true);
     try {
       const res = await fetch('/api/v1/polyglot-status');
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const data = await res.json();
-      setNodes(data);
+      if (Array.isArray(data)) {
+        setNodes(data);
+      } else {
+        console.error('Expected array from polyglot-status, got:', data);
+      }
     } catch (e) {
       console.error('Failed to fetch status:', e);
     } finally {
@@ -144,7 +151,7 @@ export default function PolyMarketDashboard() {
           <div className="flex gap-6">
             <div className="text-left font-mono">
               <div className="text-cyan-400 font-bold text-xl md:text-2xl">
-                {nodes.filter(n => n.status === 'online').length} / {nodes.length}
+                {Array.isArray(nodes) ? nodes.filter(n => n.status === 'online').length : 0} / {Array.isArray(nodes) ? nodes.length : 0}
               </div>
               <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Active Nodes</div>
             </div>
@@ -390,7 +397,7 @@ export default function PolyMarketDashboard() {
               </h2>
               
               <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
-                {nodes.length === 0 ? (
+                {!Array.isArray(nodes) || nodes.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 font-mono text-xs">
                     No active node data found.
                   </div>

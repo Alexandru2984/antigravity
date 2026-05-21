@@ -53,7 +53,7 @@ validate :: ValidateRequest -> Handler ValidationResult
 validate req =
   case payload req of
     Object obj ->
-      let currentKeys = map (show . K.toText) (keys obj)
+      let currentKeys = map K.toString (keys obj)
           requiredFields = requiredFor (schemaName req)
           missing = filter (\f -> not (f `elem` currentKeys)) requiredFields
           errs = map (\f -> "Missing required field: " <> f) missing

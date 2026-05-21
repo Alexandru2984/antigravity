@@ -1,9 +1,9 @@
 FROM haskell:9.4 AS builder
 WORKDIR /app
 RUN cabal update
-RUN cabal install --lib wai warp http-types aeson
+RUN cabal install --lib wai warp http-types aeson bytestring
 COPY . .
-RUN ghc -o main Main.hs
+RUN ghc -threaded -o main Main.hs
 
 FROM debian:bullseye-slim
 RUN apt-get update && apt-get install -y libgmp10 && rm -rf /var/lib/apt/lists/*

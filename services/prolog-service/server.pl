@@ -3,6 +3,10 @@
 :- use_module(library(http/http_json)).
 
 :- http_handler(root(check_fraud), handle_fraud, []).
+:- http_handler(root(.), handle_home, []).
+
+handle_home(_Request) :-
+    reply_json_dict(_{status: "online", service: "prolog-fraud"}).
 
 handle_fraud(Request) :-
     http_read_json_dict(Request, Dict),

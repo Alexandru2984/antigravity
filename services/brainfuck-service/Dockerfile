@@ -9,4 +9,4 @@ WORKDIR /app
 COPY --from=builder /app/bf .
 COPY service.bf .
 EXPOSE 4020
-CMD while true; do (echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"; ./bf service.bf) | nc -lkp 4020; done
+CMD while true; do (printf "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n"; ./bf service.bf) | nc -lp 4020 -N; done
