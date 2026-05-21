@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-from app.clickhouse import get_clickhouse_client
-from typing import Optional
+from analytics_service.clickhouse import get_clickhouse_client
 
 router = APIRouter()
 

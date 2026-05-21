@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.neo4j_store import get_recommendations, record_view
+from ml_service.neo4j_store import get_recommendations, record_view
 
 router = APIRouter()
 

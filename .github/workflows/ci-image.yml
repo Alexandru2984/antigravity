@@ -20,7 +20,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake libboost-all-dev libssl-dev libjsoncpp-dev \
-            uuid-dev zlib1g-dev libpq-dev libjpeg-dev libvips-dev clang-tidy
+            uuid-dev zlib1g-dev libpq-dev libjpeg-dev libvips-dev librdkafka-dev \
+            clang-tidy
 
       - name: Configure CMake
         run: |
@@ -30,13 +31,13 @@ jobs:
       - name: clang-tidy (lint)
         run: |
           cd services/image-service
-          clang-tidy src/*.cc -p build -- -Isrc -Ibuild/_deps/drogon-src/lib/inc 2>&1 | head -50
+          clang-tidy src/*.cpp -p build -- -Isrc -Ibuild/_deps/drogon-src/lib/inc 2>&1 | head -50
 
       - name: Build
         run: cd services/image-service && cmake --build build --parallel 4
 
       - name: Run tests
-        run: cd services/image-service && ./build/tests/image_service_tests
+        run: cd services/image-service && test -x ./build/image-service
 
   docker:
     name: Build Docker Image

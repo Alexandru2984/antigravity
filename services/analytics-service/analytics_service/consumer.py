@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from aiokafka import AIOKafkaConsumer
-from app.clickhouse import get_clickhouse_client
+from analytics_service.clickhouse import get_clickhouse_client
 
 logger = logging.getLogger(__name__)
 
