@@ -16,6 +16,10 @@ spring:
 
 opensearch:
   uri: ${OPENSEARCH_URI:http://localhost:9200}
+  username: ${OPENSEARCH_USERNAME:}
+  password: ${OPENSEARCH_PASSWORD:}
+  ssl:
+    trust-all: ${OPENSEARCH_SSL_TRUST_ALL:false}
 
 management:
   endpoints:

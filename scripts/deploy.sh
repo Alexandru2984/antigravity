@@ -37,6 +37,7 @@ REQUIRED=(
     MINIO_ROOT_USER
     MINIO_ROOT_PASSWORD
     NEO4J_PASSWORD
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD
     SECRET_KEY_BASE
     ADMIN_SECRET_KEY_BASE
     REVIEW_APP_KEY
@@ -63,7 +64,7 @@ fi
 
 # ── Bring up infrastructure first ─────────────────────────────
 echo "🏗️  Starting infrastructure..."
-$COMPOSE up -d postgres mongo redis zookeeper kafka minio clickhouse neo4j
+$COMPOSE up -d postgres mongo redis zookeeper kafka opensearch minio clickhouse neo4j
 
 echo "⏳ Waiting for infrastructure to be healthy..."
 sleep 10

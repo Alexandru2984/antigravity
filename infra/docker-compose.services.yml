@@ -109,7 +109,10 @@ services:
     environment:
       SERVER_PORT: 4003
       SPRING_PROFILES_ACTIVE: dev
-      OPENSEARCH_URIS: http://opensearch:9200
+      OPENSEARCH_URI: https://opensearch:9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
+      OPENSEARCH_SSL_TRUST_ALL: "true"
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
     networks:

@@ -141,11 +141,11 @@ services:
 
   opensearch:
     <<: *stateful_security
-    image: opensearchproject/opensearch:2.11.0
+    image: opensearchproject/opensearch:2.12.0
     restart: unless-stopped
     environment:
       - discovery.type=single-node
-      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
       - opensearch_data:/usr/share/opensearch/data
@@ -155,7 +155,7 @@ services:
         limits:
           memory: 1.5G
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      test: ["CMD-SHELL", "curl -k -f -u \"admin:$${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\" https://localhost:9200/_cluster/health"]
       interval: 20s
       retries: 10
 
@@ -305,7 +305,10 @@ services:
       opensearch: {condition: service_healthy}
       kafka: {condition: service_healthy}
     environment:
-      OPENSEARCH_URI:  http://opensearch:9200
+      OPENSEARCH_URI:  https://opensearch:9200
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
+      OPENSEARCH_SSL_TRUST_ALL: "true"
       KAFKA_BROKERS:   kafka:9092
       JWT_PUBLIC_KEY:  ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       PORT: 4023
