@@ -13,6 +13,21 @@ use crate::{
     AppState,
 };
 
+const INTERNAL_SERVICE_TOKEN_HEADER: &str = "x-internal-service-token";
+
+fn require_internal_request(state: &AppState, headers: &HeaderMap) -> Result<()> {
+    let provided = headers
+        .get(INTERNAL_SERVICE_TOKEN_HEADER)
+        .and_then(|v| v.to_str().ok())
+        .ok_or(AppError::Forbidden)?;
+
+    if provided != state.internal_service_token {
+        return Err(AppError::Forbidden);
+    }
+
+    Ok(())
+}
+
 fn extract_user_id(headers: &HeaderMap) -> Result<Uuid> {
     let uid = headers
         .get("x-user-id")
@@ -59,6 +74,7 @@ pub async fn create(
     req.validate()
         .map_err(|e| AppError::Validation(e.to_string()))?;
 
+    require_internal_request(&state, &headers)?;
     let seller_id = extract_user_id(&headers)?;
     let listing = state.mongo.create(seller_id, req).await?;
 
@@ -118,6 +134,7 @@ pub async fn update(
     req.validate()
         .map_err(|e| AppError::Validation(e.to_string()))?;
 
+    require_internal_request(&state, &headers)?;
     let seller_id = extract_user_id(&headers)?;
     let update_doc = bson::doc! {
         "title":       req.title,
@@ -141,6 +158,7 @@ pub async fn delete(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<StatusCode> {
+    require_internal_request(&state, &headers)?;
     let seller_id = extract_user_id(&headers)?;
     let admin = is_admin(&headers);
 
@@ -168,6 +186,7 @@ pub async fn mark_sold(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ListingResponse>> {
+    require_internal_request(&state, &headers)?;
     let seller_id = extract_user_id(&headers)?;
     let listing = state
         .mongo

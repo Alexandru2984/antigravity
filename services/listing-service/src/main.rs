@@ -32,6 +32,7 @@ pub type AppState = Arc<AppStateInner>;
 pub struct AppStateInner {
     pub mongo: MongoRepo,
     pub kafka: KafkaProducer,
+    pub internal_service_token: String,
 }
 
 fn cors_origins() -> Result<Vec<HeaderValue>> {
@@ -68,7 +69,11 @@ async fn main() -> Result<()> {
     tracing::info!("Connecting to Kafka...");
     let kafka = KafkaProducer::new(&cfg.kafka_brokers)?;
 
-    let state: AppState = Arc::new(AppStateInner { mongo, kafka });
+    let state: AppState = Arc::new(AppStateInner {
+        mongo,
+        kafka,
+        internal_service_token: cfg.internal_service_token,
+    });
 
     let cors = CorsLayer::new()
         .allow_origin(AllowOrigin::list(cors_origins()?))

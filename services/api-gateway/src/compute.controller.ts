@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get } from '@nestjs/common';
 import axios from 'axios';
 import { Public } from './auth/auth.guard';
 
+const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
+
 @Public()
 @Controller('api/v1/polyglot-mesh')
 export class ComputeController {
@@ -332,6 +334,10 @@ export class ComputeController {
       try {
         const listingServiceUrl =
           process.env.LISTING_SERVICE_URL || 'http://listing-service:4022';
+        const internalServiceToken = process.env.INTERNAL_SERVICE_TOKEN;
+        if (!internalServiceToken) {
+          throw new Error('INTERNAL_SERVICE_TOKEN is not configured');
+        }
         const rustRes = await axios.post(
           `${listingServiceUrl}/listings`,
           {
@@ -355,6 +361,7 @@ export class ComputeController {
           {
             headers: {
               'x-user-id': sellerId,
+              [INTERNAL_SERVICE_TOKEN_HEADER]: internalServiceToken,
               'Content-Type': 'application/json',
             },
             timeout: 3000,

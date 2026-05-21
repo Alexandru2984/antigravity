@@ -1,7 +1,12 @@
 import {
   All,
   Controller,
+  Delete,
+  Get,
   Logger,
+  Patch,
+  Post,
+  Put,
   Req,
   Res,
   HttpException,
@@ -11,6 +16,8 @@ import { Public } from '../auth/auth.guard';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import * as http from 'http';
 import * as https from 'https';
+
+const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -49,8 +56,8 @@ export class ProxyController {
 
   // ── Listings ─────────────────────────────────────────────────
   @Public()
-  @All('listings/*')
-  proxyListings(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+  @Get('listings/*')
+  proxyListingsRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(
       req,
       res,
@@ -60,9 +67,30 @@ export class ProxyController {
   }
 
   @Public()
-  @All('listings')
-  proxyListingsRoot(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+  @Get('listings')
+  proxyListingsRootRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(req, res, 'listings', 'listings');
+  }
+
+  @Post('listings')
+  proxyListingsRootCreate(
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    return this.proxyRequest(req, res, 'listings', 'listings');
+  }
+
+  @Post('listings/*')
+  @Put('listings/*')
+  @Patch('listings/*')
+  @Delete('listings/*')
+  proxyListingsWrite(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(
+      req,
+      res,
+      'listings',
+      'listings/' + wildcardPath(req),
+    );
   }
 
   // ── Search (public) ──────────────────────────────────────────
@@ -155,6 +183,8 @@ export class ProxyController {
 
     this.logger.debug(`Proxying ${req.method} ${req.url} → ${targetUrl}`);
 
+    const headers = this.buildProxyHeaders(req, service, targetUrl);
+
     return new Promise((resolve) => {
       const protocol = targetUrl.protocol === 'https:' ? https : http;
       const options: http.RequestOptions = {
@@ -162,12 +192,7 @@ export class ProxyController {
         port: targetUrl.port || (targetUrl.protocol === 'https:' ? 443 : 80),
         path: targetUrl.pathname + targetUrl.search,
         method: req.method,
-        headers: {
-          ...req.headers,
-          host: targetUrl.host,
-          'x-forwarded-for': req.ip ?? '',
-          'x-request-id': (req.headers['x-request-id'] as string) ?? '',
-        },
+        headers,
       };
 
       const proxyReq = protocol.request(options, (proxyRes) => {
@@ -195,5 +220,32 @@ export class ProxyController {
       if (rawBody) proxyReq.write(rawBody as Buffer);
       proxyReq.end();
     });
+  }
+
+  private buildProxyHeaders(
+    req: FastifyRequest,
+    service: string,
+    targetUrl: URL,
+  ): http.OutgoingHttpHeaders {
+    const headers: http.OutgoingHttpHeaders = { ...req.headers };
+    delete headers[INTERNAL_SERVICE_TOKEN_HEADER];
+    delete headers.host;
+
+    headers.host = targetUrl.host;
+    headers['x-forwarded-for'] = req.ip ?? '';
+    headers['x-request-id'] = (req.headers['x-request-id'] as string) ?? '';
+
+    if (service === 'listings') {
+      const token = process.env.INTERNAL_SERVICE_TOKEN;
+      if (!token) {
+        throw new HttpException(
+          'INTERNAL_SERVICE_TOKEN is not configured',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      headers[INTERNAL_SERVICE_TOKEN_HEADER] = token;
+    }
+
+    return headers;
   }
 }
