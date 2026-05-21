@@ -80,7 +80,7 @@ jobs:
         run: cd services/api-gateway && npm audit --audit-level=high
         continue-on-error: true
       - name: npm audit (frontend)
-        run: cd frontend/apps/web && npm audit --audit-level=high
+        run: cd frontend && npm audit --audit-level=high
         continue-on-error: true
 
       # Rust
