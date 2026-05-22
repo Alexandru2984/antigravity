@@ -1,0 +1,43 @@
+name: Compose Config
+
+on:
+  push:
+    paths:
+      - 'infra/docker-compose*.yml'
+      - 'scripts/deploy.sh'
+      - 'scripts/health-check.sh'
+      - 'Makefile'
+      - 'README.md'
+      - '.github/workflows/ci-compose.yml'
+  pull_request:
+    paths:
+      - 'infra/docker-compose*.yml'
+      - 'scripts/deploy.sh'
+      - 'scripts/health-check.sh'
+      - 'Makefile'
+      - 'README.md'
+      - '.github/workflows/ci-compose.yml'
+
+jobs:
+  compose-config:
+    runs-on: ubuntu-latest
+    env:
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: dummy-opensearch-password-1234567890
+      STRIPE_SECRET_KEY: sk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      STRIPE_PUBLISHABLE_KEY: pk_test_dummy
+      RAILS_MASTER_KEY: dummy-rails-master-key
+      JWT_PUBLIC_KEY: dummy-public-key
+      JWT_PRIVATE_KEY: dummy-private-key
+      INTERNAL_SERVICE_TOKEN: dummy-internal-token
+      FRONTEND_URL: https://polyglot.micutu.com
+      CORS_ORIGINS: https://polyglot.micutu.com
+      POLYGLOT_MESH_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Root compose must stay removed
+        run: test ! -e docker-compose.yml
+
+      - name: Validate canonical compose stack
+        run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config >/tmp/compose-config.yml

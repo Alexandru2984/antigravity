@@ -7,6 +7,7 @@ DOCKER_COMPOSE := docker compose
 INFRA          := -f infra/docker-compose.yml
 OBS            := -f infra/docker-compose.obs.yml
 SERVICES       := -f infra/docker-compose.services.yml
+STACK          := $(INFRA) $(SERVICES)
 
 ## ── Help ─────────────────────────────────────────────────────────────────────
 help: ## Show this help
@@ -73,11 +74,11 @@ seed: ## Insert demo/test data
 ## ── Build ────────────────────────────────────────────────────────────────────
 build: ## Build all service Docker images
 	@echo "🔨 Building all images..."
-	$(DOCKER_COMPOSE) $(SERVICES) build --parallel
+	$(DOCKER_COMPOSE) $(STACK) build --parallel
 	@echo "✅ All images built."
 
 build-%: ## Build a specific service image (e.g. make build-listing-service)
-	$(DOCKER_COMPOSE) $(SERVICES) build $*
+	$(DOCKER_COMPOSE) $(STACK) build $*
 
 perf-lib: ## Build Zig perf-lib (native .so + WASM)
 	@echo "⚡ Building perf-lib..."
@@ -88,10 +89,10 @@ perf-lib: ## Build Zig perf-lib (native .so + WASM)
 
 ## ── Development ──────────────────────────────────────────────────────────────
 dev: ## Start services in dev mode (with hot reload where supported)
-	$(DOCKER_COMPOSE) $(SERVICES) up
+	$(DOCKER_COMPOSE) $(STACK) up
 
 dev-%: ## Start a specific service (e.g. make dev-auth-service)
-	$(DOCKER_COMPOSE) $(SERVICES) up $*
+	$(DOCKER_COMPOSE) $(STACK) up $*
 
 frontend: ## Start Next.js frontend dev server
 	cd frontend/apps/web && npm run dev

@@ -115,6 +115,15 @@ This will:
 make dev           # starts all 17 application containers + frontend
 ```
 
+Deployment and local orchestration use the split Compose files under `infra/`.
+Do not use a root-level monolithic `docker-compose.yml`; it is intentionally
+not part of the project entrypoints.
+
+For direct Compose usage, use the combined infra + services stack:
+```bash
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml up -d
+```
+
 ### 5. Or Start Frontend Separately
 ```bash
 cd frontend && npm install && npm run dev
@@ -231,7 +240,7 @@ polymarket/
 ├── infra/
 │   ├── docker-compose.yml       # All DBs + Kafka + MinIO (infrastructure)
 │   ├── docker-compose.obs.yml   # Prometheus + Grafana + Loki + Jaeger + OTEL
-│   ├── docker-compose.services.yml  # All 17 app services (split config)
+│   ├── docker-compose.services.yml  # App services + public edge + mesh workers
 │   ├── nginx/
 │   │   └── nginx.conf           # Reverse proxy + SSL + rate limiting
 │   ├── db/
@@ -262,7 +271,6 @@ polymarket/
 ├── docs/
 │   ├── adr/                     # Architecture Decision Records
 │   └── runbooks/                # Operational runbooks
-├── docker-compose.yml           # Unified compose (infra + services + nginx)
 ├── .env.example                 # All env vars template
 ├── Makefile                     # Dev commands (make help)
 └── .gitignore

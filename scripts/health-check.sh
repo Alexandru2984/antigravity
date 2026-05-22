@@ -2,7 +2,8 @@
 # PolyMarket health check — verify public edge and compose services
 set -euo pipefail
 
-COMPOSE="docker compose -f docker-compose.yml"
+INFRA_COMPOSE=(docker compose -f infra/docker-compose.yml)
+SERVICES_COMPOSE=(docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml)
 
 if [[ -f .env ]]; then
     set -a; source .env; set +a
@@ -37,8 +38,17 @@ check_http() {
 }
 
 check_service() {
-    local name=$1
-    if $COMPOSE ps --services --filter status=running | grep -qx "$name"; then
+    local stack=$1
+    local name=$2
+    local compose=()
+
+    if [[ "$stack" == "infra" ]]; then
+        compose=("${INFRA_COMPOSE[@]}")
+    else
+        compose=("${SERVICES_COMPOSE[@]}")
+    fi
+
+    if "${compose[@]}" ps --services --filter status=running | grep -qx "$name"; then
         echo "  OK   $name container running"
         (( PASS += 1 ))
     else
@@ -54,7 +64,13 @@ check_http "nginx" "$PUBLIC_HTTP/health"
 check_http "api-gateway via nginx" "$PUBLIC_HTTP/api/health"
 
 for service in \
-    postgres mongo redis zookeeper kafka opensearch minio clickhouse neo4j \
+    postgres mongo mysql redis clickhouse opensearch opensearch-dashboards \
+    timescale neo4j surrealdb zookeeper kafka kafka-ui minio
+do
+    check_service infra "$service"
+done
+
+for service in \
     auth-service api-gateway listing-service search-service image-service \
     profile-service payment-service notification-service feed-service \
     review-service analytics-service chat-service ml-service stream-processor \
@@ -63,7 +79,7 @@ for service in \
     julia-service prolog-service elixir-service scala-service lua-service \
     r-service php-service zig-service nim-service swift-service haskell-service
 do
-    check_service "$service"
+    check_service services "$service"
 done
 
 echo ""

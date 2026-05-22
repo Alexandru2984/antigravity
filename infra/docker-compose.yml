@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ============================================================
 # PolyMarket — Infrastructure Stack
 # All databases + Kafka + MinIO + tooling
@@ -8,6 +6,7 @@ version: "3.9"
 
 networks:
   polymarket:
+    name: polymarket
     driver: bridge
 
 volumes:

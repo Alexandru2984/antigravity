@@ -1,10 +1,8 @@
-version: "3.9"
-
 # ============================================================
 # PolyMarket — Application Services
 # All 18 microservices
-# Run: docker compose -f infra/docker-compose.services.yml up -d
-# Requires: infra/docker-compose.yml running first
+# Run with infrastructure definitions:
+# docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml up -d
 # ============================================================
 
 networks:
@@ -25,7 +23,12 @@ services:
     environment:
       PORT: 4000
       NODE_ENV: development
-      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      POLYGLOT_MESH_ENABLED: ${POLYGLOT_MESH_ENABLED:?POLYGLOT_MESH_ENABLED is required}
+      POLYGLOT_MESH_MAX_CONCURRENCY: ${POLYGLOT_MESH_MAX_CONCURRENCY:-2}
       REDIS_URL: redis://:polymarket_dev@redis:6379
       AUTH_SERVICE_URL: http://auth-service:4001
       LISTING_SERVICE_URL: http://listing-service:4002
@@ -38,10 +41,28 @@ services:
       REVIEW_SERVICE_URL: http://review-service:4009
       ANALYTICS_SERVICE_URL: http://analytics-service:4010
       CHAT_SERVICE_URL: http://chat-service:4011
+      ML_SERVICE_URL: http://ml-service:4012
+      CONTRACT_VALIDATOR_URL: http://contract-validator:4035
+      BRAINFUCK_SERVICE_URL: http://brainfuck-service:4020
+      ASSEMBLY_SERVICE_URL: http://assembly-service:4021
+      COBOL_SERVICE_URL: http://cobol-service:4022
+      CLOJURE_SERVICE_URL: http://clojure-service:4023
+      JULIA_SERVICE_URL: http://julia-service:4054
+      PROLOG_SERVICE_URL: http://prolog-service:4055
+      ELIXIR_SERVICE_URL: http://elixir-service:4057
+      LUA_SERVICE_URL: http://lua-service:4059
+      R_SERVICE_URL: http://r-service:4060
+      ZIG_SERVICE_URL: http://zig-service:4062
+      NIM_SERVICE_URL: http://nim-service:4064
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: api-gateway
     networks:
       - polymarket
+    depends_on:
+      auth-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
       interval: 15s
@@ -62,17 +83,21 @@ services:
       DATABASE_URL: postgresql://polymarket:polymarket_dev@postgres:5432/polymarket_auth
       REDIS_URL: redis://:polymarket_dev@redis:6379
       KAFKA_BROKERS: kafka:29092
-      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private.pem
-      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?JWT_PRIVATE_KEY is required}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
       SECRET_KEY_BASE: "dev_secret_key_base_change_in_prod_very_long_string"
       MIX_ENV: dev
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     networks:
       - polymarket
     depends_on:
-      - postgres
-      - redis
-      - kafka
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Listing Service (Rust / Axum) ───────────────────────────
   listing-service:
@@ -85,17 +110,25 @@ services:
       - "4002:4002"
     environment:
       PORT: 4002
-      MONGODB_URI: mongodb://polymarket:polymarket_dev@mongo:27017/polymarket?authSource=admin
+      MONGO_URI: mongodb://polymarket:polymarket_dev@mongo:27017/polymarket?authSource=admin
+      MONGO_DB: polymarket
       REDIS_URL: redis://:polymarket_dev@redis:6379
       KAFKA_BROKERS: kafka:29092
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      IMAGE_PUBLIC_PATH_PREFIX: ${IMAGE_PUBLIC_PATH_PREFIX:-/api/v1/images}
       RUST_LOG: info
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     networks:
       - polymarket
     depends_on:
-      - mongo
-      - redis
-      - kafka
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Search Service (Java / Spring Boot) ─────────────────────
   search-service:
@@ -118,8 +151,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - opensearch
-      - kafka
+      opensearch:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Image Service (C++ / Drogon) ────────────────────────────
   image-service:
@@ -142,8 +177,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - minio
-      - kafka
+      minio:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Notification Service (Elixir / Phoenix Channels) ────────
   notification-service:
@@ -163,8 +200,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - redis
-      - kafka
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Payment Service (C# / ASP.NET Core) ─────────────────────
   payment-service:
@@ -178,7 +217,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:4006
-      ConnectionStrings__Postgres: "Host=postgres;Database=polymarket_payments;Username=polymarket;Password=polymarket_dev"
+      DATABASE_URL: "Host=postgres;Database=polymarket_payments;Username=polymarket;Password=polymarket_dev"
       Stripe__SecretKey: "${STRIPE_SECRET_KEY}"
       Stripe__WebhookSecret: "${STRIPE_WEBHOOK_SECRET}"
       Kafka__BootstrapServers: kafka:29092
@@ -186,8 +225,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - postgres
-      - kafka
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Profile Service (Kotlin / Ktor) ─────────────────────────
   profile-service:
@@ -200,15 +241,17 @@ services:
       - "4007:4007"
     environment:
       PORT: 4007
-      POSTGRES_URL: jdbc:postgresql://postgres:5432/polymarket_profiles
+      PROFILE_DATABASE_URL: jdbc:postgresql://postgres:5432/polymarket_profiles
       POSTGRES_USER: polymarket
       POSTGRES_PASSWORD: polymarket_dev
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       IMAGE_SERVICE_URL: http://image-service:4004
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     networks:
       - polymarket
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # ── Feed Service (Go / chi) ──────────────────────────────────
   feed-service:
@@ -231,9 +274,12 @@ services:
     networks:
       - polymarket
     depends_on:
-      - surrealdb
-      - redis
-      - kafka
+      surrealdb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Review Service (PHP / Laravel) ──────────────────────────
   review-service:
@@ -257,8 +303,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - mysql
-      - kafka
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Analytics Service (Python / FastAPI) ────────────────────
   analytics-service:
@@ -280,8 +328,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - clickhouse
-      - kafka
+      clickhouse:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Chat Service (Elixir / Phoenix) ─────────────────────────
   chat-service:
@@ -302,9 +352,12 @@ services:
     networks:
       - polymarket
     depends_on:
-      - postgres
-      - redis
-      - kafka
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── ML Service (Python / FastAPI) ───────────────────────────
   ml-service:
@@ -324,8 +377,10 @@ services:
     networks:
       - polymarket
     depends_on:
-      - neo4j
-      - kafka
+      neo4j:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   # ── Stream Processor (Scala / Akka Streams) ─────────────────
   stream-processor:
@@ -347,9 +402,12 @@ services:
     networks:
       - polymarket
     depends_on:
-      - kafka
-      - timescale
-      - clickhouse
+      kafka:
+        condition: service_healthy
+      timescale:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
 
   # ── Config Service (F# / Giraffe) ───────────────────────────
   config-service:
@@ -367,7 +425,8 @@ services:
     networks:
       - polymarket
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # ── Contract Validator (Haskell / Servant) ──────────────────
   contract-validator:
@@ -377,9 +436,9 @@ services:
     container_name: polymarket-contract
     restart: unless-stopped
     ports:
-      - "4015:4015"
+      - "4035:4035"
     environment:
-      PORT: 4015
+      PORT: 4035
       # Validates OpenAPI specs at deploy time
       SPECS_DIR: /app/contracts
     volumes:
@@ -405,7 +464,8 @@ services:
     networks:
       - polymarket
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # ── Frontend (Next.js) ───────────────────────────────────────
   frontend:
@@ -424,4 +484,165 @@ services:
     networks:
       - polymarket
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_started
+
+  # ── Public Edge (Nginx) ─────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: polymarket-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - polymarket
+    depends_on:
+      api-gateway:
+        condition: service_started
+      frontend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Polyglot Mesh Demo Workers ──────────────────────────────
+  brainfuck-service:
+    build:
+      context: ../services/brainfuck-service
+      dockerfile: Dockerfile
+    container_name: polymarket-brainfuck
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  assembly-service:
+    build:
+      context: ../services/assembly-service
+      dockerfile: Dockerfile
+    container_name: polymarket-assembly
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  cobol-service:
+    build:
+      context: ../services/cobol-service
+      dockerfile: Dockerfile
+    container_name: polymarket-cobol
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  clojure-service:
+    build:
+      context: ../services/clojure-service
+      dockerfile: Dockerfile
+    container_name: polymarket-clojure
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  julia-service:
+    build:
+      context: ../services/julia-service
+      dockerfile: Dockerfile
+    container_name: polymarket-julia
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  prolog-service:
+    build:
+      context: ../services/prolog-service
+      dockerfile: Dockerfile
+    container_name: polymarket-prolog
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  elixir-service:
+    build:
+      context: ../services/elixir-service
+      dockerfile: Dockerfile
+    container_name: polymarket-elixir-mesh
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  scala-service:
+    build:
+      context: ../services/scala-service
+      dockerfile: Dockerfile
+    container_name: polymarket-scala-mesh
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  lua-service:
+    build:
+      context: ../services/lua-service
+      dockerfile: Dockerfile
+    container_name: polymarket-lua
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  r-service:
+    build:
+      context: ../services/r-service
+      dockerfile: Dockerfile
+    container_name: polymarket-r
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  php-service:
+    build:
+      context: ../services/php-service
+      dockerfile: Dockerfile
+    container_name: polymarket-php-mesh
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  zig-service:
+    build:
+      context: ../services/zig-service
+      dockerfile: Dockerfile
+    container_name: polymarket-zig
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  nim-service:
+    build:
+      context: ../services/nim-service
+      dockerfile: Dockerfile
+    container_name: polymarket-nim
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  swift-service:
+    build:
+      context: ../services/swift-service
+      dockerfile: Dockerfile
+    container_name: polymarket-swift
+    restart: unless-stopped
+    networks:
+      - polymarket
+
+  haskell-service:
+    build:
+      context: ../services/haskell-service
+      dockerfile: Dockerfile
+    container_name: polymarket-haskell-mesh
+    restart: unless-stopped
+    networks:
+      - polymarket

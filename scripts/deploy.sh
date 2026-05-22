@@ -4,7 +4,8 @@
 set -euo pipefail
 
 REBUILD=${1:-""}
-COMPOSE="docker compose -f docker-compose.yml"
+INFRA_COMPOSE=(docker compose -f infra/docker-compose.yml)
+SERVICES_COMPOSE=(docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml)
 
 echo "🚀 PolyMarket Deploy — $(date)"
 echo "────────────────────────────────"
@@ -56,34 +57,37 @@ done
 # ── Pull/build images ─────────────────────────────────────────
 if [[ "$REBUILD" == "--rebuild" ]]; then
     echo "🔨 Rebuilding all images..."
-    $COMPOSE build --no-cache --parallel
+    "${SERVICES_COMPOSE[@]}" build --no-cache --parallel
 else
     echo "🔨 Building changed images..."
-    $COMPOSE build --parallel
+    "${SERVICES_COMPOSE[@]}" build --parallel
 fi
 
 # ── Bring up infrastructure first ─────────────────────────────
 echo "🏗️  Starting infrastructure..."
-$COMPOSE up -d postgres mongo redis zookeeper kafka opensearch minio clickhouse neo4j
+"${INFRA_COMPOSE[@]}" up -d
 
 echo "⏳ Waiting for infrastructure to be healthy..."
 sleep 10
 
 # ── Start services ─────────────────────────────────────────────
 echo "▶️  Starting microservices..."
-$COMPOSE up -d \
+"${SERVICES_COMPOSE[@]}" up -d \
     auth-service listing-service search-service image-service \
     profile-service payment-service notification-service \
     feed-service review-service analytics-service chat-service \
-    ml-service stream-processor config-service contract-validator
+    ml-service stream-processor config-service contract-validator \
+    brainfuck-service assembly-service cobol-service clojure-service \
+    julia-service prolog-service elixir-service scala-service lua-service \
+    r-service php-service zig-service nim-service swift-service haskell-service
 
 # ── Start frontend + gateway ───────────────────────────────────
 echo "🌐 Starting API gateway and frontend..."
-$COMPOSE up -d api-gateway frontend admin-panel
+"${SERVICES_COMPOSE[@]}" up -d api-gateway frontend admin-panel
 
 # ── Start Nginx ────────────────────────────────────────────────
 echo "🔒 Starting Nginx..."
-$COMPOSE up -d nginx
+"${SERVICES_COMPOSE[@]}" up -d nginx
 
 echo ""
 echo "✅ Deploy complete!"
