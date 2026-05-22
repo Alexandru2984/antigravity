@@ -328,11 +328,15 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(this.serviceUrl('cobol'), {
-        timeout: 1500,
-      });
+      const amountCents = Math.round(listing.price * 100);
+      const res = await axios.get(
+        `${this.serviceUrl('cobol')}/ledger?amount_cents=${amountCents}`,
+        {
+          timeout: 1500,
+        },
+      );
       cobolReport.status = 'online';
-      cobolReport.data = { message: res.data.trim() };
+      cobolReport.data = res.data;
     } catch (e) {
       cobolReport.data = { error: e.message };
     }

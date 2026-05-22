@@ -91,7 +91,13 @@ describe('ComputeController', () => {
           item: 'MacBook Pro M3',
           confidence: 0.98,
         },
-        'http://cobol.test': 'COBOL ledger posted',
+        'http://cobol.test/ledger?amount_cents=120000': {
+          service: 'cobol-ledger',
+          tax_bps: 1900,
+          amount_cents: 120000,
+          tax_cents: 22800,
+          total_cents: 142800,
+        },
         'http://assembly.test/verify?n=12': {
           service: 'assembly-fibo',
           algorithm: 'fibonacci',
@@ -137,6 +143,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Assembly-Fibo'].data
         .result,
     ).toBe(144);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['COBOL-Ledger'].data
+        .total_cents,
+    ).toBe(142800);
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Brainfuck-Crypt'].data
         .algorithm,
