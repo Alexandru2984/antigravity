@@ -296,7 +296,10 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(this.serviceUrl('r'), { timeout: 1500 });
+      const res = await axios.get(
+        `${this.serviceUrl('r')}/forecast?price=${listing.price}`,
+        { timeout: 1500 },
+      );
       rReport.status = 'online';
       rReport.data = res.data;
     } catch (e) {

@@ -83,9 +83,12 @@ describe('ComputeController', () => {
 
     mockedAxios.get.mockImplementation((url: string) => {
       const responses: Record<string, unknown> = {
-        'http://r.test': {
+        'http://r.test/forecast?price=1200': {
           status: 'ok',
+          service: 'r-regression',
           engine: 'R-Stats-Regression',
+          input_price: 1200,
+          forecast_price_45_days: 1115.83,
         },
         'http://ml.test/recommend': {
           item: 'MacBook Pro M3',
@@ -135,6 +138,10 @@ describe('ComputeController', () => {
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
     ).toBe(12.5);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
+        .forecast_price_45_days,
+    ).toBe(1115.83);
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Zig-Crypto'].data
         .algorithm,
