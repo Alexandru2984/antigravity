@@ -22,6 +22,7 @@ const SERVICE_URL_DEFAULTS = {
     url: 'http://contract-validator:4035',
   },
   prolog: { env: 'PROLOG_SERVICE_URL', url: 'http://prolog-service:4055' },
+  clojure: { env: 'CLOJURE_SERVICE_URL', url: 'http://clojure-service:4023' },
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
   ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
@@ -267,7 +268,32 @@ export class ComputeController {
     }
     reports.push(prologReport);
 
-    // Step 3: Julia Statistics Analysis
+    // Step 3: Clojure functional listing rules
+    const clojureReport = {
+      service: 'Clojure-Rules',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.post(
+        `${this.serviceUrl('clojure')}/rules`,
+        {
+          title: listing.title,
+          description: body.description || '',
+          price: listing.price,
+          category: listing.category,
+          location: listing.location,
+        },
+        { timeout: 1500 },
+      );
+      clojureReport.status = 'online';
+      clojureReport.data = res.data;
+    } catch (e) {
+      clojureReport.data = { error: e.message };
+    }
+    reports.push(clojureReport);
+
+    // Step 4: Julia Statistics Analysis
     const juliaReport = {
       service: 'Julia-Stats',
       status: 'offline',
@@ -292,7 +318,7 @@ export class ComputeController {
     }
     reports.push(juliaReport);
 
-    // Step 4: R Statistical Linear Regression & Forecast
+    // Step 5: R Statistical Linear Regression & Forecast
     const rReport = {
       service: 'R-Regression',
       status: 'offline',
@@ -310,7 +336,7 @@ export class ComputeController {
     }
     reports.push(rReport);
 
-    // Step 5: Python ML Recommendation Engine
+    // Step 6: Python ML Recommendation Engine
     const pythonReport = {
       service: 'Python-ML',
       status: 'offline',
@@ -336,7 +362,7 @@ export class ComputeController {
     }
     reports.push(pythonReport);
 
-    // Step 6: COBOL Mainframe Billing Posting
+    // Step 7: COBOL Mainframe Billing Posting
     const cobolReport = {
       service: 'COBOL-Ledger',
       status: 'offline',
@@ -357,7 +383,7 @@ export class ComputeController {
     }
     reports.push(cobolReport);
 
-    // Step 7: Assembly hyper-optimized mathematical payload validation
+    // Step 8: Assembly hyper-optimized mathematical payload validation
     const assemblyReport = {
       service: 'Assembly-Fibo',
       status: 'offline',
@@ -381,7 +407,7 @@ export class ComputeController {
     }
     reports.push(assemblyReport);
 
-    // Step 8: Zig High-performance cryptographic checksumming
+    // Step 9: Zig High-performance cryptographic checksumming
     const zigReport = {
       service: 'Zig-Crypto',
       status: 'offline',
@@ -398,7 +424,7 @@ export class ComputeController {
     }
     reports.push(zigReport);
 
-    // Step 9: Brainfuck esoteric verification signature
+    // Step 10: Brainfuck esoteric verification signature
     const bfReport = {
       service: 'Brainfuck-Crypt',
       status: 'offline',
@@ -419,7 +445,7 @@ export class ComputeController {
     }
     reports.push(bfReport);
 
-    // Step 10: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    // Step 11: Call Rust Listing service to persist in MongoDB and publish to Kafka
     const rustReport = {
       service: 'Rust-Persist-Core',
       status: 'offline',

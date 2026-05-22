@@ -14,6 +14,7 @@ describe('ComputeController', () => {
     process.env.INTERNAL_SERVICE_TOKEN = 'test-internal-token';
     process.env.CONTRACT_VALIDATOR_URL = 'http://contract-validator.test';
     process.env.PROLOG_SERVICE_URL = 'http://prolog.test';
+    process.env.CLOJURE_SERVICE_URL = 'http://clojure.test';
     process.env.JULIA_SERVICE_URL = 'http://julia.test';
     process.env.R_SERVICE_URL = 'http://r.test';
     process.env.ML_SERVICE_URL = 'http://ml.test';
@@ -30,6 +31,7 @@ describe('ComputeController', () => {
     delete process.env.INTERNAL_SERVICE_TOKEN;
     delete process.env.CONTRACT_VALIDATOR_URL;
     delete process.env.PROLOG_SERVICE_URL;
+    delete process.env.CLOJURE_SERVICE_URL;
     delete process.env.JULIA_SERVICE_URL;
     delete process.env.R_SERVICE_URL;
     delete process.env.ML_SERVICE_URL;
@@ -65,6 +67,24 @@ describe('ComputeController', () => {
             z_score: 0.0908,
             outlier: false,
             engine: 'Julia-HighPerf-Stat',
+          },
+        });
+      }
+      if (url === 'http://clojure.test/rules') {
+        return Promise.resolve({
+          data: {
+            service: 'clojure-rules',
+            status: 'ok',
+            category: 'electronics',
+            campaign_tags: ['warranty', 'condition', 'model', 'macbook'],
+            required_attributes: ['serial_number', 'condition'],
+            publish_priority: 'high',
+            quality_score: 70,
+            rules_fired: [
+              'premium-listing',
+              'needs-description',
+              'manual-review-candidate',
+            ],
           },
         });
       }
@@ -150,6 +170,17 @@ describe('ComputeController', () => {
 
     expect(result.status).toBe('SUCCESS_PERSISTED');
     expect(mockedAxios.post.mock.calls).toContainEqual([
+      'http://clojure.test/rules',
+      {
+        title: 'MacBook Pro M3',
+        description: '',
+        price: 1200,
+        category: 'electronics',
+        location: 'Bucuresti',
+      },
+      { timeout: 1500 },
+    ]);
+    expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://ml.test/recommend',
       {
         title: 'MacBook Pro M3',
@@ -178,6 +209,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Prolog-Fraud'].data
         .risk_score,
     ).toBe(0);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Clojure-Rules'].data
+        .publish_priority,
+    ).toBe('high');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
         .forecast_price_45_days,
