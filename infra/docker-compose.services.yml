@@ -18,8 +18,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-api-gateway
     restart: unless-stopped
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     environment:
       PORT: 4000
       NODE_ENV: development
@@ -76,8 +76,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-auth
     restart: unless-stopped
-    ports:
-      - "4001:4001"
+    expose:
+      - "4001"
     environment:
       PORT: 4001
       DATABASE_URL: postgresql://polymarket:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/polymarket_auth
@@ -106,8 +106,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-listing
     restart: unless-stopped
-    ports:
-      - "4002:4002"
+    expose:
+      - "4002"
     environment:
       PORT: 4002
       MONGO_URI: mongodb://polymarket:${MONGO_PASSWORD:?MONGO_PASSWORD is required}@mongo:27017/polymarket?authSource=admin
@@ -137,8 +137,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-search
     restart: unless-stopped
-    ports:
-      - "4003:4003"
+    expose:
+      - "4003"
     environment:
       SERVER_PORT: 4003
       SPRING_PROFILES_ACTIVE: dev
@@ -163,8 +163,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-image
     restart: unless-stopped
-    ports:
-      - "4004:4004"
+    expose:
+      - "4004"
     environment:
       HTTP_PORT: 4004
       MINIO_ENDPOINT: minio:9000
@@ -189,8 +189,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-notification
     restart: unless-stopped
-    ports:
-      - "4005:4005"
+    expose:
+      - "4005"
     environment:
       PORT: 4005
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
@@ -212,8 +212,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-payment
     restart: unless-stopped
-    ports:
-      - "4006:4006"
+    expose:
+      - "4006"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:4006
@@ -237,8 +237,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-profile
     restart: unless-stopped
-    ports:
-      - "4007:4007"
+    expose:
+      - "4007"
     environment:
       PORT: 4007
       PROFILE_DATABASE_URL: jdbc:postgresql://postgres:5432/polymarket_profiles
@@ -260,8 +260,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-feed
     restart: unless-stopped
-    ports:
-      - "4008:4008"
+    expose:
+      - "4008"
     environment:
       PORT: 4008
       SURREALDB_URL: ws://surrealdb:8000/rpc
@@ -288,8 +288,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-review
     restart: unless-stopped
-    ports:
-      - "4009:4009"
+    expose:
+      - "4009"
     environment:
       APP_ENV: local
       APP_KEY: ${REVIEW_APP_KEY:?REVIEW_APP_KEY is required}
@@ -315,8 +315,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-analytics
     restart: unless-stopped
-    ports:
-      - "4010:4010"
+    expose:
+      - "4010"
     environment:
       PORT: 4010
       CLICKHOUSE_HOST: clickhouse
@@ -340,8 +340,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-chat
     restart: unless-stopped
-    ports:
-      - "4011:4011"
+    expose:
+      - "4011"
     environment:
       PORT: 4011
       DATABASE_URL: postgresql://polymarket:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/polymarket_chat
@@ -366,8 +366,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-ml
     restart: unless-stopped
-    ports:
-      - "4012:4012"
+    expose:
+      - "4012"
     environment:
       PORT: 4012
       NEO4J_URI: bolt://neo4j:7687
@@ -389,8 +389,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-stream
     restart: unless-stopped
-    ports:
-      - "4013:4013"
+    expose:
+      - "4013"
     environment:
       HTTP_PORT: 4013
       KAFKA_BROKERS: kafka:29092
@@ -416,8 +416,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-config
     restart: unless-stopped
-    ports:
-      - "4014:4014"
+    expose:
+      - "4014"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:4014
@@ -435,8 +435,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-contract
     restart: unless-stopped
-    ports:
-      - "4035:4035"
+    expose:
+      - "4035"
     environment:
       PORT: 4035
       # Validates OpenAPI specs at deploy time
@@ -453,8 +453,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-admin
     restart: unless-stopped
-    ports:
-      - "4016:4016"
+    expose:
+      - "4016"
     environment:
       RAILS_ENV: development
       PORT: 4016
@@ -474,8 +474,8 @@ services:
       dockerfile: Dockerfile
     container_name: polymarket-frontend
     restart: unless-stopped
-    ports:
-      - "3005:3000"
+    expose:
+      - "3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
       NEXT_PUBLIC_WS_URL: ws://localhost:4000

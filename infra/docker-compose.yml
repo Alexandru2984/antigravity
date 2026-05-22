@@ -37,8 +37,8 @@ services:
       POSTGRES_USER: polymarket
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: polymarket
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -60,8 +60,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: polymarket
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?MONGO_PASSWORD is required}
       MONGO_INITDB_DATABASE: polymarket
-    ports:
-      - "27018:27017"
+    expose:
+      - "27017"
     volumes:
       - mongo_data:/data/db
       - ./db/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
@@ -84,8 +84,8 @@ services:
       MYSQL_DATABASE: polymarket_reviews
       MYSQL_USER: polymarket
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
-    ports:
-      - "3307:3306"
+    expose:
+      - "3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -107,8 +107,8 @@ services:
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     networks:
@@ -130,9 +130,9 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is required}
       CLICKHOUSE_DB: polymarket_analytics
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-    ports:
-      - "8123:8123"   # HTTP interface
-      - "9000:9000"   # Native TCP
+    expose:
+      - "8123"
+      - "9000"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - ./db/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -154,9 +154,9 @@ services:
       - discovery.type=single-node
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-      - "9600:9600"
+    expose:
+      - "9200"
+      - "9600"
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     networks:
@@ -177,8 +177,8 @@ services:
       - OPENSEARCH_USERNAME=admin
       - OPENSEARCH_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
       - OPENSEARCH_SSL_VERIFICATIONMODE=none
-    ports:
-      - "5601:5601"
+    expose:
+      - "5601"
     networks:
       - polymarket
     depends_on:
@@ -195,8 +195,8 @@ services:
       POSTGRES_USER: polymarket
       POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:?TIMESCALE_PASSWORD is required}
       POSTGRES_DB: polymarket_metrics
-    ports:
-      - "5433:5432"
+    expose:
+      - "5432"
     volumes:
       - timescale_data:/var/lib/postgresql/data
       - ./db/timescale/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -220,9 +220,9 @@ services:
       NEO4J_PLUGINS: '["apoc"]'
       NEO4J_dbms_memory_heap_initial__size: 256m
       NEO4J_dbms_memory_heap_max__size: 512m
-    ports:
-      - "7474:7474"   # Browser UI
-      - "7687:7687"   # Bolt
+    expose:
+      - "7474"
+      - "7687"
     volumes:
       - neo4j_data:/data
     networks:
@@ -241,8 +241,8 @@ services:
     user: root
     restart: unless-stopped
     command: start --user polymarket --pass ${SURREALDB_PASSWORD:?SURREALDB_PASSWORD is required} file:/data/polymarket.db
-    ports:
-      - "8002:8000"
+    expose:
+      - "8000"
     volumes:
       - surrealdb_data:/data
     networks:
@@ -290,8 +290,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_LOG_RETENTION_HOURS: 168   # 7 days
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-    ports:
-      - "9092:9092"
+    expose:
+      - "9092"
     volumes:
       - kafka_data:/var/lib/kafka/data
     networks:
@@ -314,8 +314,8 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: polymarket
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-    ports:
-      - "8085:8080"
+    expose:
+      - "8080"
     networks:
       - polymarket
 
@@ -329,9 +329,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
-    ports:
-      - "9002:9000"   # S3 API (mapped to host port 9002 to avoid ClickHouse collision)
-      - "9001:9001"   # Console
+    expose:
+      - "9000"
+      - "9001"
     volumes:
       - minio_data:/data
     networks:

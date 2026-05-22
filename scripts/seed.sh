@@ -6,6 +6,24 @@
 
 set -e
 
+if [[ -f .env ]]; then
+  set -a; source .env; set +a
+fi
+
+REQUIRED=(
+  MONGO_PASSWORD
+  MYSQL_PASSWORD
+  CLICKHOUSE_PASSWORD
+  NEO4J_PASSWORD
+  SURREALDB_PASSWORD
+)
+for var in "${REQUIRED[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    echo "ERROR: $var is not set. Add it to .env"
+    exit 1
+  fi
+done
+
 echo "🌱 Starting PolyMarket database seeding process..."
 
 # Pre-computed Bcrypt hash for password 'password123'
@@ -53,7 +71,7 @@ EOF
 
 # ── 4. MongoDB: Listing Database ─────────────────────────────
 echo "🗄️  Seeding Listing Database (MongoDB)..."
-docker exec -i polymarket-mongo mongosh -u polymarket -p polymarket_dev --authenticationDatabase admin polymarket <<EOF
+docker exec -i polymarket-mongo mongosh -u polymarket -p "$MONGO_PASSWORD" --authenticationDatabase admin polymarket <<EOF
 db.listings.deleteMany({});
 
 db.listings.insertMany([
@@ -106,7 +124,7 @@ EOF
 
 # ── 5. MySQL: Review Database ────────────────────────────────
 echo "🗄️  Seeding Review Database (MySQL)..."
-docker exec -i polymarket-mysql mysql -u polymarket -ppolymarket_dev polymarket_reviews <<EOF
+docker exec -i polymarket-mysql mysql -u polymarket -p"$MYSQL_PASSWORD" polymarket_reviews <<EOF
 DELETE FROM reviews;
 
 INSERT INTO reviews (id, transaction_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at) VALUES
@@ -116,7 +134,7 @@ EOF
 
 # ── 6. ClickHouse: Analytics Database ────────────────────────
 echo "🗄️  Seeding Analytics Database (ClickHouse)..."
-docker exec -i polymarket-clickhouse clickhouse-client --user polymarket --password polymarket_dev --database polymarket_analytics <<EOF
+docker exec -i polymarket-clickhouse clickhouse-client --user polymarket --password "$CLICKHOUSE_PASSWORD" --database polymarket_analytics <<EOF
 TRUNCATE TABLE listing_events;
 
 INSERT INTO listing_events (event_id, event_type, listing_id, user_id, ip_address, user_agent, timestamp) VALUES
@@ -127,7 +145,7 @@ EOF
 
 # ── 7. Neo4j: ML Graph Database ─────────────────────────────
 echo "🗄️  Seeding ML Graph Database (Neo4j)..."
-docker exec -i polymarket-neo4j cypher-shell -u neo4j -p polymarket_dev <<EOF
+docker exec -i polymarket-neo4j cypher-shell -u neo4j -p "$NEO4J_PASSWORD" <<EOF
 MATCH (n) DETACH DELETE n;
 
 CREATE (b:User {id: "$BUYER_UUID", name: "Alex Buyer"})
@@ -144,16 +162,18 @@ EOF
 
 # ── 8. SurrealDB: Social/Feed Database ───────────────────────
 echo "🗄️  Seeding Social/Feed Database (SurrealDB)..."
-# We can use curl to interact with SurrealDB HTTP REST API endpoint
-curl -X POST -u polymarket:polymarket_dev \
-  -H "NS: polymarket" \
-  -H "DB: feed" \
-  -H "Accept: application/json" \
-  -d "REMOVE TABLE follow; REMOVE TABLE favorite;
-      CREATE user:buyer SET name = 'Alex Buyer', email = 'buyer@polymarket.com';
-      CREATE user:seller SET name = 'John Seller', email = 'seller@polymarket.com';
-      RELATE user:buyer->follow->user:seller SET created_at = time::now();" \
-  http://localhost:8002/sql > /dev/null || true
+docker exec -i polymarket-surrealdb surreal sql \
+  --conn http://127.0.0.1:8000 \
+  --user polymarket \
+  --pass "$SURREALDB_PASSWORD" \
+  --ns polymarket \
+  --db feed <<EOF
+REMOVE TABLE follow;
+REMOVE TABLE favorite;
+CREATE user:buyer SET name = 'Alex Buyer', email = 'buyer@polymarket.com';
+CREATE user:seller SET name = 'John Seller', email = 'seller@polymarket.com';
+RELATE user:buyer->follow->user:seller SET created_at = time::now();
+EOF
 
 echo "🎉 PolyMarket Multi-Database Seeding complete!"
 exit 0

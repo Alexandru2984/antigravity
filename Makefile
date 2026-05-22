@@ -1,7 +1,8 @@
 # PolyMarket Makefile
 # Architecture B — Max Polyglot | 18 services | 16 languages
-.PHONY: help up down logs build test lint seed db-init kafka-init \
-        test-e2e perf-lib clean pull ps status
+.PHONY: help up up-obs up-all down down-all logs build dev frontend test lint \
+        seed db-init kafka-init minio-init init quickstart test-e2e perf-lib \
+        clean pull ps status
 
 DOCKER_COMPOSE := docker compose
 INFRA          := -f infra/docker-compose.yml
@@ -139,11 +140,11 @@ quickstart: up-all init seed ## Full environment setup (up + init + seed)
 	@echo ""
 	@echo "🎉 PolyMarket is ready!"
 	@echo ""
-	@echo "  Frontend:      http://localhost:3000"
-	@echo "  API Gateway:   http://localhost:4000"
-	@echo "  Kafka UI:      http://localhost:8080"
-	@echo "  Grafana:       http://localhost:3001  (admin/polymarket)"
-	@echo "  Jaeger:        http://localhost:16686"
-	@echo "  MinIO:         http://localhost:9001  (minio/miniominio)"
-	@echo "  OpenSearch:    http://localhost:5601"
+	@echo "  Public HTTP:   http://localhost"
+	@echo "  Public HTTPS:  https://localhost"
+	@echo "  Edge health:   http://localhost/health"
+	@echo "  API health:    http://localhost/api/health"
+	@echo ""
+	@echo "  Internal services, databases, and observability UIs are not published"
+	@echo "  on host ports in the canonical Compose stack."
 	@echo ""

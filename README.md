@@ -133,36 +133,22 @@ cd frontend && npm install && npm run dev
 
 ## 🌍 Service Endpoints (Local Dev)
 
-| Service | Port | URL | Notes |
-|---|---|---|---|
-| **Frontend** | 3000 | http://localhost:3000 | Next.js |
-| **API Gateway** | 4001 | http://localhost:4001 | Main entry point (NestJS) |
-| **Auth** | 4000 | http://localhost:4000 | JWT RS256 (Elixir) |
-| **Listings** | 4002 | http://localhost:4002 | CRUD (Rust) |
-| **Search** | 4003 | http://localhost:4003 | Full-text + geo (Java) |
-| **Images** | 4004 | http://localhost:4004 | Upload → MinIO (C++) |
-| **Profile** | 4005 | http://localhost:4005 | User profiles (Kotlin) |
-| **Payments** | 4006 | http://localhost:4006 | Stripe sandbox (C#) |
-| **Notifications** | 4007 | http://localhost:4007 | WebSocket push (Elixir) |
-| **Feed** | 4008 | http://localhost:4008 | Social feed (Go) |
-| **Reviews** | 4009 | http://localhost:4009 | Ratings (PHP) |
-| **Analytics** | 4010 | http://localhost:4010 | OLAP queries (Python) |
-| **Chat** | 4011 | http://localhost:4011 | WebSocket rooms (Elixir) |
-| **ML** | 4012 | http://localhost:4012 | Recommendations (Python) |
-| **Stream Processor** | 4013 | http://localhost:4013 | Kafka → ClickHouse (Scala) |
-| **Config** | 4014 | http://localhost:4014 | Feature flags (F#) |
-| **Contract Validator** | 4015 | http://localhost:4015 | Stateless validation (Haskell) |
-| **Admin Panel** | 4016 | http://localhost:4016 | Back-office (Ruby) |
+The canonical Compose stack publishes only Nginx on the host. Application and
+database ports are internal Docker-network ports and should be reached through
+the API gateway or with `docker compose exec`/one-off debugging commands.
+
+| Surface | URL | Notes |
+|---|---|---|
+| **Public HTTP** | http://localhost | Redirects to HTTPS except health |
+| **Public HTTPS** | https://localhost | Main Nginx entry point |
+| **Nginx Health** | http://localhost/health | Edge health check |
+| **API Health** | http://localhost/api/health | Gateway health through Nginx |
 
 ### Infrastructure UIs
 
-| Tool | URL | Credentials |
-|---|---|---|
-| **Kafka UI** | http://localhost:8080 | — |
-| **Grafana** | http://localhost:3001 | admin / polymarket |
-| **Jaeger** | http://localhost:16686 | — |
-| **MinIO Console** | http://localhost:9001 | minioadmin / minioadmin |
-| **OpenSearch Dashboards** | http://localhost:5601 | — |
+Infrastructure UIs are not published by the canonical application stack. Expose
+them intentionally for local debugging only, or access them through a private
+tunnel/VPN on production hosts.
 
 ---
 

@@ -42,6 +42,7 @@ jobs:
       CHAT_SECRET_KEY_BASE: dummy-chat-secret-key-base-1234567890
       ADMIN_SECRET_KEY_BASE: dummy-admin-secret-key-base-1234567890
       REVIEW_APP_KEY: base64:dummyreviewappkey
+      GRAFANA_ADMIN_PASSWORD: dummy-grafana-password-1234567890
       JWT_PUBLIC_KEY: dummy-public-key
       JWT_PRIVATE_KEY: dummy-private-key
       INTERNAL_SERVICE_TOKEN: dummy-internal-token
@@ -56,3 +57,43 @@ jobs:
 
       - name: Validate canonical compose stack
         run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config >/tmp/compose-config.yml
+
+      - name: Validate observability compose stack
+        run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.obs.yml config >/tmp/obs-compose-config.yml
+
+      - name: Only nginx publishes host ports
+        run: |
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config --format json >/tmp/compose-config.json
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.obs.yml config --format json >/tmp/obs-compose-config.json
+          python3 - <<'PY'
+          import json
+          import sys
+
+          with open('/tmp/compose-config.json', encoding='utf-8') as handle:
+              services = json.load(handle)['services']
+          with open('/tmp/obs-compose-config.json', encoding='utf-8') as handle:
+              obs_services = json.load(handle)['services']
+
+          offenders = {
+              name: service.get('ports')
+              for name, service in services.items()
+              if service.get('ports') and name != 'nginx'
+          }
+          offenders.update({
+              name: service.get('ports')
+              for name, service in obs_services.items()
+              if service.get('ports')
+          })
+          if offenders:
+              print('Only nginx may publish host ports:', offenders)
+              sys.exit(1)
+
+          nginx_ports = {
+              (str(port.get('published')), int(port.get('target')))
+              for port in services.get('nginx', {}).get('ports', [])
+          }
+          expected = {('80', 80), ('443', 443)}
+          if nginx_ports != expected:
+              print(f'nginx must publish only 80/443, got: {nginx_ports}')
+              sys.exit(1)
+          PY
