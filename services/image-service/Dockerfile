@@ -35,9 +35,9 @@ WORKDIR /app
 COPY --from=builder /app/build/image-service .
 
 USER app
-EXPOSE 4024
+EXPOSE 4004
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-    CMD wget -qO- http://localhost:4024/health || exit 1
+    CMD wget -qO- "http://localhost:${HTTP_PORT:-4004}/health" || exit 1
 
 CMD ["./image-service"]
