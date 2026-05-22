@@ -51,8 +51,8 @@ pull: ## Pull latest images
 db-init: ## Run all DB init scripts (schemas, indexes)
 	@echo "🗄️  Initializing databases..."
 	@bash infra/db/wait-for-dbs.sh
-	@docker exec polymarket-postgres psql -U polymarket -f /docker-entrypoint-initdb.d/init.sql 2>/dev/null || true
-	@docker exec polymarket-mongo mongosh polymarket /docker-entrypoint-initdb.d/init.js 2>/dev/null || true
+	@docker exec polymarket-postgres psql -v ON_ERROR_STOP=1 -U polymarket -f /docker-entrypoint-initdb.d/init.sql
+	@docker exec polymarket-mongo mongosh polymarket /docker-entrypoint-initdb.d/init.js
 	@echo "✅ Databases initialized."
 
 kafka-init: ## Create all Kafka topics

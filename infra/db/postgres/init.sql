@@ -4,13 +4,14 @@
 -- ============================================================
 
 -- Auth Service
-CREATE DATABASE polymarket_auth;
+SELECT 'CREATE DATABASE polymarket_auth'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_auth')\gexec
 \c polymarket_auth;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email         VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE users (
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE refresh_tokens (
+CREATE TABLE IF NOT EXISTS refresh_tokens (
     id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash VARCHAR(255) NOT NULL UNIQUE,   -- SHA256 of the opaque token
@@ -29,17 +30,18 @@ CREATE TABLE refresh_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_email         ON users(email);
-CREATE INDEX idx_refresh_token_hash  ON refresh_tokens(token_hash);
-CREATE INDEX idx_refresh_user_id     ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_email         ON users(email);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_hash  ON refresh_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_refresh_user_id     ON refresh_tokens(user_id);
 
 -- Profile Service
-CREATE DATABASE polymarket_profiles;
+SELECT 'CREATE DATABASE polymarket_profiles'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_profiles')\gexec
 \c polymarket_profiles;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
     user_id       UUID PRIMARY KEY,              -- FK to auth.users.id (cross-service)
     username      VARCHAR(100) NOT NULL UNIQUE,
     display_name  VARCHAR(255),
@@ -55,17 +57,23 @@ CREATE TABLE profiles (
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_profiles_username ON profiles(username);
+CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
 
 -- Payment Service
-CREATE DATABASE polymarket_payments;
+SELECT 'CREATE DATABASE polymarket_payments'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_payments')\gexec
 \c polymarket_payments;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TYPE payment_status AS ENUM ('pending', 'processing', 'succeeded', 'failed', 'refunded');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status') THEN
+        CREATE TYPE payment_status AS ENUM ('pending', 'processing', 'succeeded', 'failed', 'refunded');
+    END IF;
+END $$;
 
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         UUID         NOT NULL,
     listing_id      VARCHAR(100) NOT NULL,        -- MongoDB ObjectId as string
@@ -79,18 +87,19 @@ CREATE TABLE transactions (
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tx_user_id      ON transactions(user_id);
-CREATE INDEX idx_tx_listing_id   ON transactions(listing_id);
-CREATE INDEX idx_tx_stripe_pi_id ON transactions(stripe_pi_id);
-CREATE INDEX idx_tx_status       ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_tx_user_id      ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_tx_listing_id   ON transactions(listing_id);
+CREATE INDEX IF NOT EXISTS idx_tx_stripe_pi_id ON transactions(stripe_pi_id);
+CREATE INDEX IF NOT EXISTS idx_tx_status       ON transactions(status);
 
 -- Chat Service
-CREATE DATABASE polymarket_chat;
+SELECT 'CREATE DATABASE polymarket_chat'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_chat')\gexec
 \c polymarket_chat;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     listing_id   VARCHAR(100) NOT NULL,
     buyer_id     UUID         NOT NULL,
@@ -100,7 +109,7 @@ CREATE TABLE conversations (
     UNIQUE(listing_id, buyer_id, seller_id)
 );
 
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID        NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     sender_id       UUID        NOT NULL,
@@ -109,15 +118,16 @@ CREATE TABLE messages (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_messages_conv_id   ON messages(conversation_id);
-CREATE INDEX idx_messages_sender_id ON messages(sender_id);
-CREATE INDEX idx_conv_buyer_seller  ON conversations(buyer_id, seller_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conv_id   ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_conv_buyer_seller  ON conversations(buyer_id, seller_id);
 
 -- Config Service (F#)
-CREATE DATABASE polymarket_config;
+SELECT 'CREATE DATABASE polymarket_config'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_config')\gexec
 \c polymarket_config;
 
-CREATE TABLE feature_flags (
+CREATE TABLE IF NOT EXISTS feature_flags (
     key         VARCHAR(100) PRIMARY KEY,
     value       JSONB        NOT NULL,
     description TEXT,
@@ -127,7 +137,7 @@ CREATE TABLE feature_flags (
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE app_config (
+CREATE TABLE IF NOT EXISTS app_config (
     key         VARCHAR(200) PRIMARY KEY,
     value       TEXT         NOT NULL,
     secret      BOOLEAN      NOT NULL DEFAULT false,
@@ -136,7 +146,8 @@ CREATE TABLE app_config (
 );
 
 -- Admin Panel (Ruby/Rails)
-CREATE DATABASE polymarket_admin;
+SELECT 'CREATE DATABASE polymarket_admin'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_admin')\gexec
 -- Rails will manage its own schema via migrations
 
 -- Restore default connection

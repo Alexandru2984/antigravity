@@ -59,6 +59,28 @@ jobs:
       - name: Root compose must stay removed
         run: test ! -e docker-compose.yml
 
+      - name: DB init must fail fast
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          makefile = Path('Makefile').read_text(encoding='utf-8')
+          match = re.search(r'^db-init:.*?(?=^\S)', makefile, re.M | re.S)
+          if not match:
+              print('db-init target not found')
+              sys.exit(1)
+
+          target = match.group(0)
+          if 'ON_ERROR_STOP=1' not in target:
+              print('db-init must run psql with ON_ERROR_STOP=1')
+              sys.exit(1)
+          if '2>/dev/null' in target or '|| true' in target:
+              print('db-init must not hide init script failures')
+              sys.exit(1)
+          PY
+
       - name: Validate canonical compose stack
         run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config >/tmp/compose-config.yml
 

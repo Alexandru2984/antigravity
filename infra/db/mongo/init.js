@@ -5,7 +5,7 @@
 db = db.getSiblingDB('polymarket');
 
 // ── Listings Collection ─────────────────────────────────────
-db.createCollection('listings', {
+const listingValidator = {
   validator: {
     $jsonSchema: {
       bsonType: 'object',
@@ -56,7 +56,18 @@ db.createCollection('listings', {
       }
     }
   }
-});
+};
+
+if (db.getCollectionNames().includes('listings')) {
+  db.runCommand({
+    collMod: 'listings',
+    validator: listingValidator.validator,
+    validationLevel: 'strict',
+    validationAction: 'error'
+  });
+} else {
+  db.createCollection('listings', listingValidator);
+}
 
 // Indexes for listing queries
 db.listings.createIndex({ seller_id: 1 });
@@ -75,11 +86,13 @@ db.listings.createIndex(
 db.listings.createIndex({ expires_at: 1 }, { expireAfterSeconds: 0 });
 
 // ── Categories Collection ────────────────────────────────────
-db.createCollection('categories');
+if (!db.getCollectionNames().includes('categories')) {
+  db.createCollection('categories');
+}
 db.categories.createIndex({ slug: 1 }, { unique: true });
 
 // Seed base categories
-db.categories.insertMany([
+[
   { slug: 'auto',        name: 'Auto, Moto și Bărci',    icon: '🚗', subcategories: ['autoturisme', 'motociclete', 'camioane', 'barci'] },
   { slug: 'imobiliare',  name: 'Imobiliare',              icon: '🏠', subcategories: ['apartamente', 'case', 'terenuri', 'spatii-comerciale'] },
   { slug: 'electronice', name: 'Electronice și Electrocasnice', icon: '💻', subcategories: ['telefoane', 'laptopuri', 'tv', 'electrocasnice'] },
@@ -89,6 +102,12 @@ db.categories.insertMany([
   { slug: 'animale',     name: 'Animale de Companie',     icon: '🐾',  subcategories: ['caini', 'pisici', 'pasari', 'accesorii'] },
   { slug: 'servicii',    name: 'Servicii',                icon: '🔧',  subcategories: ['constructii', 'transport', 'auto-service', 'curatenie'] },
   { slug: 'locuri-munca', name: 'Locuri de Muncă',        icon: '💼',  subcategories: ['it', 'vanzari', 'constructii', 'administrativ'] },
-]);
+].forEach((category) => {
+  db.categories.updateOne(
+    { slug: category.slug },
+    { $set: category },
+    { upsert: true }
+  );
+});
 
 print('PolyMarket MongoDB init complete.');
