@@ -17,9 +17,31 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.net.URI
 import java.security.KeyFactory
 import java.security.interfaces.RSAPublicKey
 import java.util.Base64
+
+fun configuredCorsOrigins(): List<URI> {
+    val configured = System.getenv("CORS_ORIGINS")
+        ?: System.getenv("FRONTEND_URL")
+        ?: "http://localhost:3000"
+
+    return configured
+        .split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .map { origin ->
+            val uri = URI(origin)
+            require(uri.scheme == "http" || uri.scheme == "https") {
+                "CORS origin must use http or https: $origin"
+            }
+            require(!uri.host.isNullOrBlank()) {
+                "CORS origin must include a host: $origin"
+            }
+            uri
+        }
+}
 
 fun main() {
     embeddedServer(Netty, port = System.getenv("PORT")?.toInt() ?: 4007) {
@@ -28,10 +50,15 @@ fun main() {
         }
 
         install(CORS) {
-            anyHost()
+            configuredCorsOrigins().forEach { origin ->
+                val host = if (origin.port == -1) origin.host else "${origin.host}:${origin.port}"
+                allowHost(host, schemes = listOf(origin.scheme))
+            }
             allowHeader(HttpHeaders.Authorization)
             allowHeader(HttpHeaders.ContentType)
+            allowHeader("X-Request-ID")
             allowMethod(HttpMethod.Options)
+            allowMethod(HttpMethod.Get)
             allowMethod(HttpMethod.Put)
             allowMethod(HttpMethod.Delete)
         }

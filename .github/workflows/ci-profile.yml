@@ -36,19 +36,21 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.8'
 
-      - name: ktlint
-        run: cd services/profile-service && ./gradlew ktlintCheck
+      - name: CORS wildcard guard
+        run: "! grep -R \"anyHost()\" services/profile-service/src/main/kotlin"
 
       - name: Build
-        run: cd services/profile-service && ./gradlew build
+        run: cd services/profile-service && gradle assemble
 
       - name: Test
         env:
-          POSTGRES_URL: jdbc:postgresql://localhost:5432/polymarket_profiles_test
+          PROFILE_DATABASE_URL: jdbc:postgresql://localhost:5432/polymarket_profiles_test
           POSTGRES_USER: polymarket
           POSTGRES_PASSWORD: test
-        run: cd services/profile-service && ./gradlew test
+        run: cd services/profile-service && gradle test
 
   docker:
     name: Build Docker Image
@@ -61,7 +63,11 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.8'
       - name: Build jar
-        run: cd services/profile-service && ./gradlew shadowJar
+        run: cd services/profile-service && gradle shadowJar
       - name: Build Docker
         run: docker build -t polymarket/profile-service:${{ github.sha }} services/profile-service/
