@@ -170,7 +170,7 @@ services:
     expose:
       - "4003"
     environment:
-      SERVER_PORT: 4003
+      PORT: 4003
       SPRING_PROFILES_ACTIVE: dev
       OPENSEARCH_URI: https://opensearch:9200
       OPENSEARCH_USERNAME: admin
@@ -185,6 +185,11 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4003}/api/search/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Image Service (C++ / Drogon) ────────────────────────────
   image-service:

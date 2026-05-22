@@ -221,6 +221,13 @@ jobs:
                   'api-gateway must wait for auth-service service_healthy'
               )
 
+          search_service = services.get('search-service', {})
+          search_env = search_service.get('environment', {})
+          if str(search_env.get('PORT')) != '4003':
+              dependency_errors.append('search-service must listen on PORT 4003')
+          if 'healthcheck' not in search_service:
+              dependency_errors.append('search-service must define a healthcheck')
+
           if (
               missing_no_new_privileges
               or missing_mem_limit
