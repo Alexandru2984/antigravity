@@ -6,7 +6,7 @@ COPY . .
 RUN mkdir -p /app/bin && stack build --copy-bins --local-bin-path /app/bin
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y libgmp10 netcat-openbsd && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libgmp10 && rm -rf /var/lib/apt/lists/*
 RUN useradd -r -s /bin/false app
 WORKDIR /app
 COPY --from=builder /app/bin/contract-validator /app/contract-validator
