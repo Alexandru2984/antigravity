@@ -116,6 +116,8 @@ jobs:
           missing_no_new_privileges = []
           missing_mem_limit = []
           missing_cap_drop = []
+          missing_read_only = []
+          missing_tmpfs = []
           app_exceptions = {
               'nginx',
               'postgres',
@@ -139,6 +141,35 @@ jobs:
               'loki',
               'promtail',
           }
+          read_only_services = {
+              'api-gateway',
+              'listing-service',
+              'search-service',
+              'image-service',
+              'payment-service',
+              'profile-service',
+              'feed-service',
+              'analytics-service',
+              'ml-service',
+              'config-service',
+              'contract-validator',
+              'frontend',
+              'brainfuck-service',
+              'assembly-service',
+              'cobol-service',
+              'clojure-service',
+              'julia-service',
+              'prolog-service',
+              'elixir-service',
+              'scala-service',
+              'lua-service',
+              'r-service',
+              'php-service',
+              'zig-service',
+              'nim-service',
+              'swift-service',
+              'haskell-service',
+          }
 
           for name, service in services.items():
               if 'no-new-privileges:true' not in service.get('security_opt', []):
@@ -147,10 +178,24 @@ jobs:
                   missing_mem_limit.append(name)
               if name not in app_exceptions and 'ALL' not in service.get('cap_drop', []):
                   missing_cap_drop.append(name)
+              if name in read_only_services:
+                  tmpfs = service.get('tmpfs', [])
+                  if service.get('read_only') is not True:
+                      missing_read_only.append(name)
+                  if not any(str(entry).startswith('/tmp:') for entry in tmpfs):
+                      missing_tmpfs.append(name)
 
-          if missing_no_new_privileges or missing_mem_limit or missing_cap_drop:
+          if (
+              missing_no_new_privileges
+              or missing_mem_limit
+              or missing_cap_drop
+              or missing_read_only
+              or missing_tmpfs
+          ):
               print('missing no-new-privileges:', missing_no_new_privileges)
               print('missing mem_limit:', missing_mem_limit)
               print('missing cap_drop ALL:', missing_cap_drop)
+              print('missing read_only:', missing_read_only)
+              print('missing /tmp tmpfs:', missing_tmpfs)
               sys.exit(1)
           PY
