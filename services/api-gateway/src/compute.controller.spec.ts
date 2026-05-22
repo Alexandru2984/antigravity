@@ -16,6 +16,7 @@ describe('ComputeController', () => {
     process.env.PROLOG_SERVICE_URL = 'http://prolog.test';
     process.env.CLOJURE_SERVICE_URL = 'http://clojure.test';
     process.env.NIM_SERVICE_URL = 'http://nim.test';
+    process.env.LUA_SERVICE_URL = 'http://lua.test';
     process.env.JULIA_SERVICE_URL = 'http://julia.test';
     process.env.R_SERVICE_URL = 'http://r.test';
     process.env.ML_SERVICE_URL = 'http://ml.test';
@@ -34,6 +35,7 @@ describe('ComputeController', () => {
     delete process.env.PROLOG_SERVICE_URL;
     delete process.env.CLOJURE_SERVICE_URL;
     delete process.env.NIM_SERVICE_URL;
+    delete process.env.LUA_SERVICE_URL;
     delete process.env.JULIA_SERVICE_URL;
     delete process.env.R_SERVICE_URL;
     delete process.env.ML_SERVICE_URL;
@@ -101,6 +103,21 @@ describe('ComputeController', () => {
             search_tokens: ['macbook', 'pro', 'electronics'],
             description_quality: 'missing',
             description_length: 0,
+          },
+        });
+      }
+      if (url === 'http://lua.test/ui-rules') {
+        return Promise.resolve({
+          data: {
+            service: 'lua-customizer',
+            status: 'ok',
+            card_theme: 'indigo',
+            trust_badge: 'premium',
+            price_band: 'premium',
+            title_hint: 'MacBook Pro M3',
+            layout_density: 'compact',
+            visible_components: ['price', 'seller_cta', 'trust_badge'],
+            sort_boost: 70,
           },
         });
       }
@@ -207,6 +224,18 @@ describe('ComputeController', () => {
       { timeout: 1500 },
     ]);
     expect(mockedAxios.post.mock.calls).toContainEqual([
+      'http://lua.test/ui-rules',
+      {
+        title: 'MacBook Pro M3',
+        category: 'electronics',
+        price: 1200,
+        risk_score: 0,
+        quality_score: 70,
+        image_count: 0,
+      },
+      { timeout: 1500 },
+    ]);
+    expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://ml.test/recommend',
       {
         title: 'MacBook Pro M3',
@@ -225,6 +254,7 @@ describe('ComputeController', () => {
     const listingPayload = listingCall?.[1] as Record<string, any>;
     expect(listingPayload.title).toBe('Macbook Pro M3');
     expect(listingPayload.attributes.source).toBe('test');
+    expect(listingPayload.attributes.ui_hints.trust_badge).toBe('premium');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
     ).toBe(165.2271);
@@ -244,6 +274,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Nim-Optimizer'].data
         .slug,
     ).toBe('macbook-pro-m3');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Lua-Customizer'].data
+        .card_theme,
+    ).toBe('indigo');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
         .forecast_price_45_days,

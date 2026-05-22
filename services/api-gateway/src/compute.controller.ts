@@ -24,6 +24,7 @@ const SERVICE_URL_DEFAULTS = {
   prolog: { env: 'PROLOG_SERVICE_URL', url: 'http://prolog-service:4055' },
   clojure: { env: 'CLOJURE_SERVICE_URL', url: 'http://clojure-service:4023' },
   nim: { env: 'NIM_SERVICE_URL', url: 'http://nim-service:4064' },
+  lua: { env: 'LUA_SERVICE_URL', url: 'http://lua-service:4059' },
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
   ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
@@ -318,7 +319,33 @@ export class ComputeController {
     }
     reports.push(nimReport);
 
-    // Step 5: Julia Statistics Analysis
+    // Step 5: Lua dynamic UI rendering hints
+    const luaReport = {
+      service: 'Lua-Customizer',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.post(
+        `${this.serviceUrl('lua')}/ui-rules`,
+        {
+          title: listing.title,
+          category: listing.category,
+          price: listing.price,
+          risk_score: prologReport.data?.risk_score ?? 0,
+          quality_score: clojureReport.data?.quality_score ?? 100,
+          image_count: body.imageIds?.length ?? 0,
+        },
+        { timeout: 1500 },
+      );
+      luaReport.status = 'online';
+      luaReport.data = res.data;
+    } catch (e) {
+      luaReport.data = { error: e.message };
+    }
+    reports.push(luaReport);
+
+    // Step 6: Julia Statistics Analysis
     const juliaReport = {
       service: 'Julia-Stats',
       status: 'offline',
@@ -343,7 +370,7 @@ export class ComputeController {
     }
     reports.push(juliaReport);
 
-    // Step 6: R Statistical Linear Regression & Forecast
+    // Step 7: R Statistical Linear Regression & Forecast
     const rReport = {
       service: 'R-Regression',
       status: 'offline',
@@ -361,7 +388,7 @@ export class ComputeController {
     }
     reports.push(rReport);
 
-    // Step 7: Python ML Recommendation Engine
+    // Step 8: Python ML Recommendation Engine
     const pythonReport = {
       service: 'Python-ML',
       status: 'offline',
@@ -387,7 +414,7 @@ export class ComputeController {
     }
     reports.push(pythonReport);
 
-    // Step 8: COBOL Mainframe Billing Posting
+    // Step 9: COBOL Mainframe Billing Posting
     const cobolReport = {
       service: 'COBOL-Ledger',
       status: 'offline',
@@ -408,7 +435,7 @@ export class ComputeController {
     }
     reports.push(cobolReport);
 
-    // Step 9: Assembly hyper-optimized mathematical payload validation
+    // Step 10: Assembly hyper-optimized mathematical payload validation
     const assemblyReport = {
       service: 'Assembly-Fibo',
       status: 'offline',
@@ -432,7 +459,7 @@ export class ComputeController {
     }
     reports.push(assemblyReport);
 
-    // Step 10: Zig High-performance cryptographic checksumming
+    // Step 11: Zig High-performance cryptographic checksumming
     const zigReport = {
       service: 'Zig-Crypto',
       status: 'offline',
@@ -449,7 +476,7 @@ export class ComputeController {
     }
     reports.push(zigReport);
 
-    // Step 11: Brainfuck esoteric verification signature
+    // Step 12: Brainfuck esoteric verification signature
     const bfReport = {
       service: 'Brainfuck-Crypt',
       status: 'offline',
@@ -470,7 +497,7 @@ export class ComputeController {
     }
     reports.push(bfReport);
 
-    // Step 12: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    // Step 13: Call Rust Listing service to persist in MongoDB and publish to Kafka
     const rustReport = {
       service: 'Rust-Persist-Core',
       status: 'offline',
@@ -566,8 +593,11 @@ export class ComputeController {
     attributes: Record<string, unknown> | undefined,
     reports: any[],
   ): Record<string, unknown> {
+    const uiHints = this.reportData(reports, 'Lua-Customizer');
+
     return {
       ...(attributes || {}),
+      ...(uiHints ? { ui_hints: uiHints } : {}),
       polyglot_mesh: {
         version: 1,
         evaluated_at: new Date().toISOString(),
@@ -583,6 +613,21 @@ export class ComputeController {
         }, {}),
       },
     };
+  }
+
+  private reportData(
+    reports: any[],
+    service: string,
+  ): Record<string, unknown> | undefined {
+    const report = reports.find(
+      (candidate) =>
+        candidate.service === service && candidate.status === 'online',
+    );
+    if (!report || !report.data || typeof report.data !== 'object') {
+      return undefined;
+    }
+
+    return report.data as Record<string, unknown>;
   }
 
   private acquireTransactionSlot(): () => void {
