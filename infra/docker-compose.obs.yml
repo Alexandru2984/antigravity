@@ -13,13 +13,19 @@ volumes:
   grafana_data:
   loki_data:
 
+x-stateful-security: &stateful_security
+  security_opt:
+    - no-new-privileges:true
+
 services:
 
   # ── OpenTelemetry Collector ─────────────────────────────────
   otel-collector:
+    <<: *stateful_security
     image: otel/opentelemetry-collector-contrib:0.99.0
     container_name: polymarket-otel-collector
     restart: unless-stopped
+    mem_limit: 256m
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml:ro
@@ -37,9 +43,11 @@ services:
   # ── Jaeger ──────────────────────────────────────────────────
   # Distributed tracing — follow a request across all services
   jaeger:
+    <<: *stateful_security
     image: jaegertracing/all-in-one:1.57
     container_name: polymarket-jaeger
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     expose:
@@ -51,9 +59,11 @@ services:
   # ── Prometheus ──────────────────────────────────────────────
   # Metrics scraping from all services (/metrics endpoints)
   prometheus:
+    <<: *stateful_security
     image: prom/prometheus:v2.52.0
     container_name: polymarket-prometheus
     restart: unless-stopped
+    mem_limit: 512m
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -71,9 +81,11 @@ services:
   # ── Grafana ─────────────────────────────────────────────────
   # Dashboards for metrics (Prometheus) + logs (Loki) + traces (Jaeger)
   grafana:
+    <<: *stateful_security
     image: grafana/grafana:10.4.2
     container_name: polymarket-grafana
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
@@ -95,9 +107,11 @@ services:
   # ── Loki ────────────────────────────────────────────────────
   # Log aggregation (structured JSON logs from all services)
   loki:
+    <<: *stateful_security
     image: grafana/loki:2.9.8
     container_name: polymarket-loki
     restart: unless-stopped
+    mem_limit: 512m
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - loki_data:/loki
@@ -110,9 +124,11 @@ services:
   # ── Promtail ────────────────────────────────────────────────
   # Scrapes Docker container logs → ships to Loki
   promtail:
+    <<: *stateful_security
     image: grafana/promtail:2.9.8
     container_name: polymarket-promtail
     restart: unless-stopped
+    mem_limit: 128m
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log:/var/log:ro

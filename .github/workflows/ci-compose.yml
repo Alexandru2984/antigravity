@@ -97,3 +97,60 @@ jobs:
               print(f'nginx must publish only 80/443, got: {nginx_ports}')
               sys.exit(1)
           PY
+
+      - name: Compose services must have hardening and memory limits
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+
+          configs = []
+          for path in ['/tmp/compose-config.json', '/tmp/obs-compose-config.json']:
+              with open(path, encoding='utf-8') as handle:
+                  configs.append(json.load(handle)['services'])
+
+          services = {}
+          for config in configs:
+              services.update(config)
+
+          missing_no_new_privileges = []
+          missing_mem_limit = []
+          missing_cap_drop = []
+          app_exceptions = {
+              'nginx',
+              'postgres',
+              'mongo',
+              'mysql',
+              'redis',
+              'clickhouse',
+              'opensearch',
+              'opensearch-dashboards',
+              'timescale',
+              'neo4j',
+              'surrealdb',
+              'zookeeper',
+              'kafka',
+              'kafka-ui',
+              'minio',
+              'otel-collector',
+              'jaeger',
+              'prometheus',
+              'grafana',
+              'loki',
+              'promtail',
+          }
+
+          for name, service in services.items():
+              if 'no-new-privileges:true' not in service.get('security_opt', []):
+                  missing_no_new_privileges.append(name)
+              if 'mem_limit' not in service:
+                  missing_mem_limit.append(name)
+              if name not in app_exceptions and 'ALL' not in service.get('cap_drop', []):
+                  missing_cap_drop.append(name)
+
+          if missing_no_new_privileges or missing_mem_limit or missing_cap_drop:
+              print('missing no-new-privileges:', missing_no_new_privileges)
+              print('missing mem_limit:', missing_mem_limit)
+              print('missing cap_drop ALL:', missing_cap_drop)
+              sys.exit(1)
+          PY

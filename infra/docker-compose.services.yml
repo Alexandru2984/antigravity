@@ -9,15 +9,26 @@ networks:
   polymarket:
     external: true
 
+x-stateful-security: &stateful_security
+  security_opt:
+    - no-new-privileges:true
+
+x-app-security: &app_security
+  <<: *stateful_security
+  cap_drop:
+    - ALL
+
 services:
 
   # ── API Gateway (Node.js / NestJS) ─────────────────────────
   api-gateway:
+    <<: *app_security
     build:
       context: ../services/api-gateway
       dockerfile: Dockerfile
     container_name: polymarket-api-gateway
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4000"
     environment:
@@ -71,11 +82,13 @@ services:
 
   # ── Auth Service (Elixir / Phoenix) ─────────────────────────
   auth-service:
+    <<: *app_security
     build:
       context: ../services/auth-service
       dockerfile: Dockerfile
     container_name: polymarket-auth
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4001"
     environment:
@@ -101,11 +114,13 @@ services:
 
   # ── Listing Service (Rust / Axum) ───────────────────────────
   listing-service:
+    <<: *app_security
     build:
       context: ../services/listing-service
       dockerfile: Dockerfile
     container_name: polymarket-listing
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4002"
     environment:
@@ -132,11 +147,13 @@ services:
 
   # ── Search Service (Java / Spring Boot) ─────────────────────
   search-service:
+    <<: *app_security
     build:
       context: ../services/search-service
       dockerfile: Dockerfile
     container_name: polymarket-search
     restart: unless-stopped
+    mem_limit: 700m
     expose:
       - "4003"
     environment:
@@ -158,11 +175,13 @@ services:
 
   # ── Image Service (C++ / Drogon) ────────────────────────────
   image-service:
+    <<: *app_security
     build:
       context: ../services/image-service
       dockerfile: Dockerfile
     container_name: polymarket-image
     restart: unless-stopped
+    mem_limit: 400m
     expose:
       - "4004"
     environment:
@@ -184,11 +203,13 @@ services:
 
   # ── Notification Service (Elixir / Phoenix Channels) ────────
   notification-service:
+    <<: *app_security
     build:
       context: ../services/notification-service
       dockerfile: Dockerfile
     container_name: polymarket-notification
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4005"
     environment:
@@ -207,11 +228,13 @@ services:
 
   # ── Payment Service (C# / ASP.NET Core) ─────────────────────
   payment-service:
+    <<: *app_security
     build:
       context: ../services/payment-service
       dockerfile: Dockerfile
     container_name: polymarket-payment
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4006"
     environment:
@@ -232,11 +255,13 @@ services:
 
   # ── Profile Service (Kotlin / Ktor) ─────────────────────────
   profile-service:
+    <<: *app_security
     build:
       context: ../services/profile-service
       dockerfile: Dockerfile
     container_name: polymarket-profile
     restart: unless-stopped
+    mem_limit: 600m
     expose:
       - "4007"
     environment:
@@ -255,11 +280,13 @@ services:
 
   # ── Feed Service (Go / chi) ──────────────────────────────────
   feed-service:
+    <<: *app_security
     build:
       context: ../services/feed-service
       dockerfile: Dockerfile
     container_name: polymarket-feed
     restart: unless-stopped
+    mem_limit: 200m
     expose:
       - "4008"
     environment:
@@ -283,11 +310,13 @@ services:
 
   # ── Review Service (PHP / Laravel) ──────────────────────────
   review-service:
+    <<: *app_security
     build:
       context: ../services/review-service
       dockerfile: Dockerfile
     container_name: polymarket-review
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4009"
     environment:
@@ -310,11 +339,13 @@ services:
 
   # ── Analytics Service (Python / FastAPI) ────────────────────
   analytics-service:
+    <<: *app_security
     build:
       context: ../services/analytics-service
       dockerfile: Dockerfile
     container_name: polymarket-analytics
     restart: unless-stopped
+    mem_limit: 300m
     expose:
       - "4010"
     environment:
@@ -335,11 +366,13 @@ services:
 
   # ── Chat Service (Elixir / Phoenix) ─────────────────────────
   chat-service:
+    <<: *app_security
     build:
       context: ../services/chat-service
       dockerfile: Dockerfile
     container_name: polymarket-chat
     restart: unless-stopped
+    mem_limit: 400m
     expose:
       - "4011"
     environment:
@@ -361,11 +394,13 @@ services:
 
   # ── ML Service (Python / FastAPI) ───────────────────────────
   ml-service:
+    <<: *app_security
     build:
       context: ../services/ml-service
       dockerfile: Dockerfile
     container_name: polymarket-ml
     restart: unless-stopped
+    mem_limit: 600m
     expose:
       - "4012"
     environment:
@@ -384,11 +419,13 @@ services:
 
   # ── Stream Processor (Scala / Akka Streams) ─────────────────
   stream-processor:
+    <<: *app_security
     build:
       context: ../services/stream-processor
       dockerfile: Dockerfile
     container_name: polymarket-stream
     restart: unless-stopped
+    mem_limit: 600m
     expose:
       - "4013"
     environment:
@@ -411,11 +448,13 @@ services:
 
   # ── Config Service (F# / Giraffe) ───────────────────────────
   config-service:
+    <<: *app_security
     build:
       context: ../services/config-service
       dockerfile: Dockerfile
     container_name: polymarket-config
     restart: unless-stopped
+    mem_limit: 250m
     expose:
       - "4014"
     environment:
@@ -430,11 +469,13 @@ services:
 
   # ── Contract Validator (Haskell / Servant) ──────────────────
   contract-validator:
+    <<: *app_security
     build:
       context: ../services/contract-validator
       dockerfile: Dockerfile
     container_name: polymarket-contract
     restart: unless-stopped
+    mem_limit: 500m
     expose:
       - "4035"
     environment:
@@ -448,11 +489,13 @@ services:
 
   # ── Admin Panel (Ruby / Rails) ───────────────────────────────
   admin-panel:
+    <<: *app_security
     build:
       context: ../services/admin-panel
       dockerfile: Dockerfile
     container_name: polymarket-admin
     restart: unless-stopped
+    mem_limit: 500m
     expose:
       - "4016"
     environment:
@@ -469,11 +512,13 @@ services:
 
   # ── Frontend (Next.js) ───────────────────────────────────────
   frontend:
+    <<: *app_security
     build:
       context: ../frontend
       dockerfile: Dockerfile
     container_name: polymarket-frontend
     restart: unless-stopped
+    mem_limit: 400m
     expose:
       - "3000"
     environment:
@@ -489,9 +534,11 @@ services:
 
   # ── Public Edge (Nginx) ─────────────────────────────────────
   nginx:
+    <<: *stateful_security
     image: nginx:1.27-alpine
     container_name: polymarket-nginx
     restart: unless-stopped
+    mem_limit: 100m
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
       - "${NGINX_HTTPS_PORT:-443}:443"
@@ -513,136 +560,166 @@ services:
 
   # ── Polyglot Mesh Demo Workers ──────────────────────────────
   brainfuck-service:
+    <<: *app_security
     build:
       context: ../services/brainfuck-service
       dockerfile: Dockerfile
     container_name: polymarket-brainfuck
     restart: unless-stopped
+    mem_limit: 64m
     networks:
       - polymarket
 
   assembly-service:
+    <<: *app_security
     build:
       context: ../services/assembly-service
       dockerfile: Dockerfile
     container_name: polymarket-assembly
     restart: unless-stopped
+    mem_limit: 128m
     networks:
       - polymarket
 
   cobol-service:
+    <<: *app_security
     build:
       context: ../services/cobol-service
       dockerfile: Dockerfile
     container_name: polymarket-cobol
     restart: unless-stopped
+    mem_limit: 64m
     networks:
       - polymarket
 
   clojure-service:
+    <<: *app_security
     build:
       context: ../services/clojure-service
       dockerfile: Dockerfile
     container_name: polymarket-clojure
     restart: unless-stopped
+    mem_limit: 400m
     networks:
       - polymarket
 
   julia-service:
+    <<: *app_security
     build:
       context: ../services/julia-service
       dockerfile: Dockerfile
     container_name: polymarket-julia
     restart: unless-stopped
+    mem_limit: 400m
     networks:
       - polymarket
 
   prolog-service:
+    <<: *app_security
     build:
       context: ../services/prolog-service
       dockerfile: Dockerfile
     container_name: polymarket-prolog
     restart: unless-stopped
+    mem_limit: 128m
     networks:
       - polymarket
 
   elixir-service:
+    <<: *app_security
     build:
       context: ../services/elixir-service
       dockerfile: Dockerfile
     container_name: polymarket-elixir-mesh
     restart: unless-stopped
+    mem_limit: 200m
     networks:
       - polymarket
 
   scala-service:
+    <<: *app_security
     build:
       context: ../services/scala-service
       dockerfile: Dockerfile
     container_name: polymarket-scala-mesh
     restart: unless-stopped
+    mem_limit: 512m
     networks:
       - polymarket
 
   lua-service:
+    <<: *app_security
     build:
       context: ../services/lua-service
       dockerfile: Dockerfile
     container_name: polymarket-lua
     restart: unless-stopped
+    mem_limit: 64m
     networks:
       - polymarket
 
   r-service:
+    <<: *app_security
     build:
       context: ../services/r-service
       dockerfile: Dockerfile
     container_name: polymarket-r
     restart: unless-stopped
+    mem_limit: 512m
     networks:
       - polymarket
 
   php-service:
+    <<: *app_security
     build:
       context: ../services/php-service
       dockerfile: Dockerfile
     container_name: polymarket-php-mesh
     restart: unless-stopped
+    mem_limit: 128m
     networks:
       - polymarket
 
   zig-service:
+    <<: *app_security
     build:
       context: ../services/zig-service
       dockerfile: Dockerfile
     container_name: polymarket-zig
     restart: unless-stopped
+    mem_limit: 64m
     networks:
       - polymarket
 
   nim-service:
+    <<: *app_security
     build:
       context: ../services/nim-service
       dockerfile: Dockerfile
     container_name: polymarket-nim
     restart: unless-stopped
+    mem_limit: 128m
     networks:
       - polymarket
 
   swift-service:
+    <<: *app_security
     build:
       context: ../services/swift-service
       dockerfile: Dockerfile
     container_name: polymarket-swift
     restart: unless-stopped
+    mem_limit: 512m
     networks:
       - polymarket
 
   haskell-service:
+    <<: *app_security
     build:
       context: ../services/haskell-service
       dockerfile: Dockerfile
     container_name: polymarket-haskell-mesh
     restart: unless-stopped
+    mem_limit: 128m
     networks:
       - polymarket

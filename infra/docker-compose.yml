@@ -24,15 +24,21 @@ volumes:
   minio_data:
   kafka_ui_data:
 
+x-stateful-security: &stateful_security
+  security_opt:
+    - no-new-privileges:true
+
 services:
 
   # ── PostgreSQL ──────────────────────────────────────────────
   # Used by: auth-service, payment-service, profile-service,
   #          config-service, admin-panel, chat-service
   postgres:
+    <<: *stateful_security
     image: postgres:16-alpine
     container_name: polymarket-postgres
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       POSTGRES_USER: polymarket
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -53,9 +59,11 @@ services:
   # ── MongoDB ─────────────────────────────────────────────────
   # Used by: listing-service (flexible schema per category)
   mongo:
+    <<: *stateful_security
     image: mongo:7
     container_name: polymarket-mongo
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       MONGO_INITDB_ROOT_USERNAME: polymarket
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?MONGO_PASSWORD is required}
@@ -76,9 +84,11 @@ services:
   # ── MySQL ───────────────────────────────────────────────────
   # Used by: review-service (Laravel RAD, tabular reviews)
   mysql:
+    <<: *stateful_security
     image: mysql:8.3
     container_name: polymarket-mysql
     restart: unless-stopped
+    mem_limit: 700m
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: polymarket_reviews
@@ -101,9 +111,11 @@ services:
   # Used by: api-gateway (sessions), auth-service (refresh tokens),
   #          notification-service (pub/sub + store), feed-service (cache)
   redis:
+    <<: *stateful_security
     image: redis:7.2-alpine
     container_name: polymarket-redis
     restart: unless-stopped
+    mem_limit: 300m
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
@@ -122,9 +134,11 @@ services:
   # ── ClickHouse ──────────────────────────────────────────────
   # Used by: analytics-service, stream-processor (OLAP columnar)
   clickhouse:
+    <<: *stateful_security
     image: clickhouse/clickhouse-server:24.3-alpine
     container_name: polymarket-clickhouse
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       CLICKHOUSE_USER: polymarket
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD is required}
@@ -147,9 +161,11 @@ services:
   # ── OpenSearch ──────────────────────────────────────────────
   # Used by: search-service (full-text + geo search + faceted)
   opensearch:
+    <<: *stateful_security
     image: opensearchproject/opensearch:2.13.0
     container_name: polymarket-opensearch
     restart: unless-stopped
+    mem_limit: 1536m
     environment:
       - discovery.type=single-node
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
@@ -169,9 +185,11 @@ services:
 
   # OpenSearch Dashboard
   opensearch-dashboards:
+    <<: *stateful_security
     image: opensearchproject/opensearch-dashboards:2.13.0
     container_name: polymarket-opensearch-dashboards
     restart: unless-stopped
+    mem_limit: 512m
     environment:
       - OPENSEARCH_HOSTS=["https://opensearch:9200"]
       - OPENSEARCH_USERNAME=admin
@@ -188,9 +206,11 @@ services:
   # ── TimescaleDB ─────────────────────────────────────────────
   # Used by: stream-processor (time-series metrics, KPIs)
   timescale:
+    <<: *stateful_security
     image: timescale/timescaledb:latest-pg16
     container_name: polymarket-timescale
     restart: unless-stopped
+    mem_limit: 700m
     environment:
       POSTGRES_USER: polymarket
       POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:?TIMESCALE_PASSWORD is required}
@@ -211,9 +231,11 @@ services:
   # ── Neo4j ───────────────────────────────────────────────────
   # Used by: ml-service (recommendation graph, co-purchase)
   neo4j:
+    <<: *stateful_security
     image: neo4j:5.18-community
     container_name: polymarket-neo4j
     restart: unless-stopped
+    mem_limit: 1g
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?NEO4J_PASSWORD is required}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD:?NEO4J_PASSWORD is required}
@@ -236,10 +258,12 @@ services:
   # ── SurrealDB ───────────────────────────────────────────────
   # Used by: feed-service (social graph: follows, favorites, activity)
   surrealdb:
+    <<: *stateful_security
     image: surrealdb/surrealdb:v1.5.4
     container_name: polymarket-surrealdb
     user: root
     restart: unless-stopped
+    mem_limit: 256m
     command: start --user polymarket --pass ${SURREALDB_PASSWORD:?SURREALDB_PASSWORD is required} file:/data/polymarket.db
     expose:
       - "8000"
@@ -256,9 +280,11 @@ services:
   # ── Kafka + Zookeeper ───────────────────────────────────────
   # Event spine for all services
   zookeeper:
+    <<: *stateful_security
     image: confluentinc/cp-zookeeper:7.6.1
     container_name: polymarket-zookeeper
     restart: unless-stopped
+    mem_limit: 400m
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -273,9 +299,11 @@ services:
       retries: 5
 
   kafka:
+    <<: *stateful_security
     image: confluentinc/cp-kafka:7.6.1
     container_name: polymarket-kafka
     restart: unless-stopped
+    mem_limit: 1g
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -305,9 +333,11 @@ services:
 
   # Kafka UI — topic browser + consumer lag monitoring
   kafka-ui:
+    <<: *stateful_security
     image: provectuslabs/kafka-ui:latest
     container_name: polymarket-kafka-ui
     restart: unless-stopped
+    mem_limit: 256m
     depends_on:
       kafka:
         condition: service_healthy
@@ -322,9 +352,11 @@ services:
   # ── MinIO ───────────────────────────────────────────────────
   # S3-compatible object storage: listing images, avatars, documents
   minio:
+    <<: *stateful_security
     image: minio/minio:RELEASE.2024-05-10T01-41-38Z
     container_name: polymarket-minio
     restart: unless-stopped
+    mem_limit: 512m
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
