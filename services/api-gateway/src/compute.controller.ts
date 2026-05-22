@@ -362,9 +362,11 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(this.serviceUrl('zig'), { timeout: 1500 });
+      const res = await axios.post(`${this.serviceUrl('zig')}/sign`, listing, {
+        timeout: 1500,
+      });
       zigReport.status = 'online';
-      zigReport.data = { message: res.data.trim() };
+      zigReport.data = res.data;
     } catch (e) {
       zigReport.data = { error: e.message };
     }

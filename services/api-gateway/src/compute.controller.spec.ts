@@ -55,6 +55,16 @@ describe('ComputeController', () => {
           data: { mean: 120, std: 12.5, engine: 'Julia-HighPerf-Stat' },
         });
       }
+      if (url === 'http://zig.test/sign') {
+        return Promise.resolve({
+          data: {
+            algorithm: 'sha256',
+            digest: '7c56a550a0f4f50789d67c8a12aabf3b',
+            bytes: JSON.stringify(payload).length,
+            service: 'zig-crypto',
+          },
+        });
+      }
       if (url === 'http://listing.test/listings') {
         return Promise.resolve({ data: { id: 'mongo123', payload } });
       }
@@ -73,7 +83,6 @@ describe('ComputeController', () => {
         },
         'http://cobol.test': 'COBOL ledger posted',
         'http://assembly.test': 'Assembly Fibonacci(10): 55',
-        'http://zig.test': 'Zig checksum active',
         'http://brainfuck.test': 'bf-signature',
       };
       if (url in responses) {
@@ -106,6 +115,10 @@ describe('ComputeController', () => {
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
     ).toBe(12.5);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Zig-Crypto'].data
+        .algorithm,
+    ).toBe('sha256');
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );
