@@ -21,28 +21,28 @@ public class StripeService(PaymentDbContext db, IKafkaProducer kafka, ILogger<St
     {
         var opts = new PaymentIntentCreateOptions
         {
-            Amount   = (long)(amount * 100),  // Stripe uses smallest currency unit
+            Amount = (long)(amount * 100),  // Stripe uses smallest currency unit
             Currency = currency.ToLower(),
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions { Enabled = true },
             Metadata = new Dictionary<string, string>
             {
-                ["user_id"]    = userId.ToString(),
+                ["user_id"] = userId.ToString(),
                 ["listing_id"] = listingId?.ToString() ?? "",
             },
         };
 
-        var svc    = new PaymentIntentService();
+        var svc = new PaymentIntentService();
         var intent = await svc.CreateAsync(opts);
 
         var tx = new Transaction
         {
-            UserId                = userId,
-            ListingId             = listingId,
-            Amount                = amount,
-            Currency              = currency,
-            Status                = "pending",
+            UserId = userId,
+            ListingId = listingId,
+            Amount = amount,
+            Currency = currency,
+            Status = "pending",
             StripePaymentIntentId = intent.Id,
-            StripeClientSecret    = intent.ClientSecret,
+            StripeClientSecret = intent.ClientSecret,
         };
         db.Transactions.Add(tx);
         await db.SaveChangesAsync();
@@ -57,10 +57,10 @@ public class StripeService(PaymentDbContext db, IKafkaProducer kafka, ILogger<St
             .FirstOrDefaultAsync(t => t.StripePaymentIntentId == paymentIntentId)
             ?? throw new KeyNotFoundException($"Transaction for {paymentIntentId} not found");
 
-        var svc    = new PaymentIntentService();
+        var svc = new PaymentIntentService();
         var intent = await svc.GetAsync(paymentIntentId);
 
-        tx.Status    = intent.Status == "succeeded" ? "completed" : "failed";
+        tx.Status = intent.Status == "succeeded" ? "completed" : "failed";
         tx.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
@@ -69,11 +69,11 @@ public class StripeService(PaymentDbContext db, IKafkaProducer kafka, ILogger<St
             await kafka.PublishAsync("payments.processed", new
             {
                 transaction_id = tx.Id,
-                user_id        = tx.UserId,
-                listing_id     = tx.ListingId,
-                amount         = tx.Amount,
-                currency       = tx.Currency,
-                occurred_at    = DateTime.UtcNow,
+                user_id = tx.UserId,
+                listing_id = tx.ListingId,
+                amount = tx.Amount,
+                currency = tx.Currency,
+                occurred_at = DateTime.UtcNow,
             });
         }
 

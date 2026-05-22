@@ -11,7 +11,7 @@ public interface IKafkaProducer
 public class KafkaProducer : IKafkaProducer, IDisposable
 {
     private readonly IProducer<string, string> _producer;
-    private readonly ILogger<KafkaProducer>    _logger;
+    private readonly ILogger<KafkaProducer> _logger;
 
     public KafkaProducer(IConfiguration config, ILogger<KafkaProducer> logger)
     {
@@ -22,10 +22,10 @@ public class KafkaProducer : IKafkaProducer, IDisposable
 
         var producerConfig = new ProducerConfig
         {
-            BootstrapServers       = bootstrapServers,
-            Acks                   = Acks.Leader,
-            EnableDeliveryReports  = false,
-            MessageTimeoutMs       = 5000,
+            BootstrapServers = bootstrapServers,
+            Acks = Acks.Leader,
+            EnableDeliveryReports = false,
+            MessageTimeoutMs = 5000,
         };
         _producer = new ProducerBuilder<string, string>(producerConfig).Build();
     }
@@ -37,7 +37,7 @@ public class KafkaProducer : IKafkaProducer, IDisposable
             var json = JsonSerializer.Serialize(payload);
             await _producer.ProduceAsync(topic, new Message<string, string>
             {
-                Key   = Guid.NewGuid().ToString(),
+                Key = Guid.NewGuid().ToString(),
                 Value = json,
             });
             _logger.LogDebug("Published to {Topic}: {Payload}", topic, json);

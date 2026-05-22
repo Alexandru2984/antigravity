@@ -44,7 +44,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "payment-service" }));
-app.MapGet("/ready",  () => Results.Ok(new { status = "ready" }));
+app.MapGet("/ready", () => Results.Ok(new { status = "ready" }));
 
 var payments = app.MapGroup("/payments");
 PaymentEndpoints.MapPaymentEndpoints(payments);

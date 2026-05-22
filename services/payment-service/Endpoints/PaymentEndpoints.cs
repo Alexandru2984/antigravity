@@ -21,9 +21,9 @@ public static class PaymentEndpoints
             var result = await stripe.CreateIntentAsync(userId, req.ListingId, req.Amount, req.Currency);
             return Results.Ok(new
             {
-                client_secret      = result.ClientSecret,
-                payment_intent_id  = result.PaymentIntentId,
-                transaction_id     = result.TransactionId,
+                client_secret = result.ClientSecret,
+                payment_intent_id = result.PaymentIntentId,
+                transaction_id = result.TransactionId,
             });
         });
 
@@ -51,9 +51,9 @@ public static class PaymentEndpoints
             IConfiguration config,
             ILogger<Program> logger) =>
         {
-            var json    = await new StreamReader(ctx.Request.Body).ReadToEndAsync();
-            var sig     = ctx.Request.Headers["Stripe-Signature"].FirstOrDefault() ?? "";
-            var secret  = config["STRIPE_WEBHOOK_SECRET"]
+            var json = await new StreamReader(ctx.Request.Body).ReadToEndAsync();
+            var sig = ctx.Request.Headers["Stripe-Signature"].FirstOrDefault() ?? "";
+            var secret = config["STRIPE_WEBHOOK_SECRET"]
                 ?? Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET")
                 ?? "";
 
@@ -69,16 +69,16 @@ public static class PaymentEndpoints
                         t => t.StripePaymentIntentId == intent.Id);
                     if (tx is not null)
                     {
-                        tx.Status    = "completed";
+                        tx.Status = "completed";
                         tx.UpdatedAt = DateTime.UtcNow;
                         await db.SaveChangesAsync();
                         await kafka.PublishAsync("payments.processed", new
                         {
                             transaction_id = tx.Id,
-                            user_id        = tx.UserId,
-                            listing_id     = tx.ListingId,
-                            amount         = tx.Amount,
-                            occurred_at    = DateTime.UtcNow,
+                            user_id = tx.UserId,
+                            listing_id = tx.ListingId,
+                            amount = tx.Amount,
+                            occurred_at = DateTime.UtcNow,
                         });
                         logger.LogInformation("Payment succeeded for intent {IntentId}", intent.Id);
                     }
