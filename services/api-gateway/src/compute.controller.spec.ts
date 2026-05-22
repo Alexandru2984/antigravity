@@ -17,6 +17,7 @@ describe('ComputeController', () => {
     process.env.CLOJURE_SERVICE_URL = 'http://clojure.test';
     process.env.NIM_SERVICE_URL = 'http://nim.test';
     process.env.LUA_SERVICE_URL = 'http://lua.test';
+    process.env.ELIXIR_SERVICE_URL = 'http://elixir.test';
     process.env.JULIA_SERVICE_URL = 'http://julia.test';
     process.env.R_SERVICE_URL = 'http://r.test';
     process.env.ML_SERVICE_URL = 'http://ml.test';
@@ -36,6 +37,7 @@ describe('ComputeController', () => {
     delete process.env.CLOJURE_SERVICE_URL;
     delete process.env.NIM_SERVICE_URL;
     delete process.env.LUA_SERVICE_URL;
+    delete process.env.ELIXIR_SERVICE_URL;
     delete process.env.JULIA_SERVICE_URL;
     delete process.env.R_SERVICE_URL;
     delete process.env.ML_SERVICE_URL;
@@ -160,6 +162,24 @@ describe('ComputeController', () => {
       }
       if (url === 'http://listing.test/listings') {
         return Promise.resolve({ data: { id: 'mongo123', payload } });
+      }
+      if (url === 'http://elixir.test/events') {
+        return Promise.resolve({
+          data: {
+            status: 'ok',
+            service: 'elixir-broker',
+            event_id: 'event-123',
+            event_type: 'listing.created',
+            listing_id: 'mongo123',
+            realtime: true,
+            delivered_to: [
+              'activity-feed',
+              'notification-service',
+              'analytics-service',
+            ],
+            queue: 'beam-local-bus',
+          },
+        });
       }
       return Promise.reject(new Error(`unexpected POST ${url}`));
     });
@@ -302,6 +322,26 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Brainfuck-Crypt'].data
         .algorithm,
     ).toBe('fnv1a-bf-obfuscation');
+
+    expect(mockedAxios.post.mock.calls).toContainEqual([
+      'http://elixir.test/events',
+      {
+        type: 'listing.created',
+        listing_id: 'mongo123',
+        seller_id: '22222222-2222-2222-2222-222222222222',
+        category: 'electronics',
+        price_cents: 120000,
+        mesh_online_nodes: expect.arrayContaining([
+          'Haskell-Validator',
+          'Rust-Persist-Core',
+        ]),
+      },
+      { timeout: 1500 },
+    ]);
+    const elixirReport = result.nodeReports.find(
+      (report) => report.service === 'Elixir-Broker',
+    );
+    expect(elixirReport.data.event_type).toBe('listing.created');
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );

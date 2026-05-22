@@ -276,6 +276,7 @@ services:
       CLOJURE_SERVICE_URL: http://clojure-service:4023
       NIM_SERVICE_URL:     http://nim-service:4064
       LUA_SERVICE_URL:     http://lua-service:4059
+      ELIXIR_SERVICE_URL:  http://elixir-service:4057
       JULIA_SERVICE_URL:   http://julia-service:4054
       R_SERVICE_URL:       http://r-service:4060
       COBOL_SERVICE_URL:   http://cobol-service:4022

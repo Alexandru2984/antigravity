@@ -25,6 +25,7 @@ const SERVICE_URL_DEFAULTS = {
   clojure: { env: 'CLOJURE_SERVICE_URL', url: 'http://clojure-service:4023' },
   nim: { env: 'NIM_SERVICE_URL', url: 'http://nim-service:4064' },
   lua: { env: 'LUA_SERVICE_URL', url: 'http://lua-service:4059' },
+  elixir: { env: 'ELIXIR_SERVICE_URL', url: 'http://elixir-service:4057' },
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
   ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
@@ -561,6 +562,36 @@ export class ComputeController {
         };
       }
       reports.push(rustReport);
+
+      // Step 14: Elixir event broker notification after durable persistence
+      if (rustReport.status === 'online') {
+        const elixirReport = {
+          service: 'Elixir-Broker',
+          status: 'offline',
+          data: null as any,
+        };
+        try {
+          const res = await axios.post(
+            `${this.serviceUrl('elixir')}/events`,
+            {
+              type: 'listing.created',
+              listing_id: rustReport.data?.id || null,
+              seller_id: sellerId,
+              category: listing.category,
+              price_cents: Math.round(listing.price * 100),
+              mesh_online_nodes: reports
+                .filter((report) => report.status === 'online')
+                .map((report) => report.service),
+            },
+            { timeout: 1500 },
+          );
+          elixirReport.status = 'online';
+          elixirReport.data = res.data;
+        } catch (e) {
+          elixirReport.data = { error: e.message };
+        }
+        reports.push(elixirReport);
+      }
     }
 
     const duration = Date.now() - startTime;

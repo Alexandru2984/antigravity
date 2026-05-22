@@ -4,7 +4,7 @@ defmodule Polyglot.MixProject do
     [app: :polyglot, version: "0.1.0", elixir: "~> 1.14", start_permanent: true, deps: deps()]
   end
   def application do
-    [extra_applications: [:logger], mod: {Polyglot.Application, []}]
+    [extra_applications: [:logger, :crypto], mod: {Polyglot.Application, []}]
   end
   defp deps do
     [{:plug_cowboy, "~> 2.0"}, {:jason, "~> 1.4"}]
