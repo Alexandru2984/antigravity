@@ -15,6 +15,7 @@ COPY --from=builder /app/feed-service /feed-service
 
 ENV PORT=4028
 EXPOSE 4028
+USER 65532:65532
 
 HEALTHCHECK --interval=30s --timeout=5s \
     CMD ["/feed-service", "-health"] || exit 1

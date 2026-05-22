@@ -7,6 +7,8 @@ RUN gcc main.c fib.o -o assembly-service
 
 FROM fedora:latest
 WORKDIR /app
+RUN useradd -r -s /sbin/nologin app
 COPY --from=builder /app/assembly-service .
+USER app
 EXPOSE 4021
 CMD ["./assembly-service"]

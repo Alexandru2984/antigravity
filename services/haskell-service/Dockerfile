@@ -6,8 +6,12 @@ COPY . .
 RUN ghc -threaded -o main Main.hs
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y libgmp10 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y libgmp10 \
+    && useradd -r -s /usr/sbin/nologin app \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /app/main .
+USER app
 EXPOSE 4065
 CMD ["./main"]

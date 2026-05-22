@@ -8,6 +8,8 @@ on:
       - 'scripts/health-check.sh'
       - 'Makefile'
       - 'README.md'
+      - 'frontend/Dockerfile'
+      - 'services/*/Dockerfile'
       - '.github/workflows/ci-compose.yml'
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - 'scripts/health-check.sh'
       - 'Makefile'
       - 'README.md'
+      - 'frontend/Dockerfile'
+      - 'services/*/Dockerfile'
       - '.github/workflows/ci-compose.yml'
 
 jobs:
@@ -118,6 +122,7 @@ jobs:
           missing_cap_drop = []
           missing_read_only = []
           missing_tmpfs = []
+          missing_runtime_user = []
           app_exceptions = {
               'nginx',
               'postgres',
@@ -184,6 +189,21 @@ jobs:
                       missing_read_only.append(name)
                   if not any(str(entry).startswith('/tmp:') for entry in tmpfs):
                       missing_tmpfs.append(name)
+              build = service.get('build')
+              if build:
+                  dockerfile = build.get('dockerfile') or 'Dockerfile'
+                  dockerfile_path = f"{build['context'].rstrip('/')}/{dockerfile}"
+                  with open(dockerfile_path, encoding='utf-8') as handle:
+                      lines = handle.readlines()
+                  last_from = max(
+                      index for index, line in enumerate(lines)
+                      if line.lstrip().upper().startswith('FROM ')
+                  )
+                  if not any(
+                      line.lstrip().upper().startswith('USER ')
+                      for line in lines[last_from + 1:]
+                  ):
+                      missing_runtime_user.append(name)
 
           if (
               missing_no_new_privileges
@@ -191,11 +211,13 @@ jobs:
               or missing_cap_drop
               or missing_read_only
               or missing_tmpfs
+              or missing_runtime_user
           ):
               print('missing no-new-privileges:', missing_no_new_privileges)
               print('missing mem_limit:', missing_mem_limit)
               print('missing cap_drop ALL:', missing_cap_drop)
               print('missing read_only:', missing_read_only)
               print('missing /tmp tmpfs:', missing_tmpfs)
+              print('missing runtime USER:', missing_runtime_user)
               sys.exit(1)
           PY

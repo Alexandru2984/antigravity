@@ -5,6 +5,8 @@ RUN sbt assembly
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+RUN addgroup -S polymarket && adduser -S app -G polymarket
 COPY --from=builder /app/target/scala-2.13/*.jar app.jar
+USER app
 EXPOSE 4058
 CMD ["java", "-jar", "app.jar"]
