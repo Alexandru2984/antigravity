@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { HttpStatus } from '@nestjs/common';
 import { ComputeController } from './compute.controller';
 
 jest.mock('axios');
@@ -31,6 +32,7 @@ describe('ComputeController', () => {
 
   afterEach(() => {
     delete process.env.POLYGLOT_MESH_ENABLED;
+    delete process.env.POLYGLOT_MESH_MAX_CONCURRENCY;
     delete process.env.INTERNAL_SERVICE_TOKEN;
     delete process.env.CONTRACT_VALIDATOR_URL;
     delete process.env.PROLOG_SERVICE_URL;
@@ -345,5 +347,44 @@ describe('ComputeController', () => {
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );
+  });
+
+  it('rejects concurrent mesh transactions over the configured limit', async () => {
+    process.env.POLYGLOT_MESH_MAX_CONCURRENCY = '1';
+
+    let releaseContractValidator: () => void = () => undefined;
+    mockedAxios.post.mockImplementation((url: string) => {
+      if (url === 'http://contract-validator.test/validate') {
+        return new Promise((resolve) => {
+          releaseContractValidator = () => {
+            resolve({ data: { valid: true, errors: [] } });
+          };
+        });
+      }
+      return Promise.resolve({ data: {} });
+    });
+    mockedAxios.get.mockResolvedValue({ data: {} });
+
+    const first = controller.executeTransaction({
+      title: 'MacBook Pro M3',
+      price: 1200,
+      category: 'electronics',
+    });
+    await Promise.resolve();
+
+    await expect(
+      controller.executeTransaction({
+        title: 'iPhone 15',
+        price: 700,
+        category: 'electronics',
+      }),
+    ).rejects.toMatchObject({
+      status: HttpStatus.TOO_MANY_REQUESTS,
+    });
+
+    releaseContractValidator();
+    await expect(first).resolves.toMatchObject({
+      status: expect.any(String),
+    });
   });
 });

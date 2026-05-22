@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Post,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -664,7 +666,10 @@ export class ComputeController {
   private acquireTransactionSlot(): () => void {
     const maxConcurrent = this.maxConcurrentTransactions();
     if (this.activeTransactions >= maxConcurrent) {
-      throw new ServiceUnavailableException('Polyglot mesh is busy');
+      throw new HttpException(
+        'Polyglot mesh concurrency limit reached',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     this.activeTransactions += 1;
