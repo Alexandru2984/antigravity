@@ -16,6 +16,29 @@ const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_IMAGE_IDS = 10;
 const MAX_ATTRIBUTES_BYTES = 4096;
 
+const SERVICE_URL_DEFAULTS = {
+  contractValidator: {
+    env: 'CONTRACT_VALIDATOR_URL',
+    url: 'http://contract-validator:4035',
+  },
+  prolog: { env: 'PROLOG_SERVICE_URL', url: 'http://prolog-service:4055' },
+  julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
+  r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
+  ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
+  cobol: { env: 'COBOL_SERVICE_URL', url: 'http://cobol-service:4022' },
+  assembly: {
+    env: 'ASSEMBLY_SERVICE_URL',
+    url: 'http://assembly-service:4021',
+  },
+  zig: { env: 'ZIG_SERVICE_URL', url: 'http://zig-service:4062' },
+  brainfuck: {
+    env: 'BRAINFUCK_SERVICE_URL',
+    url: 'http://brainfuck-service:4020',
+  },
+};
+
+type ServiceUrlKey = keyof typeof SERVICE_URL_DEFAULTS;
+
 interface MeshTransactionRequest {
   title?: string;
   description?: string;
@@ -205,7 +228,7 @@ export class ComputeController {
     };
     try {
       const res = await axios.post(
-        'http://contract-validator:4035/validate',
+        `${this.serviceUrl('contractValidator')}/validate`,
         {
           payload: listing,
           schemaName: 'listing',
@@ -227,7 +250,7 @@ export class ComputeController {
     };
     try {
       const res = await axios.post(
-        'http://prolog-service:4055/check_fraud',
+        `${this.serviceUrl('prolog')}/check_fraud`,
         {
           price: listing.price,
           category: listing.category,
@@ -255,7 +278,7 @@ export class ComputeController {
         Math.round(listing.price * 0.85),
       ];
       const res = await axios.post(
-        'http://julia-service:4054',
+        this.serviceUrl('julia'),
         { data: prices },
         { timeout: 1500 },
       );
@@ -273,7 +296,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://r-service:4060', { timeout: 1500 });
+      const res = await axios.get(this.serviceUrl('r'), { timeout: 1500 });
       rReport.status = 'online';
       rReport.data = res.data;
     } catch (e) {
@@ -288,7 +311,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://ml-service:4028/recommend', {
+      const res = await axios.get(`${this.serviceUrl('ml')}/recommend`, {
         timeout: 1500,
       });
       pythonReport.status = 'online';
@@ -305,7 +328,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://cobol-service:4022', {
+      const res = await axios.get(this.serviceUrl('cobol'), {
         timeout: 1500,
       });
       cobolReport.status = 'online';
@@ -322,7 +345,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://assembly-service:4021', {
+      const res = await axios.get(this.serviceUrl('assembly'), {
         timeout: 1500,
       });
       assemblyReport.status = 'online';
@@ -339,7 +362,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://zig-service:4062', { timeout: 1500 });
+      const res = await axios.get(this.serviceUrl('zig'), { timeout: 1500 });
       zigReport.status = 'online';
       zigReport.data = { message: res.data.trim() };
     } catch (e) {
@@ -354,7 +377,7 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get('http://brainfuck-service:4020', {
+      const res = await axios.get(this.serviceUrl('brainfuck'), {
         timeout: 1500,
       });
       bfReport.status = 'online';
@@ -399,7 +422,7 @@ export class ComputeController {
               lng: body.lng ? Number(body.lng) : 26.1025,
             },
             image_ids: body.imageIds || [],
-            attributes: body.attributes || {},
+            attributes: this.withMeshAttributes(body.attributes, reports),
           },
           {
             headers: {
@@ -441,6 +464,34 @@ export class ComputeController {
 
   private isMeshEnabled(): boolean {
     return process.env.POLYGLOT_MESH_ENABLED === 'true';
+  }
+
+  private serviceUrl(key: ServiceUrlKey): string {
+    const service = SERVICE_URL_DEFAULTS[key];
+    return process.env[service.env] || service.url;
+  }
+
+  private withMeshAttributes(
+    attributes: Record<string, unknown> | undefined,
+    reports: any[],
+  ): Record<string, unknown> {
+    return {
+      ...(attributes || {}),
+      polyglot_mesh: {
+        version: 1,
+        evaluated_at: new Date().toISOString(),
+        online_nodes: reports
+          .filter((report) => report.status === 'online')
+          .map((report) => report.service),
+        reports: reports.reduce<Record<string, unknown>>((acc, report) => {
+          acc[report.service] = {
+            status: report.status,
+            data: report.data,
+          };
+          return acc;
+        }, {}),
+      },
+    };
   }
 
   private acquireTransactionSlot(): () => void {
