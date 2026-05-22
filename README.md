@@ -17,18 +17,18 @@ A full-featured marketplace platform (OLX-like) with realtime notifications, eve
                   ┌────────────────────┼────────────────────┐
                   ▼                    ▼                    ▼
         Frontend (Next.js)    API Gateway (NestJS)   Admin Panel (Rails)
-           :3000                  :4001                 :4016
+           :3000                  :4000                 :4016
                                    │
      ┌─────────────────────────────┼──────────────────────────────┐
      │                   APPLICATION SERVICES                     │
      ├────────────────────────────────────────────────────────────┤
-     │ auth-service        Elixir / Phoenix      :4000  (JWT)     │
+     │ auth-service        Elixir / Phoenix      :4001  (JWT)     │
      │ listing-service     Rust / Axum           :4002  (MongoDB) │
      │ search-service      Java / Spring Boot    :4003  (OpenSrch)│
      │ image-service       C++ / Drogon          :4004  (MinIO)   │
-     │ profile-service     Kotlin / Ktor         :4005  (Postgres)│
+     │ notification-svc    Elixir / Phoenix Ch.  :4005  (WS)      │
      │ payment-service     C# / ASP.NET Core     :4006  (Stripe)  │
-     │ notification-svc    Elixir / Phoenix Ch.   :4007  (WS)     │
+     │ profile-service     Kotlin / Ktor         :4007  (Postgres)│
      │ feed-service        Go / chi              :4008  (Redis)   │
      │ review-service      PHP / Laravel         :4009  (Postgres)│
      │ analytics-service   Python / FastAPI      :4010  (ClickH.) │
@@ -36,7 +36,7 @@ A full-featured marketplace platform (OLX-like) with realtime notifications, eve
      │ ml-service          Python / FastAPI      :4012  (Neo4j)   │
      │ stream-processor    Scala / Akka Streams  :4013  (ClickH.) │
      │ config-service      F# / Giraffe          :4014  (Postgres)│
-     │ contract-validator  Haskell / Servant     :4015  (stateless)│
+     │ contract-validator  Haskell / Servant     :4035  (stateless)│
      │ admin-panel         Ruby / Rails          :4016  (Postgres)│
      └────────────────────────────────────────────────────────────┘
                                    │

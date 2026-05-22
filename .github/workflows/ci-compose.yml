@@ -123,6 +123,7 @@ jobs:
           missing_read_only = []
           missing_tmpfs = []
           missing_runtime_user = []
+          dependency_errors = []
           app_exceptions = {
               'nginx',
               'postgres',
@@ -205,6 +206,21 @@ jobs:
                   ):
                       missing_runtime_user.append(name)
 
+          auth_service = services.get('auth-service', {})
+          if 'healthcheck' not in auth_service:
+              dependency_errors.append('auth-service must define a healthcheck')
+
+          api_gateway = services.get('api-gateway', {})
+          auth_dependency = (
+              api_gateway
+              .get('depends_on', {})
+              .get('auth-service', {})
+          )
+          if auth_dependency.get('condition') != 'service_healthy':
+              dependency_errors.append(
+                  'api-gateway must wait for auth-service service_healthy'
+              )
+
           if (
               missing_no_new_privileges
               or missing_mem_limit
@@ -212,6 +228,7 @@ jobs:
               or missing_read_only
               or missing_tmpfs
               or missing_runtime_user
+              or dependency_errors
           ):
               print('missing no-new-privileges:', missing_no_new_privileges)
               print('missing mem_limit:', missing_mem_limit)
@@ -219,5 +236,6 @@ jobs:
               print('missing read_only:', missing_read_only)
               print('missing /tmp tmpfs:', missing_tmpfs)
               print('missing runtime USER:', missing_runtime_user)
+              print('dependency errors:', dependency_errors)
               sys.exit(1)
           PY

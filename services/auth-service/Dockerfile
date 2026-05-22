@@ -33,8 +33,8 @@ USER auth
 
 COPY --from=builder --chown=auth:polymarket /app/_build/prod/rel/auth_service ./
 
-EXPOSE 4020
+EXPOSE 4001
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:4020/health || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-4001}/health/ready" || exit 1
 
 CMD ["/app/bin/auth_service", "start"]

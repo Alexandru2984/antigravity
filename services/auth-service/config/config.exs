@@ -3,7 +3,7 @@ import Config
 # ── Phoenix Endpoint ─────────────────────────────────────────
 config :auth_service, AuthServiceWeb.Endpoint,
   url: [host: "localhost"],
-  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4020")],
+  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4001")],
   secret_key_base: System.get_env("SECRET_KEY_BASE") || "dev_secret_key_base_replace_in_production_must_be_64_chars_min",
   render_errors: [
     formats: [json: AuthServiceWeb.ErrorJSON],
