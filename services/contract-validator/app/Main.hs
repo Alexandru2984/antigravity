@@ -91,9 +91,9 @@ textLength field minLen maxLen obj =
     Just (String raw) ->
       let value = T.strip raw
           len = T.length value
-      in if len < minLen || len > maxLen
-           then [field <> " must be between " <> show minLen <> " and " <> show maxLen <> " characters"]
-           else []
+      in [ field <> " must be between " <> show minLen <> " and " <> show maxLen <> " characters"
+         | len < minLen || len > maxLen
+         ]
     Just _ -> [field <> " must be a string"]
 
 positiveNumber :: String -> Scientific -> KeyMap Value -> [String]
