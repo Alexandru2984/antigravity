@@ -65,6 +65,16 @@ describe('ComputeController', () => {
           },
         });
       }
+      if (url === 'http://brainfuck.test/obfuscate') {
+        return Promise.resolve({
+          data: {
+            service: 'brainfuck-crypt',
+            algorithm: 'fnv1a-bf-obfuscation',
+            signature: 'd4e5028f',
+            bytes: JSON.stringify(payload).length,
+          },
+        });
+      }
       if (url === 'http://listing.test/listings') {
         return Promise.resolve({ data: { id: 'mongo123', payload } });
       }
@@ -88,7 +98,6 @@ describe('ComputeController', () => {
           input: 12,
           result: 144,
         },
-        'http://brainfuck.test': 'bf-signature',
       };
       if (url in responses) {
         return Promise.resolve({ data: responses[url] });
@@ -128,6 +137,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Assembly-Fibo'].data
         .result,
     ).toBe(144);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Brainfuck-Crypt'].data
+        .algorithm,
+    ).toBe('fnv1a-bf-obfuscation');
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );

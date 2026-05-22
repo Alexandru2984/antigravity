@@ -386,11 +386,15 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(this.serviceUrl('brainfuck'), {
-        timeout: 1500,
-      });
+      const res = await axios.post(
+        `${this.serviceUrl('brainfuck')}/obfuscate`,
+        listing,
+        {
+          timeout: 1500,
+        },
+      );
       bfReport.status = 'online';
-      bfReport.data = { signature: res.data.trim() };
+      bfReport.data = res.data;
     } catch (e) {
       bfReport.data = { error: e.message };
     }
