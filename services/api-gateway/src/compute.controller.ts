@@ -23,6 +23,7 @@ const SERVICE_URL_DEFAULTS = {
   },
   prolog: { env: 'PROLOG_SERVICE_URL', url: 'http://prolog-service:4055' },
   clojure: { env: 'CLOJURE_SERVICE_URL', url: 'http://clojure-service:4023' },
+  nim: { env: 'NIM_SERVICE_URL', url: 'http://nim-service:4064' },
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
   ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
@@ -293,7 +294,31 @@ export class ComputeController {
     }
     reports.push(clojureReport);
 
-    // Step 4: Julia Statistics Analysis
+    // Step 4: Nim text normalization and search token generation
+    const nimReport = {
+      service: 'Nim-Optimizer',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.post(
+        `${this.serviceUrl('nim')}/optimize`,
+        {
+          title: listing.title,
+          description: body.description || '',
+          category: listing.category,
+          location: listing.location,
+        },
+        { timeout: 1500 },
+      );
+      nimReport.status = 'online';
+      nimReport.data = res.data;
+    } catch (e) {
+      nimReport.data = { error: e.message };
+    }
+    reports.push(nimReport);
+
+    // Step 5: Julia Statistics Analysis
     const juliaReport = {
       service: 'Julia-Stats',
       status: 'offline',
@@ -318,7 +343,7 @@ export class ComputeController {
     }
     reports.push(juliaReport);
 
-    // Step 5: R Statistical Linear Regression & Forecast
+    // Step 6: R Statistical Linear Regression & Forecast
     const rReport = {
       service: 'R-Regression',
       status: 'offline',
@@ -336,7 +361,7 @@ export class ComputeController {
     }
     reports.push(rReport);
 
-    // Step 6: Python ML Recommendation Engine
+    // Step 7: Python ML Recommendation Engine
     const pythonReport = {
       service: 'Python-ML',
       status: 'offline',
@@ -362,7 +387,7 @@ export class ComputeController {
     }
     reports.push(pythonReport);
 
-    // Step 7: COBOL Mainframe Billing Posting
+    // Step 8: COBOL Mainframe Billing Posting
     const cobolReport = {
       service: 'COBOL-Ledger',
       status: 'offline',
@@ -383,7 +408,7 @@ export class ComputeController {
     }
     reports.push(cobolReport);
 
-    // Step 8: Assembly hyper-optimized mathematical payload validation
+    // Step 9: Assembly hyper-optimized mathematical payload validation
     const assemblyReport = {
       service: 'Assembly-Fibo',
       status: 'offline',
@@ -407,7 +432,7 @@ export class ComputeController {
     }
     reports.push(assemblyReport);
 
-    // Step 9: Zig High-performance cryptographic checksumming
+    // Step 10: Zig High-performance cryptographic checksumming
     const zigReport = {
       service: 'Zig-Crypto',
       status: 'offline',
@@ -424,7 +449,7 @@ export class ComputeController {
     }
     reports.push(zigReport);
 
-    // Step 10: Brainfuck esoteric verification signature
+    // Step 11: Brainfuck esoteric verification signature
     const bfReport = {
       service: 'Brainfuck-Crypt',
       status: 'offline',
@@ -445,7 +470,7 @@ export class ComputeController {
     }
     reports.push(bfReport);
 
-    // Step 11: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    // Step 12: Call Rust Listing service to persist in MongoDB and publish to Kafka
     const rustReport = {
       service: 'Rust-Persist-Core',
       status: 'offline',
@@ -462,13 +487,21 @@ export class ComputeController {
         if (!internalServiceToken) {
           throw new Error('INTERNAL_SERVICE_TOKEN is not configured');
         }
+        const optimizedTitle =
+          typeof nimReport.data?.normalized_title === 'string'
+            ? nimReport.data.normalized_title
+            : listing.title;
+        const optimizedDescription =
+          typeof nimReport.data?.normalized_description === 'string' &&
+          nimReport.data.normalized_description.length > 0
+            ? nimReport.data.normalized_description
+            : body.description ||
+              `Mesh validated transaction. Timestamp: ${new Date().toISOString()}`;
         const rustRes = await axios.post(
           `${listingServiceUrl}/listings`,
           {
-            title: listing.title,
-            description:
-              body.description ||
-              `Mesh validated transaction. Timestamp: ${new Date().toISOString()}`,
+            title: optimizedTitle,
+            description: optimizedDescription,
             price: Math.round(listing.price * 100), // convert to cents/bani
             currency: body.currency || 'RON',
             category: listing.category,

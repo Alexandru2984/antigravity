@@ -274,6 +274,7 @@ services:
       CONTRACT_VALIDATOR_URL: http://contract-validator:4035
       PROLOG_SERVICE_URL:  http://prolog-service:4055
       CLOJURE_SERVICE_URL: http://clojure-service:4023
+      NIM_SERVICE_URL:     http://nim-service:4064
       JULIA_SERVICE_URL:   http://julia-service:4054
       R_SERVICE_URL:       http://r-service:4060
       COBOL_SERVICE_URL:   http://cobol-service:4022

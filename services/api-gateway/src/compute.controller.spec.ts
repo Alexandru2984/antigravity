@@ -15,6 +15,7 @@ describe('ComputeController', () => {
     process.env.CONTRACT_VALIDATOR_URL = 'http://contract-validator.test';
     process.env.PROLOG_SERVICE_URL = 'http://prolog.test';
     process.env.CLOJURE_SERVICE_URL = 'http://clojure.test';
+    process.env.NIM_SERVICE_URL = 'http://nim.test';
     process.env.JULIA_SERVICE_URL = 'http://julia.test';
     process.env.R_SERVICE_URL = 'http://r.test';
     process.env.ML_SERVICE_URL = 'http://ml.test';
@@ -32,6 +33,7 @@ describe('ComputeController', () => {
     delete process.env.CONTRACT_VALIDATOR_URL;
     delete process.env.PROLOG_SERVICE_URL;
     delete process.env.CLOJURE_SERVICE_URL;
+    delete process.env.NIM_SERVICE_URL;
     delete process.env.JULIA_SERVICE_URL;
     delete process.env.R_SERVICE_URL;
     delete process.env.ML_SERVICE_URL;
@@ -85,6 +87,20 @@ describe('ComputeController', () => {
               'needs-description',
               'manual-review-candidate',
             ],
+          },
+        });
+      }
+      if (url === 'http://nim.test/optimize') {
+        return Promise.resolve({
+          data: {
+            service: 'nim-optimizer',
+            status: 'ok',
+            normalized_title: 'Macbook Pro M3',
+            normalized_description: '',
+            slug: 'macbook-pro-m3',
+            search_tokens: ['macbook', 'pro', 'electronics'],
+            description_quality: 'missing',
+            description_length: 0,
           },
         });
       }
@@ -181,6 +197,16 @@ describe('ComputeController', () => {
       { timeout: 1500 },
     ]);
     expect(mockedAxios.post.mock.calls).toContainEqual([
+      'http://nim.test/optimize',
+      {
+        title: 'MacBook Pro M3',
+        description: '',
+        category: 'electronics',
+        location: 'Bucuresti',
+      },
+      { timeout: 1500 },
+    ]);
+    expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://ml.test/recommend',
       {
         title: 'MacBook Pro M3',
@@ -197,6 +223,7 @@ describe('ComputeController', () => {
     expect(listingCall).toBeDefined();
 
     const listingPayload = listingCall?.[1] as Record<string, any>;
+    expect(listingPayload.title).toBe('Macbook Pro M3');
     expect(listingPayload.attributes.source).toBe('test');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
@@ -213,6 +240,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Clojure-Rules'].data
         .publish_priority,
     ).toBe('high');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Nim-Optimizer'].data
+        .slug,
+    ).toBe('macbook-pro-m3');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
         .forecast_price_45_days,
