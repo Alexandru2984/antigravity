@@ -75,6 +75,23 @@ describe('ComputeController', () => {
           },
         });
       }
+      if (url === 'http://ml.test/recommend') {
+        return Promise.resolve({
+          data: {
+            service: 'python-ml',
+            model: 'category-price-ranker-v1',
+            category: 'electronics',
+            price_band: 'mid_market',
+            recommendations: [
+              {
+                item: 'USB-C docking station',
+                score: 0.92,
+                reason: 'electronics:mid_market',
+              },
+            ],
+          },
+        });
+      }
       if (url === 'http://listing.test/listings') {
         return Promise.resolve({ data: { id: 'mongo123', payload } });
       }
@@ -89,10 +106,6 @@ describe('ComputeController', () => {
           engine: 'R-Stats-Regression',
           input_price: 1200,
           forecast_price_45_days: 1115.83,
-        },
-        'http://ml.test/recommend': {
-          item: 'MacBook Pro M3',
-          confidence: 0.98,
         },
         'http://cobol.test/ledger?amount_cents=120000': {
           service: 'cobol-ledger',
@@ -123,8 +136,14 @@ describe('ComputeController', () => {
     });
 
     expect(result.status).toBe('SUCCESS_PERSISTED');
-    expect(mockedAxios.get.mock.calls).toContainEqual([
+    expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://ml.test/recommend',
+      {
+        title: 'MacBook Pro M3',
+        category: 'electronics',
+        price: 1200,
+        location: 'Bucuresti',
+      },
       { timeout: 1500 },
     ]);
 
@@ -142,6 +161,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
         .forecast_price_45_days,
     ).toBe(1115.83);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Python-ML'].data
+        .price_band,
+    ).toBe('mid_market');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Zig-Crypto'].data
         .algorithm,

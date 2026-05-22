@@ -314,9 +314,18 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(`${this.serviceUrl('ml')}/recommend`, {
-        timeout: 1500,
-      });
+      const res = await axios.post(
+        `${this.serviceUrl('ml')}/recommend`,
+        {
+          title: listing.title,
+          category: listing.category,
+          price: listing.price,
+          location: listing.location,
+        },
+        {
+          timeout: 1500,
+        },
+      );
       pythonReport.status = 'online';
       pythonReport.data = res.data;
     } catch (e) {
