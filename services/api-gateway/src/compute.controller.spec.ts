@@ -47,7 +47,12 @@ describe('ComputeController', () => {
       }
       if (url === 'http://prolog.test/check_fraud') {
         return Promise.resolve({
-          data: { status: 'ok', reason: 'Safe listing' },
+          data: {
+            service: 'prolog-fraud',
+            status: 'ok',
+            risk_score: 0,
+            triggered_rules: [],
+          },
         });
       }
       if (url === 'http://julia.test') {
@@ -157,6 +162,10 @@ describe('ComputeController', () => {
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
     ).toBe(12.5);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Prolog-Fraud'].data
+        .risk_score,
+    ).toBe(0);
     expect(
       listingPayload.attributes.polyglot_mesh.reports['R-Regression'].data
         .forecast_price_45_days,

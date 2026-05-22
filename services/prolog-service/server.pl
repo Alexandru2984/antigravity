@@ -1,24 +1,34 @@
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_json)).
+:- use_module(library(option)).
+:- use_module(rules).
 
+:- http_handler(root(health), handle_health, []).
 :- http_handler(root(check_fraud), handle_fraud, []).
-:- http_handler(root(.), handle_home, []).
+:- http_handler(root(.), handle_health, []).
 
-handle_home(_Request) :-
-    reply_json_dict(_{status: "online", service: "prolog-fraud"}).
+handle_health(_Request) :-
+    reply_json_dict(_{status: "ok", service: "prolog-fraud"}).
 
 handle_fraud(Request) :-
     http_read_json_dict(Request, Dict),
-    (   Dict.price < 100, Dict.category == "electronics"
-    ->  Reply = _{status: "warning", reason: "Price too low for electronics"}
-    ;   Reply = _{status: "ok", reason: "Safe listing"}
-    ),
-    reply_json_dict(Reply).
+    dict_value(Dict, title, "", Title),
+    dict_value(Dict, category, "general", Category),
+    dict_value(Dict, price, 0, Price),
+    dict_value(Dict, seller_id, "", SellerId),
+    dict_value(Dict, location, "", Location),
+    fraud_report(Title, Category, Price, SellerId, Location, Report),
+    reply_json_dict(Report).
+
+dict_value(Dict, Key, Default, Value) :-
+    (   get_dict(Key, Dict, Existing)
+    ->  Value = Existing
+    ;   Value = Default
+    ).
 
 server(Port) :-
     http_server(http_dispatch, [port(Port)]),
     thread_get_message(_).
 
 :- initialization(server(4055)).
-

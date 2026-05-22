@@ -252,8 +252,11 @@ export class ComputeController {
       const res = await axios.post(
         `${this.serviceUrl('prolog')}/check_fraud`,
         {
+          title: listing.title,
           price: listing.price,
           category: listing.category,
+          seller_id: sellerId,
+          location: listing.location,
         },
         { timeout: 1500 },
       );
