@@ -345,11 +345,18 @@ export class ComputeController {
       data: null as any,
     };
     try {
-      const res = await axios.get(this.serviceUrl('assembly'), {
-        timeout: 1500,
-      });
+      const verificationInput = Math.max(
+        2,
+        Math.min(45, Math.round(listing.price / 100)),
+      );
+      const res = await axios.get(
+        `${this.serviceUrl('assembly')}/verify?n=${verificationInput}`,
+        {
+          timeout: 1500,
+        },
+      );
       assemblyReport.status = 'online';
-      assemblyReport.data = { message: res.data.trim() };
+      assemblyReport.data = res.data;
     } catch (e) {
       assemblyReport.data = { error: e.message };
     }

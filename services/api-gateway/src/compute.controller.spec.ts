@@ -82,7 +82,12 @@ describe('ComputeController', () => {
           confidence: 0.98,
         },
         'http://cobol.test': 'COBOL ledger posted',
-        'http://assembly.test': 'Assembly Fibonacci(10): 55',
+        'http://assembly.test/verify?n=12': {
+          service: 'assembly-fibo',
+          algorithm: 'fibonacci',
+          input: 12,
+          result: 144,
+        },
         'http://brainfuck.test': 'bf-signature',
       };
       if (url in responses) {
@@ -119,6 +124,10 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Zig-Crypto'].data
         .algorithm,
     ).toBe('sha256');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Assembly-Fibo'].data
+        .result,
+    ).toBe(144);
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );
