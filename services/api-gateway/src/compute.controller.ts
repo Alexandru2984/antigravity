@@ -275,14 +275,14 @@ export class ComputeController {
     };
     try {
       const prices = [
-        listing.price,
         Math.round(listing.price * 0.9),
         Math.round(listing.price * 1.15),
         Math.round(listing.price * 0.85),
+        Math.round(listing.price * 1.05),
       ];
       const res = await axios.post(
         this.serviceUrl('julia'),
-        { data: prices },
+        { price: listing.price, comparables: prices },
         { timeout: 1500 },
       );
       juliaReport.status = 'online';

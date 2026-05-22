@@ -57,7 +57,15 @@ describe('ComputeController', () => {
       }
       if (url === 'http://julia.test') {
         return Promise.resolve({
-          data: { mean: 120, std: 12.5, engine: 'Julia-HighPerf-Stat' },
+          data: {
+            status: 'ok',
+            service: 'julia-stats',
+            mean: 1185,
+            std: 165.2271,
+            z_score: 0.0908,
+            outlier: false,
+            engine: 'Julia-HighPerf-Stat',
+          },
         });
       }
       if (url === 'http://zig.test/sign') {
@@ -161,7 +169,11 @@ describe('ComputeController', () => {
     expect(listingPayload.attributes.source).toBe('test');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data.std,
-    ).toBe(12.5);
+    ).toBe(165.2271);
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Julia-Stats'].data
+        .outlier,
+    ).toBe(false);
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Prolog-Fraud'].data
         .risk_score,
