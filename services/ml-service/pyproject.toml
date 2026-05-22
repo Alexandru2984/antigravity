@@ -7,7 +7,7 @@ packages = [{include = "ml_service"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.115.0"
+fastapi = "^0.136.1"
 uvicorn = "^0.32.0"
 pydantic = "^2.9.0"
 neo4j = "^5.25.0"

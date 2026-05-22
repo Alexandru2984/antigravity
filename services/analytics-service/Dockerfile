@@ -2,9 +2,10 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 RUN pip install poetry==1.8.4
 COPY pyproject.toml poetry.lock* ./
-RUN poetry config virtualenvs.in-project true && poetry install --no-dev --no-interaction || true
+RUN poetry config virtualenvs.in-project true && poetry install --only main --no-root --no-interaction
 COPY analytics_service/ ./analytics_service/
-RUN poetry install --no-dev --no-interaction
+RUN poetry install --only main --no-interaction \
+    && .venv/bin/python -m pip install --upgrade pip==26.1.1
 
 FROM python:3.12-slim
 RUN useradd -r -s /bin/false app
