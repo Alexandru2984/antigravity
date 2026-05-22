@@ -107,6 +107,7 @@ export class ProxyController {
   }
 
   // ── Images ───────────────────────────────────────────────────
+  @Public()
   @All('images/*')
   proxyImages(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(req, res, 'images', wildcardPath(req));
@@ -217,9 +218,23 @@ export class ProxyController {
       });
 
       const rawBody = (req as unknown as Record<string, unknown>).rawBody;
-      if (rawBody) proxyReq.write(rawBody as Buffer);
+      if (rawBody) {
+        proxyReq.write(rawBody as Buffer);
+        proxyReq.end();
+        return;
+      }
+
+      if (this.hasRequestBody(req)) {
+        req.raw.pipe(proxyReq);
+        return;
+      }
+
       proxyReq.end();
     });
+  }
+
+  private hasRequestBody(req: FastifyRequest): boolean {
+    return !['GET', 'HEAD'].includes(req.method.toUpperCase());
   }
 
   private buildProxyHeaders(

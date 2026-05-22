@@ -27,7 +27,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -S . -B build && \
 FROM ubuntu:24.04 AS runtime
 
 RUN apt-get update && apt-get install -y \
-    libvips libcurl4 librdkafka1 libjsoncpp25 libssl3 \
+    libvips libcurl4 librdkafka1 librdkafka++1 libjsoncpp25 libssl3 libc-ares2 wget \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -r -s /bin/false app
 

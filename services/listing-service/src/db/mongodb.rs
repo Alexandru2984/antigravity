@@ -8,7 +8,9 @@ use mongodb::{
 };
 use uuid::Uuid;
 
-use crate::models::{CreateListingRequest, Listing, ListingQuery, ListingStatus, Location};
+use crate::models::{
+    CreateListingRequest, Listing, ListingImage, ListingQuery, ListingStatus, Location,
+};
 
 pub const COLLECTION: &str = "listings";
 
@@ -18,6 +20,41 @@ fn uuid_to_bson_binary(uuid: Uuid) -> bson::Bson {
         subtype: bson::spec::BinarySubtype::Generic,
         bytes,
     })
+}
+
+fn image_public_path_prefix() -> String {
+    std::env::var("IMAGE_PUBLIC_PATH_PREFIX").unwrap_or_else(|_| "/api/v1/images".to_string())
+}
+
+fn listing_images(image_ids: Option<Vec<String>>) -> Vec<ListingImage> {
+    let prefix = image_public_path_prefix();
+
+    image_ids
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|id| {
+            let key = id.trim().to_string();
+            if key.is_empty() {
+                return None;
+            }
+
+            let url = if key.starts_with("http://")
+                || key.starts_with("https://")
+                || key.starts_with('/')
+            {
+                key.clone()
+            } else {
+                format!("{}/{}", prefix.trim_end_matches('/'), key)
+            };
+
+            Some(ListingImage {
+                url: url.clone(),
+                key,
+                thumbnail: url.clone(),
+                medium: url,
+            })
+        })
+        .collect()
 }
 
 #[derive(Clone)]
@@ -77,7 +114,7 @@ impl MongoRepo {
             category: req.category,
             subcategory: req.subcategory,
             seller_id,
-            images: vec![], // populated by image-service
+            images: listing_images(req.image_ids),
             location: Location {
                 city: req.location.city,
                 county: req.location.county,

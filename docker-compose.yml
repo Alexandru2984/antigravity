@@ -290,6 +290,7 @@ services:
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
       CORS_ORIGINS:   ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      IMAGE_PUBLIC_PATH_PREFIX: ${IMAGE_PUBLIC_PATH_PREFIX:-/api/v1/images}
       PORT: 4022
     networks: [backend, data]
     deploy:
@@ -329,6 +330,8 @@ services:
       MINIO_ENDPOINT:   http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      IMAGE_BUCKET: listings-images
+      IMAGE_PUBLIC_PATH_PREFIX: ${IMAGE_PUBLIC_PATH_PREFIX:-/api/v1/images}
       KAFKA_BROKERS:    kafka:9092
       PORT: 4024
     networks: [backend]

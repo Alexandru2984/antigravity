@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import NextImage from 'next/image';
 import { 
   Activity, ShieldAlert, Cpu, Database, Play, CheckCircle2, 
   Terminal, Server, RefreshCw, BarChart2, Globe, Clock,
-  MapPin, User, Trash2
+  MapPin, User, Trash2, Image as ImageIcon, UploadCloud, X
 } from 'lucide-react';
 
 export default function PolyMarketDashboard() {
@@ -14,6 +15,9 @@ export default function PolyMarketDashboard() {
   const [category, setCategory] = useState('electronics');
   const [sellerId, setSellerId] = useState('vendor_premium_01');
   const [location, setLocation] = useState('Cluj-Napoca');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<any>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Execution states
   const [isExecuting, setIsExecuting] = useState(false);
@@ -124,6 +128,30 @@ export default function PolyMarketDashboard() {
     }
 
     try {
+      let imageIds: string[] = uploadedImage?.key ? [uploadedImage.key] : [];
+      if (selectedImage && imageIds.length === 0) {
+        setIsUploadingImage(true);
+        logEvent('C++ Images', `Uploading ${selectedImage.name} to image processing service...`);
+
+        const formData = new FormData();
+        formData.append('file', selectedImage);
+
+        const imageResponse = await fetch('/api/v1/images/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!imageResponse.ok) {
+          const details = await imageResponse.json().catch(() => ({}));
+          throw new Error(details.error || 'Image upload failed');
+        }
+
+        const imageData = await imageResponse.json();
+        setUploadedImage(imageData);
+        imageIds = [imageData.key];
+        logEvent('C++ Images', 'Image converted to WebP and stored in MinIO.', imageData);
+      }
+
       const response = await fetch('/api/v1/polyglot-mesh/transaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,7 +160,8 @@ export default function PolyMarketDashboard() {
           price: parseFloat(price),
           category,
           sellerId,
-          location
+          location,
+          imageIds
         })
       });
 
@@ -157,6 +186,7 @@ export default function PolyMarketDashboard() {
       logEvent('Gateway', `❌ Critical Network Exception: ${err.message}`);
     } finally {
       setIsExecuting(false);
+      setIsUploadingImage(false);
       setActiveStep(null);
       fetchStatus();
       fetchListings();
@@ -319,12 +349,59 @@ export default function PolyMarketDashboard() {
                   </div>
                 </div>
 
+                <div className="rounded-xl border border-slate-900 bg-slate-950/60 p-3.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Listing Image</label>
+                  {selectedImage ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+                          <ImageIcon className="w-5 h-5 text-cyan-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-mono text-cyan-300 truncate">{selectedImage.name}</p>
+                          <p className="text-[10px] font-mono text-slate-500">{Math.ceil(selectedImage.size / 1024)} KB queued for C++ processing</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setUploadedImage(null);
+                        }}
+                        className="p-2 rounded-lg border border-slate-800 text-slate-500 hover:text-red-400 hover:border-red-500/40 transition-all"
+                        aria-label="Remove selected image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 cursor-pointer rounded-lg border border-dashed border-slate-800 py-4 text-xs font-mono text-slate-500 hover:border-cyan-500/40 hover:text-cyan-300 transition-all">
+                      <UploadCloud className="w-4 h-4" />
+                      Upload image through C++ image-service
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/avif"
+                        className="hidden"
+                        onChange={(event) => {
+                          setSelectedImage(event.target.files?.[0] ?? null);
+                          setUploadedImage(null);
+                        }}
+                      />
+                    </label>
+                  )}
+                  {uploadedImage && (
+                    <p className="mt-2 text-[10px] text-green-400 font-mono">
+                      Stored in MinIO as {uploadedImage.key}
+                    </p>
+                  )}
+                </div>
+
                 <button 
                   type="submit"
-                  disabled={isExecuting}
+                  disabled={isExecuting || isUploadingImage}
                   className="w-full mt-4 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl font-bold uppercase tracking-widest text-slate-950 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/20"
                 >
-                  {isExecuting ? 'Orchestrating Mesh...' : 'Propose Transaction'}
+                  {isUploadingImage ? 'Uploading Image...' : isExecuting ? 'Orchestrating Mesh...' : 'Propose Transaction'}
                 </button>
               </form>
             </section>
@@ -602,6 +679,18 @@ export default function PolyMarketDashboard() {
                       </div>
                       
                       <div>
+                        {item.images?.[0]?.medium && (
+                          <div className="mb-4 aspect-[4/3] overflow-hidden rounded-lg border border-slate-900 bg-slate-900/40">
+                            <NextImage
+                              src={item.images[0].medium}
+                              alt={item.title}
+                              width={640}
+                              height={480}
+                              unoptimized
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        )}
                         <div className="flex justify-between items-start gap-2 mb-3">
                           <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-900 text-[10px] text-cyan-400 font-mono uppercase font-bold">
                             {item.category}

@@ -1,8 +1,11 @@
 #include "ImageController.h"
+#include "MinioClient.h"
 #include <vips/vips8>
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <string>
+#include <uuid/uuid.h>
 
 using namespace vips;
 
@@ -10,6 +13,24 @@ namespace {
 constexpr size_t kMaxUploadBytes = 10 * 1024 * 1024;
 constexpr int64_t kMaxImagePixels = 40'000'000;
 constexpr int kTargetWidth = 800;
+
+std::string imageBucket() {
+    const char *bucket = std::getenv("IMAGE_BUCKET");
+    return bucket != nullptr && std::string(bucket).length() > 0 ? bucket : "listings-images";
+}
+
+std::string publicPathPrefix() {
+    const char *prefix = std::getenv("IMAGE_PUBLIC_PATH_PREFIX");
+    return prefix != nullptr && std::string(prefix).length() > 0 ? prefix : "/api/v1/images";
+}
+
+std::string newImageKey() {
+    uuid_t uuid;
+    char out[37];
+    uuid_generate_random(uuid);
+    uuid_unparse_lower(uuid, out);
+    return std::string(out) + ".webp";
+}
 
 drogon::HttpResponsePtr jsonError(const std::string &message, drogon::HttpStatusCode status) {
     Json::Value ret;
@@ -120,10 +141,23 @@ void ImageController::upload(const drogon::HttpRequestPtr& req,
         size_t outSize;
         resized.write_to_buffer(".webp", &outBuf, &outSize, NULL);
 
-        auto resp = drogon::HttpResponse::newHttpResponse();
-        resp->setBody(std::string((char*)outBuf, outSize));
-        resp->setContentTypeCode(drogon::CT_IMAGE_WEBP);
+        const std::string key = newImageKey();
+        MinioClient minio;
+        minio.putObject(imageBucket(), key, static_cast<const char *>(outBuf), outSize, "image/webp");
         g_free(outBuf);
+
+        Json::Value ret;
+        ret["id"] = key;
+        ret["key"] = key;
+        ret["url"] = publicPathPrefix() + "/" + key;
+        ret["thumbnail"] = ret["url"];
+        ret["medium"] = ret["url"];
+        ret["width"] = resized.width();
+        ret["height"] = resized.height();
+        ret["size"] = Json::UInt64(outSize);
+        ret["content_type"] = "image/webp";
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
     } catch (const std::exception &e) {
         callback(jsonError("Invalid or unsupported image", drogon::k400BadRequest));
@@ -133,10 +167,16 @@ void ImageController::upload(const drogon::HttpRequestPtr& req,
 void ImageController::getImage(const drogon::HttpRequestPtr& req,
                               std::function<void(const drogon::HttpResponsePtr&)>&& callback,
                               std::string uuid) {
-    Json::Value ret;
-    ret["uuid"] = uuid;
-    ret["message"] = "Image retrieval not yet implemented in storage";
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(ret);
-    resp->setStatusCode(drogon::k501NotImplemented);
-    callback(resp);
+    try {
+        MinioClient minio;
+        auto body = minio.getObject(imageBucket(), uuid);
+
+        auto resp = drogon::HttpResponse::newHttpResponse();
+        resp->setBody(std::string(body.data(), body.size()));
+        resp->setContentTypeCode(drogon::CT_IMAGE_WEBP);
+        resp->addHeader("Cache-Control", "public, max-age=31536000, immutable");
+        callback(resp);
+    } catch (const std::exception &e) {
+        callback(jsonError("Image not found", drogon::k404NotFound));
+    }
 }
