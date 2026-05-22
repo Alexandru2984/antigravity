@@ -1,5 +1,6 @@
 import { ProxyController } from './proxy.controller';
 import type { FastifyRequest } from 'fastify';
+import { IS_PUBLIC_KEY } from '../auth/auth.guard';
 
 describe('ProxyController', () => {
   let controller: ProxyController;
@@ -75,5 +76,71 @@ describe('ProxyController', () => {
     expect(headers['x-user-email']).toBe('user@example.test');
     expect(headers['x-user-roles']).toBe('seller');
     expect(headers['x-internal-service-token']).toBe('internal-test-token');
+  });
+
+  it('adds the internal token for image service requests', () => {
+    const headers = buildHeaders(
+      {
+        headers: {
+          'x-internal-service-token': 'forged',
+        },
+      },
+      'images',
+    );
+
+    expect(headers['x-internal-service-token']).toBe('internal-test-token');
+  });
+
+  it('keeps image reads public but requires auth for uploads', () => {
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesRead)).toBe(
+      true,
+    );
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesUpload),
+    ).toBeUndefined();
+  });
+
+  it('proxies image routes to the image-service path prefix', async () => {
+    const proxyRequest = jest
+      .spyOn(
+        controller as unknown as {
+          proxyRequest: jest.MockedFunction<
+            (
+              req: FastifyRequest,
+              res: unknown,
+              service: string,
+              path: string,
+            ) => Promise<void>
+          >;
+        },
+        'proxyRequest'
+      )
+      .mockResolvedValue(undefined);
+
+    const res = {};
+    const readReq = {
+      params: { '*': 'abc.webp' },
+    } as unknown as FastifyRequest;
+    const uploadReq = {
+      params: { '*': 'upload' },
+    } as unknown as FastifyRequest;
+
+    await controller.proxyImagesRead(readReq, res as never);
+    await controller.proxyImagesUpload(uploadReq, res as never);
+
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      1,
+      readReq,
+      res,
+      'images',
+      'images/abc.webp',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      2,
+      uploadReq,
+      res,
+      'images',
+      'images/upload',
+    );
   });
 });

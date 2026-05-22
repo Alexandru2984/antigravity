@@ -19,6 +19,7 @@ import * as https from 'https';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
+const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images']);
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -109,9 +110,14 @@ export class ProxyController {
 
   // ── Images ───────────────────────────────────────────────────
   @Public()
-  @All('images/*')
-  proxyImages(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'images', wildcardPath(req));
+  @Get('images/*')
+  proxyImagesRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'images', 'images/' + wildcardPath(req));
+  }
+
+  @Post('images/upload')
+  proxyImagesUpload(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'images', 'images/upload');
   }
 
   // ── Notifications ────────────────────────────────────────────
@@ -267,7 +273,7 @@ export class ProxyController {
       }
     }
 
-    if (service === 'listings') {
+    if (INTERNAL_TOKEN_SERVICES.has(service)) {
       const token = process.env.INTERNAL_SERVICE_TOKEN;
       if (!token) {
         throw new HttpException(

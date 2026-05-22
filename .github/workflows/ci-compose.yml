@@ -250,6 +250,13 @@ jobs:
           if 'healthcheck' not in search_service:
               dependency_errors.append('search-service must define a healthcheck')
 
+          image_service = services.get('image-service', {})
+          image_env = image_service.get('environment', {})
+          if not image_env.get('INTERNAL_SERVICE_TOKEN'):
+              dependency_errors.append(
+                  'image-service must receive INTERNAL_SERVICE_TOKEN'
+              )
+
           if (
               missing_no_new_privileges
               or missing_mem_limit

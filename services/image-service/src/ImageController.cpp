@@ -13,6 +13,7 @@ namespace {
 constexpr size_t kMaxUploadBytes = 10 * 1024 * 1024;
 constexpr int64_t kMaxImagePixels = 40'000'000;
 constexpr int kTargetWidth = 800;
+constexpr const char *kInternalServiceTokenHeader = "x-internal-service-token";
 
 std::string imageBucket() {
     const char *bucket = std::getenv("IMAGE_BUCKET");
@@ -75,6 +76,33 @@ bool hasAllowedImageSignature(std::string_view content) {
 
     return false;
 }
+
+bool constantTimeEquals(std::string_view left, std::string_view right) {
+    size_t diff = left.size() ^ right.size();
+    const size_t maxLen = std::max(left.size(), right.size());
+
+    for (size_t index = 0; index < maxLen; ++index) {
+        const unsigned char leftChar = index < left.size() ? static_cast<unsigned char>(left[index]) : 0;
+        const unsigned char rightChar = index < right.size() ? static_cast<unsigned char>(right[index]) : 0;
+        diff |= leftChar ^ rightChar;
+    }
+
+    return diff == 0;
+}
+
+drogon::HttpResponsePtr validateInternalServiceToken(const drogon::HttpRequestPtr &req) {
+    const char *expected = std::getenv("INTERNAL_SERVICE_TOKEN");
+    if (expected == nullptr || std::string_view(expected).empty()) {
+        return jsonError("INTERNAL_SERVICE_TOKEN is not configured", drogon::k500InternalServerError);
+    }
+
+    const auto provided = req->getHeader(kInternalServiceTokenHeader);
+    if (provided.empty() || !constantTimeEquals(provided, expected)) {
+        return jsonError("Unauthorized", drogon::k401Unauthorized);
+    }
+
+    return nullptr;
+}
 }
 
 void ImageController::health(const drogon::HttpRequestPtr& req,
@@ -88,6 +116,11 @@ void ImageController::health(const drogon::HttpRequestPtr& req,
 
 void ImageController::upload(const drogon::HttpRequestPtr& req,
                             std::function<void(const drogon::HttpResponsePtr&)>&& callback) {
+    if (auto authError = validateInternalServiceToken(req)) {
+        callback(authError);
+        return;
+    }
+
     drogon::MultiPartParser fileUpload;
     if (fileUpload.parse(req) != 0 || fileUpload.getFiles().empty()) {
         callback(jsonError("No files uploaded", drogon::k400BadRequest));

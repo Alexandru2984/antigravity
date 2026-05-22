@@ -211,6 +211,7 @@ services:
       MINIO_BUCKET_AVATARS: avatars
       KAFKA_BROKERS: kafka:29092
       MAX_UPLOAD_SIZE_MB: 10
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
     networks:
       - polymarket
     depends_on:
