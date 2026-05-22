@@ -1,10 +1,10 @@
-FROM ruby:3.3-alpine AS builder
+FROM ruby:3.3.11-alpine AS builder
 RUN apk add --no-cache build-base nodejs postgresql-dev yaml-dev
 WORKDIR /app
 COPY Gemfile Gemfile.lock* ./
-RUN bundle install --jobs 4 --without development test
+RUN bundle config set without 'development test' && bundle install --jobs 4
 
-FROM ruby:3.3-alpine
+FROM ruby:3.3.11-alpine
 RUN apk add --no-cache postgresql-libs yaml
 RUN adduser -D -s /bin/sh app
 WORKDIR /app

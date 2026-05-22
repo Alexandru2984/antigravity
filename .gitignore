@@ -128,6 +128,7 @@ cabal.sandbox.config
 .bundle/
 vendor/bundle/
 Gemfile.lock
+!services/admin-panel/Gemfile.lock
 *.gem
 db/*.sqlite3
 db/*.sqlite3-journal
