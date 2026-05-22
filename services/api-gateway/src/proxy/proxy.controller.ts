@@ -18,6 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
+const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -243,12 +244,28 @@ export class ProxyController {
     targetUrl: URL,
   ): http.OutgoingHttpHeaders {
     const headers: http.OutgoingHttpHeaders = { ...req.headers };
-    delete headers[INTERNAL_SERVICE_TOKEN_HEADER];
-    delete headers.host;
+    this.deleteHeader(headers, INTERNAL_SERVICE_TOKEN_HEADER);
+    USER_CONTEXT_HEADERS.forEach((header) => this.deleteHeader(headers, header));
+    this.deleteHeader(headers, 'host');
 
     headers.host = targetUrl.host;
     headers['x-forwarded-for'] = req.ip ?? '';
     headers['x-request-id'] = (req.headers['x-request-id'] as string) ?? '';
+
+    const user = (
+      req as FastifyRequest & {
+        user?: { sub?: string; email?: string; roles?: string[] };
+      }
+    ).user;
+    if (user?.sub) {
+      headers['x-user-id'] = user.sub;
+      if (user.email) {
+        headers['x-user-email'] = user.email;
+      }
+      if (Array.isArray(user.roles)) {
+        headers['x-user-roles'] = user.roles.join(',');
+      }
+    }
 
     if (service === 'listings') {
       const token = process.env.INTERNAL_SERVICE_TOKEN;
@@ -262,5 +279,13 @@ export class ProxyController {
     }
 
     return headers;
+  }
+
+  private deleteHeader(headers: http.OutgoingHttpHeaders, header: string): void {
+    Object.keys(headers).forEach((key) => {
+      if (key.toLowerCase() === header) {
+        delete headers[key];
+      }
+    });
   }
 }
