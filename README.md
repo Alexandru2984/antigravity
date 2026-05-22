@@ -89,7 +89,7 @@ make --version
 git clone https://github.com/youruser/polymarket
 cd polymarket
 cp .env.example .env
-# Edit .env — set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, POSTGRES_PASSWORD at minimum
+# Edit .env — every required secret must be unique and production-safe
 ```
 
 ### 2. Generate JWT Keys (one-time)

@@ -26,7 +26,22 @@ jobs:
       STRIPE_SECRET_KEY: sk_test_dummy
       STRIPE_WEBHOOK_SECRET: whsec_dummy
       STRIPE_PUBLISHABLE_KEY: pk_test_dummy
-      RAILS_MASTER_KEY: dummy-rails-master-key
+      POSTGRES_PASSWORD: dummy-postgres-password-1234567890
+      MONGO_PASSWORD: dummy-mongo-password-1234567890
+      MYSQL_ROOT_PASSWORD: dummy-mysql-root-password-1234567890
+      MYSQL_PASSWORD: dummy-mysql-password-1234567890
+      REDIS_PASSWORD: dummy-redis-password-1234567890
+      CLICKHOUSE_PASSWORD: dummy-clickhouse-password-1234567890
+      TIMESCALE_PASSWORD: dummy-timescale-password-1234567890
+      SURREALDB_PASSWORD: dummy-surreal-password-1234567890
+      MINIO_ROOT_USER: dummy-minio-admin
+      MINIO_ROOT_PASSWORD: dummy-minio-password-1234567890
+      NEO4J_PASSWORD: dummy-neo4j-password-1234567890
+      SECRET_KEY_BASE: dummy-secret-key-base-1234567890
+      NOTIFICATION_SECRET_KEY_BASE: dummy-notification-secret-key-base-1234567890
+      CHAT_SECRET_KEY_BASE: dummy-chat-secret-key-base-1234567890
+      ADMIN_SECRET_KEY_BASE: dummy-admin-secret-key-base-1234567890
+      REVIEW_APP_KEY: base64:dummyreviewappkey
       JWT_PUBLIC_KEY: dummy-public-key
       JWT_PRIVATE_KEY: dummy-private-key
       INTERNAL_SERVICE_TOKEN: dummy-internal-token
