@@ -1,11 +1,21 @@
 import axios from 'axios';
 import { HttpStatus } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { ComputeController } from './compute.controller';
 import { IS_PUBLIC_KEY } from './auth/auth.guard';
 
 jest.mock('axios');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
+
+function authenticatedRequest(
+  userId = AUTH_USER_ID,
+): FastifyRequest & { user: { sub: string } } {
+  return {
+    user: { sub: userId },
+  } as FastifyRequest & { user: { sub: string } };
+}
 
 describe('ComputeController', () => {
   let controller: ComputeController;
@@ -52,7 +62,9 @@ describe('ComputeController', () => {
   });
 
   it('keeps mesh node discovery public but requires auth for transactions', () => {
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, ComputeController)).toBeUndefined();
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, ComputeController),
+    ).toBeUndefined();
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.getMeshNodes)).toBe(
       true,
     );
@@ -226,11 +238,10 @@ describe('ComputeController', () => {
       return Promise.reject(new Error(`unexpected GET ${url}`));
     });
 
-    const result = await controller.executeTransaction({
+    const result = await controller.executeTransaction(authenticatedRequest(), {
       title: 'MacBook Pro M3',
       price: 1200,
       category: 'electronics',
-      sellerId: 'seller-100',
       attributes: { source: 'test' },
     });
 
@@ -341,7 +352,7 @@ describe('ComputeController', () => {
       {
         type: 'listing.created',
         listing_id: 'mongo123',
-        seller_id: '22222222-2222-2222-2222-222222222222',
+        seller_id: AUTH_USER_ID,
         category: 'electronics',
         price_cents: 120000,
         mesh_online_nodes: expect.arrayContaining([
@@ -358,6 +369,37 @@ describe('ComputeController', () => {
     expect(listingPayload.attributes.polyglot_mesh.online_nodes).toContain(
       'Brainfuck-Crypt',
     );
+    expect(listingCall?.[2]).toMatchObject({
+      headers: {
+        'x-user-id': AUTH_USER_ID,
+        'x-internal-service-token': 'test-internal-token',
+      },
+    });
+  });
+
+  it('rejects client-supplied seller ids', async () => {
+    await expect(
+      controller.executeTransaction(authenticatedRequest(), {
+        title: 'MacBook Pro M3',
+        price: 1200,
+        category: 'electronics',
+        sellerId: '22222222-2222-2222-2222-222222222222',
+      }),
+    ).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+    });
+  });
+
+  it('rejects invalid authenticated user ids', async () => {
+    await expect(
+      controller.executeTransaction(authenticatedRequest('not-a-uuid'), {
+        title: 'MacBook Pro M3',
+        price: 1200,
+        category: 'electronics',
+      }),
+    ).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+    });
   });
 
   it('rejects concurrent mesh transactions over the configured limit', async () => {
@@ -376,7 +418,7 @@ describe('ComputeController', () => {
     });
     mockedAxios.get.mockResolvedValue({ data: {} });
 
-    const first = controller.executeTransaction({
+    const first = controller.executeTransaction(authenticatedRequest(), {
       title: 'MacBook Pro M3',
       price: 1200,
       category: 'electronics',
@@ -384,7 +426,7 @@ describe('ComputeController', () => {
     await Promise.resolve();
 
     await expect(
-      controller.executeTransaction({
+      controller.executeTransaction(authenticatedRequest(), {
         title: 'iPhone 15',
         price: 700,
         category: 'electronics',

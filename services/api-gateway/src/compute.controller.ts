@@ -6,10 +6,12 @@ import {
   HttpException,
   HttpStatus,
   Post,
+  Req,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import axios from 'axios';
 import { Public } from './auth/auth.guard';
+import type { FastifyRequest } from 'fastify';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const DEFAULT_MAX_CONCURRENT_TRANSACTIONS = 2;
@@ -50,7 +52,6 @@ interface MeshTransactionRequest {
   description?: string;
   price?: number;
   category?: string;
-  sellerId?: string;
   location?: string;
   currency?: string;
   subcategory?: string;
@@ -187,34 +188,27 @@ export class ComputeController {
   }
 
   @Post('transaction')
-  async executeTransaction(@Body() body: unknown) {
+  async executeTransaction(@Req() req: FastifyRequest, @Body() body: unknown) {
     if (!this.isMeshEnabled()) {
       throw new ServiceUnavailableException('Polyglot mesh is disabled');
     }
 
+    const sellerId = this.authenticatedUserId(req);
     const releaseSlot = this.acquireTransactionSlot();
     try {
-      return await this.executeTransactionCore(this.normalizeBody(body));
+      return await this.executeTransactionCore(
+        this.normalizeBody(body),
+        sellerId,
+      );
     } finally {
       releaseSlot();
     }
   }
 
-  private async executeTransactionCore(body: MeshTransactionRequest) {
-    // Ensure sellerId is a valid UUID, generate a deterministic one if not
-    let sellerId = body.sellerId || '00000000-0000-0000-0000-000000000100';
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(sellerId)) {
-      if (sellerId.includes('vendor') || sellerId.includes('premium')) {
-        sellerId = '11111111-1111-1111-1111-111111111111';
-      } else if (sellerId.includes('seller') || sellerId.includes('100')) {
-        sellerId = '22222222-2222-2222-2222-222222222222';
-      } else {
-        sellerId = '00000000-0000-0000-0000-000000000100';
-      }
-    }
-
+  private async executeTransactionCore(
+    body: MeshTransactionRequest,
+    sellerId: string,
+  ) {
     const listing = {
       title: body.title || 'Demo Listing Item',
       price: Number(body.price) || 250,
@@ -702,7 +696,6 @@ export class ComputeController {
       ),
       price: this.optionalPrice(input.price),
       category: this.optionalString(input.category, 'category', 64),
-      sellerId: this.optionalString(input.sellerId, 'sellerId', 80),
       location: this.optionalString(input.location, 'location', 80),
       currency: this.optionalString(input.currency, 'currency', 8),
       subcategory: this.optionalString(input.subcategory, 'subcategory', 64),
@@ -713,7 +706,28 @@ export class ComputeController {
       attributes: this.optionalAttributes(input.attributes),
     };
 
+    if (input.sellerId !== undefined && input.sellerId !== null) {
+      throw new BadRequestException('sellerId is derived from the auth token');
+    }
+
     return normalized;
+  }
+
+  private authenticatedUserId(req: FastifyRequest): string {
+    const user = (
+      req as FastifyRequest & {
+        user?: { sub?: string };
+      }
+    ).user;
+    const sellerId = user?.sub;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!sellerId || !uuidRegex.test(sellerId)) {
+      throw new BadRequestException('Authenticated user id must be a UUID');
+    }
+
+    return sellerId;
   }
 
   private optionalString(
