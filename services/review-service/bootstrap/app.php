@@ -14,4 +14,9 @@ $app->singleton(
     Illuminate\Contracts\Debug\ExceptionHandler::class,
     App\Exceptions\Handler::class
 );
+$app->booted(function () use ($app) {
+    $app->make('router')
+        ->prefix('api')
+        ->group($app->basePath('routes/api.php'));
+});
 return $app;

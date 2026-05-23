@@ -360,6 +360,7 @@ services:
       DB_USERNAME: polymarket
       DB_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
       KAFKA_BROKERS: kafka:29092
+      PORT: 4009
     networks:
       - polymarket
     depends_on:
@@ -367,6 +368,11 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4009}/api/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Analytics Service (Python / FastAPI) ────────────────────
   analytics-service:

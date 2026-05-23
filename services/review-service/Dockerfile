@@ -11,7 +11,8 @@ COPY composer.json composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 COPY . .
-RUN ls -la && php artisan --version || true
+RUN mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
+    && php artisan --version
 
 # ── Runtime stage ─────────────────────────────────────────────
 FROM php:8.3-cli-alpine
@@ -24,10 +25,12 @@ COPY --from=builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 COPY --from=builder /app /app
 
 WORKDIR /app
+RUN mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
+    && chown -R app:app bootstrap/cache storage
 USER app
-EXPOSE 4029
+EXPOSE 4009
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4029/health || exit 1
+    CMD wget -qO- "http://127.0.0.1:${PORT:-4009}/api/health" || exit 1
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=4029"]
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-4009}"]

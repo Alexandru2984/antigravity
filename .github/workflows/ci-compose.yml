@@ -305,6 +305,13 @@ jobs:
           if 'healthcheck' not in feed_service:
               dependency_errors.append('feed-service must define a healthcheck')
 
+          review_service = services.get('review-service', {})
+          review_env = review_service.get('environment', {})
+          if str(review_env.get('PORT')) != '4009':
+              dependency_errors.append('review-service must listen on PORT 4009')
+          if 'healthcheck' not in review_service:
+              dependency_errors.append('review-service must define a healthcheck')
+
           search_service = services.get('search-service', {})
           search_env = search_service.get('environment', {})
           if str(search_env.get('PORT')) != '4003':
