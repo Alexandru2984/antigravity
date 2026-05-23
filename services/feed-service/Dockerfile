@@ -13,11 +13,11 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/feed-service /feed-service
 
-ENV PORT=4028
-EXPOSE 4028
+ENV PORT=4008
+EXPOSE 4008
 USER 65532:65532
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD ["/feed-service", "-health"] || exit 1
+    CMD ["/feed-service", "-health"]
 
 ENTRYPOINT ["/feed-service"]

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -18,21 +19,21 @@ import (
 // ── Types ─────────────────────────────────────────────────────
 
 type FeedItem struct {
-	ListingID   string    `json:"listing_id"`
-	Title       string    `json:"title"`
-	Price       float64   `json:"price"`
-	Category    string    `json:"category"`
-	SellerID    string    `json:"seller_id"`
-	ThumbnailURL string   `json:"thumbnail_url"`
-	CreatedAt   time.Time `json:"created_at"`
-	Score       float64   `json:"score"`
+	ListingID    string    `json:"listing_id"`
+	Title        string    `json:"title"`
+	Price        float64   `json:"price"`
+	Category     string    `json:"category"`
+	SellerID     string    `json:"seller_id"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+	CreatedAt    time.Time `json:"created_at"`
+	Score        float64   `json:"score"`
 }
 
 type FeedResponse struct {
-	Items  []FeedItem `json:"items"`
-	Total  int        `json:"total"`
-	Page   int        `json:"page"`
-	Limit  int        `json:"limit"`
+	Items []FeedItem `json:"items"`
+	Total int        `json:"total"`
+	Page  int        `json:"page"`
+	Limit int        `json:"limit"`
 }
 
 // ── App ───────────────────────────────────────────────────────
@@ -71,8 +72,12 @@ func (a *App) getFeed(w http.ResponseWriter, r *http.Request) {
 
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if page < 1 { page = 1 }
-	if limit < 1 || limit > 100 { limit = 20 }
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
 
 	// Try personalized feed from Redis sorted set first
 	cacheKey := "feed:user:" + userID
@@ -117,7 +122,7 @@ func (a *App) fetchFromCache(ctx context.Context, key string, page, limit int) [
 
 func (a *App) followSeller(w http.ResponseWriter, r *http.Request) {
 	sellerID := chi.URLParam(r, "sellerID")
-	userID   := r.Header.Get("X-User-Id")
+	userID := r.Header.Get("X-User-Id")
 	if userID == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -135,7 +140,7 @@ func (a *App) followSeller(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) unfollowSeller(w http.ResponseWriter, r *http.Request) {
 	sellerID := chi.URLParam(r, "sellerID")
-	userID   := r.Header.Get("X-User-Id")
+	userID := r.Header.Get("X-User-Id")
 	if userID == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -152,6 +157,14 @@ func (a *App) unfollowSeller(w http.ResponseWriter, r *http.Request) {
 // ── Main ──────────────────────────────────────────────────────
 
 func main() {
+	healthCheck := flag.Bool("health", false, "check local HTTP health endpoint")
+	flag.Parse()
+
+	if *healthCheck {
+		runHealthCheck()
+		return
+	}
+
 	app := NewApp()
 	r := chi.NewRouter()
 
@@ -160,17 +173,30 @@ func main() {
 	r.Use(middleware.RequestID)
 
 	r.Get("/health", app.health)
-	r.Get("/ready",  app.health)
+	r.Get("/ready", app.health)
 
 	r.Route("/feed", func(r chi.Router) {
-		r.Get("/",                       app.getFeed)
-		r.Post("/follow/{sellerID}",     app.followSeller)
-		r.Delete("/follow/{sellerID}",   app.unfollowSeller)
+		r.Get("/", app.getFeed)
+		r.Post("/follow/{sellerID}", app.followSeller)
+		r.Delete("/follow/{sellerID}", app.unfollowSeller)
 	})
 
-	port := getEnv("PORT", "4028")
+	port := getEnv("PORT", "4008")
 	log.Printf("🚀 feed-service running on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("Server error: %v", err)
+	}
+}
+
+func runHealthCheck() {
+	port := getEnv("PORT", "4008")
+	client := http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://127.0.0.1:" + port + "/health")
+	if err != nil {
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		os.Exit(1)
 	}
 }
