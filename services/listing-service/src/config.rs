@@ -20,7 +20,7 @@ impl Config {
         }
 
         Ok(Self {
-            port: env::var("PORT").unwrap_or("4022".into()).parse()?,
+            port: env::var("PORT").unwrap_or("4002".into()).parse()?,
             mongo_uri: env::var("MONGO_URI")
                 .unwrap_or("mongodb://polymarket:polymarket_dev@localhost:27017".into()),
             mongo_db: env::var("MONGO_DB").unwrap_or("polymarket".into()),

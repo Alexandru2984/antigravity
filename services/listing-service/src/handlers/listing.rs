@@ -15,13 +15,28 @@ use crate::{
 
 const INTERNAL_SERVICE_TOKEN_HEADER: &str = "x-internal-service-token";
 
+fn constant_time_eq(left: &str, right: &str) -> bool {
+    let left = left.as_bytes();
+    let right = right.as_bytes();
+    let mut diff = left.len() ^ right.len();
+    let max_len = left.len().max(right.len());
+
+    for index in 0..max_len {
+        let left_byte = left.get(index).copied().unwrap_or(0);
+        let right_byte = right.get(index).copied().unwrap_or(0);
+        diff |= usize::from(left_byte ^ right_byte);
+    }
+
+    diff == 0
+}
+
 fn require_internal_request(state: &AppState, headers: &HeaderMap) -> Result<()> {
     let provided = headers
         .get(INTERNAL_SERVICE_TOKEN_HEADER)
         .and_then(|v| v.to_str().ok())
         .ok_or(AppError::Forbidden)?;
 
-    if provided != state.internal_service_token {
+    if !constant_time_eq(provided, &state.internal_service_token) {
         return Err(AppError::Forbidden);
     }
 
@@ -42,7 +57,12 @@ fn is_admin(headers: &HeaderMap) -> bool {
     headers
         .get("x-user-roles")
         .and_then(|v| v.to_str().ok())
-        .map(|roles| roles.contains("admin"))
+        .map(|roles| {
+            roles
+                .split(',')
+                .map(str::trim)
+                .any(|role| role.eq_ignore_ascii_case("admin"))
+        })
         .unwrap_or(false)
 }
 
@@ -122,6 +142,38 @@ pub async fn get_by_id(
     });
 
     Ok(Json(ListingResponse::from(listing)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{constant_time_eq, is_admin};
+    use axum::http::{HeaderMap, HeaderValue};
+
+    fn roles_header(roles: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert("x-user-roles", HeaderValue::from_str(roles).unwrap());
+        headers
+    }
+
+    #[test]
+    fn admin_role_requires_exact_csv_match() {
+        assert!(is_admin(&roles_header("user,admin")));
+        assert!(is_admin(&roles_header("seller, admin ")));
+        assert!(is_admin(&roles_header("ADMIN")));
+
+        assert!(!is_admin(&roles_header("notadmin")));
+        assert!(!is_admin(&roles_header("superadministrator")));
+        assert!(!is_admin(&roles_header("user,admin-assistant")));
+        assert!(!is_admin(&HeaderMap::new()));
+    }
+
+    #[test]
+    fn internal_token_comparison_checks_full_value() {
+        assert!(constant_time_eq("internal-token", "internal-token"));
+        assert!(!constant_time_eq("internal-token", "internal"));
+        assert!(!constant_time_eq("internal", "internal-token"));
+        assert!(!constant_time_eq("internal-token", "internal-tokem"));
+    }
 }
 
 // ── PUT /listings/:id ──────────────────────────────────────────

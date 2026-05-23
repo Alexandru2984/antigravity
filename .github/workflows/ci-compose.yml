@@ -243,6 +243,11 @@ jobs:
                   'api-gateway must wait for auth-service service_healthy'
               )
 
+          listing_service = services.get('listing-service', {})
+          listing_env = listing_service.get('environment', {})
+          if str(listing_env.get('PORT')) != '4002':
+              dependency_errors.append('listing-service must listen on PORT 4002')
+
           search_service = services.get('search-service', {})
           search_env = search_service.get('environment', {})
           if str(search_env.get('PORT')) != '4003':
