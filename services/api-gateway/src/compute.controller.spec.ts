@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { HttpStatus } from '@nestjs/common';
 import { ComputeController } from './compute.controller';
+import { IS_PUBLIC_KEY } from './auth/auth.guard';
 
 jest.mock('axios');
 
@@ -48,6 +49,16 @@ describe('ComputeController', () => {
     delete process.env.ZIG_SERVICE_URL;
     delete process.env.BRAINFUCK_SERVICE_URL;
     delete process.env.LISTING_SERVICE_URL;
+  });
+
+  it('keeps mesh node discovery public but requires auth for transactions', () => {
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, ComputeController)).toBeUndefined();
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.getMeshNodes)).toBe(
+      true,
+    );
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.executeTransaction),
+    ).toBeUndefined();
   });
 
   it('persists mesh reports as listing attributes', async () => {

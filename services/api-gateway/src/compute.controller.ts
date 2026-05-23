@@ -61,11 +61,11 @@ interface MeshTransactionRequest {
   attributes?: Record<string, unknown>;
 }
 
-@Public()
 @Controller('api/v1/polyglot-mesh')
 export class ComputeController {
   private activeTransactions = 0;
 
+  @Public()
   @Get('nodes')
   async getMeshNodes() {
     return [

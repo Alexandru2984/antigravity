@@ -81,6 +81,45 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Polyglot mesh transaction must require auth
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          source = Path('services/api-gateway/src/compute.controller.ts').read_text(
+              encoding='utf-8'
+          )
+          class_match = re.search(
+              r'@Controller\\(\\'api/v1/polyglot-mesh\\'\\)\\s*export class ComputeController',
+              source,
+          )
+          if not class_match:
+              print('ComputeController route declaration not found')
+              sys.exit(1)
+
+          before_class = source[:class_match.start()]
+          previous_decorator_block = before_class.split('\\n\\n')[-1]
+          if '@Public()' in previous_decorator_block:
+              print('ComputeController class must not be public')
+              sys.exit(1)
+
+          transaction_match = re.search(
+              r'@Post\\(\\'transaction\\'\\)\\s*async executeTransaction',
+              source,
+          )
+          if not transaction_match:
+              print('executeTransaction route not found')
+              sys.exit(1)
+
+          before_transaction = source[:transaction_match.start()]
+          previous_method_block = before_transaction.split('\\n\\n')[-1]
+          if '@Public()' in previous_method_block:
+              print('polyglot mesh transaction must not be public')
+              sys.exit(1)
+          PY
+
       - name: Validate canonical compose stack
         run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config >/tmp/compose-config.yml
 
