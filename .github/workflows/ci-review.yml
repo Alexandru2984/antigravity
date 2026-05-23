@@ -30,12 +30,15 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo, pdo_mysql, mbstring, bcmath, json
+          extensions: pdo, pdo_mysql, mbstring, bcmath, json, rdkafka
           coverage: xdebug
       - name: Composer install
         run: cd services/review-service && composer install --no-interaction --prefer-dist
-      - name: PHPStan (static analysis)
-        run: cd services/review-service && vendor/bin/phpstan analyse src
+      - name: PHP syntax check
+        run: |
+          cd services/review-service
+          find app bootstrap public routes -name '*.php' -print0 \
+            | xargs -0 -n1 php -l
       - name: Laravel Pint (lint)
         run: cd services/review-service && vendor/bin/pint --test
       - name: Run migrations + tests

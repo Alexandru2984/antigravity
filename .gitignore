@@ -167,3 +167,13 @@ Desktop.ini
 *.orig
 *.pid
 *.seed
+
+# ── Review service Laravel runtime directories ───────────────
+!services/review-service/storage/
+!services/review-service/storage/framework/
+!services/review-service/storage/framework/cache/
+!services/review-service/storage/framework/cache/data/
+!services/review-service/storage/framework/sessions/
+!services/review-service/storage/framework/views/
+!services/review-service/storage/logs/
+!services/review-service/storage/**/.gitkeep

@@ -91,12 +91,40 @@ describe('ProxyController', () => {
     expect(headers['x-internal-service-token']).toBe('internal-test-token');
   });
 
+  it('adds the internal token for review service requests', () => {
+    const headers = buildHeaders(
+      {
+        headers: {
+          'x-internal-service-token': 'forged',
+        },
+      },
+      'reviews',
+    );
+
+    expect(headers['x-internal-service-token']).toBe('internal-test-token');
+  });
+
   it('keeps image reads public but requires auth for uploads', () => {
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesRead)).toBe(
       true,
     );
     expect(
       Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesUpload),
+    ).toBeUndefined();
+  });
+
+  it('keeps review reads public but requires auth for writes', () => {
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRootRead),
+    ).toBe(true);
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRead)).toBe(
+      true,
+    );
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRootCreate),
+    ).toBeUndefined();
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsWrite),
     ).toBeUndefined();
   });
 
@@ -141,6 +169,67 @@ describe('ProxyController', () => {
       res,
       'images',
       'images/upload',
+    );
+  });
+
+  it('proxies review routes to the Laravel API path prefix', async () => {
+    const proxyRequest = jest
+      .spyOn(
+        controller as unknown as {
+          proxyRequest: jest.MockedFunction<
+            (
+              req: FastifyRequest,
+              res: unknown,
+              service: string,
+              path: string,
+            ) => Promise<void>
+          >;
+        },
+        'proxyRequest'
+      )
+      .mockResolvedValue(undefined);
+
+    const res = {};
+    const rootReq = {} as unknown as FastifyRequest;
+    const listingReq = {
+      params: { '*': 'listing/listing-123' },
+    } as unknown as FastifyRequest;
+    const writeReq = {
+      params: { '*': 'review-123' },
+    } as unknown as FastifyRequest;
+
+    await controller.proxyReviewsRootRead(rootReq, res as never);
+    await controller.proxyReviewsRead(listingReq, res as never);
+    await controller.proxyReviewsRootCreate(rootReq, res as never);
+    await controller.proxyReviewsWrite(writeReq, res as never);
+
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      1,
+      rootReq,
+      res,
+      'reviews',
+      'api/reviews',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      2,
+      listingReq,
+      res,
+      'reviews',
+      'api/reviews/listing/listing-123',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      3,
+      rootReq,
+      res,
+      'reviews',
+      'api/reviews',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      4,
+      writeReq,
+      res,
+      'reviews',
+      'api/reviews/review-123',
     );
   });
 });

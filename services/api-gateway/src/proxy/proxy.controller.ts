@@ -19,7 +19,7 @@ import * as https from 'https';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
-const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images']);
+const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images', 'reviews']);
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -150,11 +150,42 @@ export class ProxyController {
     return this.proxyRequest(req, res, 'feed', wildcardPath(req));
   }
 
-  // ── Reviews (public) ─────────────────────────────────────────
+  // ── Reviews ──────────────────────────────────────────────────
   @Public()
-  @All('reviews/*')
-  proxyReviews(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'reviews', wildcardPath(req));
+  @Get('reviews')
+  proxyReviewsRootRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'reviews', 'api/reviews');
+  }
+
+  @Public()
+  @Get('reviews/*')
+  proxyReviewsRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(
+      req,
+      res,
+      'reviews',
+      'api/reviews/' + wildcardPath(req),
+    );
+  }
+
+  @Post('reviews')
+  proxyReviewsRootCreate(
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply,
+  ) {
+    return this.proxyRequest(req, res, 'reviews', 'api/reviews');
+  }
+
+  @Put('reviews/*')
+  @Patch('reviews/*')
+  @Delete('reviews/*')
+  proxyReviewsWrite(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(
+      req,
+      res,
+      'reviews',
+      'api/reviews/' + wildcardPath(req),
+    );
   }
 
   // ── Chat ─────────────────────────────────────────────────────
