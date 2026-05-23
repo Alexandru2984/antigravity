@@ -359,6 +359,7 @@ services:
       DB_DATABASE: polymarket_reviews
       DB_USERNAME: polymarket
       DB_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
       KAFKA_BROKERS: kafka:29092
       PORT: 4009
     networks:

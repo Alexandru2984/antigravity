@@ -286,6 +286,13 @@ jobs:
                   'api-gateway must wait for auth-service service_healthy'
               )
 
+          mysql_service = services.get('mysql', {})
+          mysql_healthcheck = ' '.join(mysql_service.get('healthcheck', {}).get('test', []))
+          if 'mysqladmin ping' in mysql_healthcheck or 'SELECT 1' not in mysql_healthcheck:
+              dependency_errors.append(
+                  'mysql healthcheck must validate authenticated SELECT 1'
+              )
+
           listing_service = services.get('listing-service', {})
           listing_env = listing_service.get('environment', {})
           if str(listing_env.get('PORT')) != '4002':
@@ -311,6 +318,10 @@ jobs:
               dependency_errors.append('review-service must listen on PORT 4009')
           if 'healthcheck' not in review_service:
               dependency_errors.append('review-service must define a healthcheck')
+          if not review_env.get('INTERNAL_SERVICE_TOKEN'):
+              dependency_errors.append(
+                  'review-service must receive INTERNAL_SERVICE_TOKEN'
+              )
 
           search_service = services.get('search-service', {})
           search_env = search_service.get('environment', {})

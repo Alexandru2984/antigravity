@@ -44,10 +44,15 @@ jobs:
       - name: Run migrations + tests
         env:
           APP_ENV: testing
+          APP_KEY: base64:dummyreviewappkey
+          DB_CONNECTION: mysql
           DB_HOST: localhost
+          DB_PORT: 3306
           DB_DATABASE: polymarket_reviews_test
           DB_USERNAME: polymarket
           DB_PASSWORD: test
+          INTERNAL_SERVICE_TOKEN: test-internal-token
+          KAFKA_BROKERS: 127.0.0.1:9092
         run: |
           cd services/review-service
           php artisan migrate --force

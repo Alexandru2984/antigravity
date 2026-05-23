@@ -1,0 +1,6 @@
+.git
+vendor/
+composer.lock
+.phpunit.result.cache
+storage/logs/*.log
+bootstrap/cache/*.php

@@ -102,7 +102,7 @@ services:
     networks:
       - polymarket
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u polymarket -p\"$${MYSQL_PASSWORD}\""]
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -u polymarket -p\"$${MYSQL_PASSWORD}\" polymarket_reviews -e 'SELECT 1' >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 5

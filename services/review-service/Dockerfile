@@ -2,6 +2,7 @@
 FROM php:8.3-cli-alpine AS builder
 
 RUN apk add --no-cache git unzip librdkafka-dev autoconf build-base
+RUN docker-php-ext-install pdo_mysql
 RUN pecl install rdkafka && docker-php-ext-enable rdkafka
 
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer

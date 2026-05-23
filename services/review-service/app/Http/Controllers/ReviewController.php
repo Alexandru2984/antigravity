@@ -34,19 +34,20 @@ class ReviewController extends Controller
             'body' => $validated['body'],
         ]);
 
-        // Kafka event: reviews.created
         try {
-            $kafka = new Producer;
-            $kafka->addBrokers(env('KAFKA_BROKERS', 'kafka:9092'));
-            $topic = $kafka->newTopic('reviews.created');
-            $topic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode([
-                'review_id' => $review->id,
-                'listing_id' => $review->listing_id,
-                'rating' => $review->rating,
-                'reviewer_id' => $userId,
-            ]));
-            $kafka->flush(3000);
-        } catch (\Exception $e) {
+            if (class_exists(Producer::class)) {
+                $kafka = new Producer;
+                $kafka->addBrokers(env('KAFKA_BROKERS', 'kafka:9092'));
+                $topic = $kafka->newTopic('reviews.created');
+                $topic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode([
+                    'review_id' => $review->id,
+                    'listing_id' => $review->listing_id,
+                    'rating' => $review->rating,
+                    'reviewer_id' => $userId,
+                ]));
+                $kafka->flush(3000);
+            }
+        } catch (\Throwable $e) {
             \Log::warning('Kafka publish failed: '.$e->getMessage());
         }
 
