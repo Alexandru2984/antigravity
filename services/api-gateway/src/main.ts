@@ -39,7 +39,7 @@ async function bootstrap() {
     credentials: true,
     maxAge: 600,
   });
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 4021;
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
   await app.listen(port, '0.0.0.0');
 }
 bootstrap().catch((err) => {

@@ -272,6 +272,10 @@ jobs:
               dependency_errors.append('auth-service must define a healthcheck')
 
           api_gateway = services.get('api-gateway', {})
+          api_gateway_env = api_gateway.get('environment', {})
+          if str(api_gateway_env.get('PORT')) != '4000':
+              dependency_errors.append('api-gateway must listen on PORT 4000')
+
           auth_dependency = (
               api_gateway
               .get('depends_on', {})
