@@ -11,7 +11,7 @@ RUN addgroup -S polymarket && adduser -S profile -G polymarket
 WORKDIR /app
 COPY --from=builder --chown=profile:polymarket /app/build/libs/profile-service-fat.jar ./app.jar
 USER profile
-EXPOSE 4027
+EXPOSE 4007
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- http://localhost:4027/health || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-4007}/health" || exit 1
 CMD ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

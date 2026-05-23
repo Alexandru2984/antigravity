@@ -291,6 +291,13 @@ jobs:
           if str(listing_env.get('PORT')) != '4002':
               dependency_errors.append('listing-service must listen on PORT 4002')
 
+          profile_service = services.get('profile-service', {})
+          profile_env = profile_service.get('environment', {})
+          if str(profile_env.get('PORT')) != '4007':
+              dependency_errors.append('profile-service must listen on PORT 4007')
+          if 'healthcheck' not in profile_service:
+              dependency_errors.append('profile-service must define a healthcheck')
+
           search_service = services.get('search-service', {})
           search_env = search_service.get('environment', {})
           if str(search_env.get('PORT')) != '4003':

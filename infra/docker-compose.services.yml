@@ -298,6 +298,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4007}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Feed Service (Go / chi) ──────────────────────────────────
   feed-service:
