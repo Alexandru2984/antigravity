@@ -126,10 +126,36 @@ jobs:
       - name: Validate observability compose stack
         run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.obs.yml config >/tmp/obs-compose-config.yml
 
-      - name: Only nginx publishes host ports
+      - name: Compose images must be pinned
         run: |
           docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml config --format json >/tmp/compose-config.json
           docker compose -f infra/docker-compose.yml -f infra/docker-compose.obs.yml config --format json >/tmp/obs-compose-config.json
+          python3 - <<'PY'
+          import json
+          import sys
+
+          services = {}
+          for path in ['/tmp/compose-config.json', '/tmp/obs-compose-config.json']:
+              with open(path, encoding='utf-8') as handle:
+                  services.update(json.load(handle)['services'])
+
+          offenders = {}
+          for name, service in services.items():
+              image = service.get('image')
+              if not image:
+                  continue
+              repository = image.rsplit('/', 1)[-1].split('@', 1)[0]
+              tag = repository.rsplit(':', 1)[1] if ':' in repository else ''
+              if not tag or tag == 'latest' or tag.startswith('latest-'):
+                  offenders[name] = image
+
+          if offenders:
+              print('Compose images must use pinned non-latest tags:', offenders)
+              sys.exit(1)
+          PY
+
+      - name: Only nginx publishes host ports
+        run: |
           python3 - <<'PY'
           import json
           import sys

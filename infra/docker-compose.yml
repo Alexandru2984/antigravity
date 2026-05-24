@@ -207,7 +207,7 @@ services:
   # Used by: stream-processor (time-series metrics, KPIs)
   timescale:
     <<: *stateful_security
-    image: timescale/timescaledb:latest-pg16
+    image: timescale/timescaledb:2.27.1-pg16
     container_name: polymarket-timescale
     restart: unless-stopped
     mem_limit: 700m
@@ -353,7 +353,7 @@ services:
   # Kafka UI — topic browser + consumer lag monitoring
   kafka-ui:
     <<: *stateful_security
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: polymarket-kafka-ui
     restart: unless-stopped
     mem_limit: 256m
