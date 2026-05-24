@@ -286,6 +286,37 @@ jobs:
                   'api-gateway must wait for auth-service service_healthy'
               )
 
+          surrealdb_init = services.get('surrealdb-init', {})
+          if not surrealdb_init:
+              dependency_errors.append('surrealdb-init must prepare the data volume')
+          if str(surrealdb_init.get('user')) != 'root':
+              dependency_errors.append('surrealdb-init must run as root only for chown')
+          if 'ALL' not in surrealdb_init.get('cap_drop', []):
+              dependency_errors.append('surrealdb-init must drop all capabilities')
+          if surrealdb_init.get('cap_add') != ['CHOWN']:
+              dependency_errors.append('surrealdb-init must add only CHOWN capability')
+          if surrealdb_init.get('network_mode') != 'none':
+              dependency_errors.append('surrealdb-init must not join a network')
+
+          surrealdb_service = services.get('surrealdb', {})
+          surrealdb_user = str(surrealdb_service.get('user', ''))
+          if surrealdb_user in {'', '0', '0:0', 'root'}:
+              dependency_errors.append('surrealdb must run as a non-root user')
+          surrealdb_command = surrealdb_service.get('command', [])
+          if isinstance(surrealdb_command, str):
+              surrealdb_command = surrealdb_command.split()
+          if '--auth' not in surrealdb_command:
+              dependency_errors.append('surrealdb must enable authentication')
+          surrealdb_dependency = (
+              surrealdb_service
+              .get('depends_on', {})
+              .get('surrealdb-init', {})
+          )
+          if surrealdb_dependency.get('condition') != 'service_completed_successfully':
+              dependency_errors.append(
+                  'surrealdb must wait for surrealdb-init service_completed_successfully'
+              )
+
           mysql_service = services.get('mysql', {})
           mysql_healthcheck = ' '.join(mysql_service.get('healthcheck', {}).get('test', []))
           if 'mysqladmin ping' in mysql_healthcheck or 'SELECT 1' not in mysql_healthcheck:

@@ -257,14 +257,33 @@ services:
 
   # ── SurrealDB ───────────────────────────────────────────────
   # Used by: feed-service (social graph: follows, favorites, activity)
+  surrealdb-init:
+    <<: *stateful_security
+    image: busybox:1.36
+    container_name: polymarket-surrealdb-init
+    restart: "no"
+    mem_limit: 32m
+    network_mode: none
+    user: root
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    command: ["sh", "-c", "chown -R 65532:65532 /data"]
+    volumes:
+      - surrealdb_data:/data
+
   surrealdb:
     <<: *stateful_security
     image: surrealdb/surrealdb:v1.5.4
     container_name: polymarket-surrealdb
-    user: root
+    user: "65532:65532"
     restart: unless-stopped
     mem_limit: 256m
-    command: start --user polymarket --pass ${SURREALDB_PASSWORD:?SURREALDB_PASSWORD is required} file:/data/polymarket.db
+    command: start --auth --user polymarket --pass ${SURREALDB_PASSWORD:?SURREALDB_PASSWORD is required} file:/data/polymarket.db
+    depends_on:
+      surrealdb-init:
+        condition: service_completed_successfully
     expose:
       - "8000"
     volumes:
