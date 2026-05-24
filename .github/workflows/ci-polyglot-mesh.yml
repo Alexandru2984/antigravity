@@ -14,6 +14,7 @@ on:
       - 'services/lua-service/**'
       - 'services/nim-service/**'
       - 'services/notification-service/**'
+      - 'services/odin-service/**'
       - 'services/php-service/**'
       - 'services/prolog-service/**'
       - 'services/r-service/**'
@@ -35,6 +36,7 @@ on:
       - 'services/lua-service/**'
       - 'services/nim-service/**'
       - 'services/notification-service/**'
+      - 'services/odin-service/**'
       - 'services/php-service/**'
       - 'services/prolog-service/**'
       - 'services/r-service/**'
@@ -64,6 +66,7 @@ jobs:
             lua-service
             nim-service
             notification-service
+            odin-service
             php-service
             prolog-service
             r-service
@@ -118,6 +121,7 @@ jobs:
           - lua-service
           - nim-service
           - notification-service
+          - odin-service
           - php-service
           - prolog-service
           - r-service

@@ -72,6 +72,7 @@ services:
       R_SERVICE_URL: http://r-service:4060
       ZIG_SERVICE_URL: http://zig-service:4062
       NIM_SERVICE_URL: http://nim-service:4064
+      ODIN_SERVICE_URL: http://odin-service:4065
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: api-gateway
     networks:
@@ -774,5 +775,16 @@ services:
     container_name: polymarket-haskell-mesh
     restart: unless-stopped
     mem_limit: 128m
+    networks:
+      - polymarket
+
+  odin-service:
+    <<: *readonly_app_security
+    build:
+      context: ../services/odin-service
+      dockerfile: Dockerfile
+    container_name: polymarket-odin
+    restart: unless-stopped
+    mem_limit: 64m
     networks:
       - polymarket

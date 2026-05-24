@@ -45,6 +45,7 @@ const SERVICE_URL_DEFAULTS = {
     env: 'BRAINFUCK_SERVICE_URL',
     url: 'http://brainfuck-service:4020',
   },
+  odin: { env: 'ODIN_SERVICE_URL', url: 'http://odin-service:4065' },
 };
 
 type ServiceUrlKey = keyof typeof SERVICE_URL_DEFAULTS;
@@ -185,6 +186,12 @@ export class ComputeController {
         language: 'Nim',
         port: 4064,
         description: 'Static description text normalization',
+      },
+      {
+        name: 'Odin-Speed',
+        language: 'Odin',
+        port: 4065,
+        description: 'Low-level listing execution signal probe',
       },
     ];
   }
@@ -497,7 +504,27 @@ export class ComputeController {
     }
     reports.push(bfReport);
 
-    // Step 13: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    // Step 13: Odin low-level runtime probe
+    const odinReport = {
+      service: 'Odin-Speed',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.get(`${this.serviceUrl('odin')}/speed`, {
+        timeout: 1500,
+      });
+      odinReport.status = 'online';
+      odinReport.data = {
+        service: 'odin-speed',
+        signal: String(res.data).trim(),
+      };
+    } catch (e) {
+      odinReport.data = { error: e.message };
+    }
+    reports.push(odinReport);
+
+    // Step 14: Call Rust Listing service to persist in MongoDB and publish to Kafka
     const rustReport = {
       service: 'Rust-Persist-Core',
       status: 'offline',
@@ -562,7 +589,7 @@ export class ComputeController {
       }
       reports.push(rustReport);
 
-      // Step 14: Elixir event broker notification after durable persistence
+      // Step 15: Elixir event broker notification after durable persistence
       if (rustReport.status === 'online') {
         const elixirReport = {
           service: 'Elixir-Broker',

@@ -230,6 +230,7 @@ jobs:
               'elixir-service',
               'scala-service',
               'lua-service',
+              'odin-service',
               'r-service',
               'php-service',
               'zig-service',
@@ -284,6 +285,10 @@ jobs:
           if auth_dependency.get('condition') != 'service_healthy':
               dependency_errors.append(
                   'api-gateway must wait for auth-service service_healthy'
+              )
+          if api_gateway_env.get('ODIN_SERVICE_URL') != 'http://odin-service:4065':
+              dependency_errors.append(
+                  'api-gateway must route Odin mesh calls to odin-service:4065'
               )
 
           surrealdb_init = services.get('surrealdb-init', {})

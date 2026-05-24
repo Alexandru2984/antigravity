@@ -40,6 +40,7 @@ describe('ComputeController', () => {
     process.env.ASSEMBLY_SERVICE_URL = 'http://assembly.test';
     process.env.ZIG_SERVICE_URL = 'http://zig.test';
     process.env.BRAINFUCK_SERVICE_URL = 'http://brainfuck.test';
+    process.env.ODIN_SERVICE_URL = 'http://odin.test';
     process.env.LISTING_SERVICE_URL = 'http://listing.test';
     controller = new ComputeController();
   });
@@ -61,6 +62,7 @@ describe('ComputeController', () => {
     delete process.env.ASSEMBLY_SERVICE_URL;
     delete process.env.ZIG_SERVICE_URL;
     delete process.env.BRAINFUCK_SERVICE_URL;
+    delete process.env.ODIN_SERVICE_URL;
     delete process.env.LISTING_SERVICE_URL;
   });
 
@@ -251,6 +253,7 @@ describe('ComputeController', () => {
           input: 12,
           result: 144,
         },
+        'http://odin.test/speed': 'Odin Game-Engine Speed: Active\n',
       };
       if (url in responses) {
         return Promise.resolve({ data: responses[url] });
@@ -366,6 +369,9 @@ describe('ComputeController', () => {
       listingPayload.attributes.polyglot_mesh.reports['Brainfuck-Crypt'].data
         .algorithm,
     ).toBe('fnv1a-bf-obfuscation');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Odin-Speed'].data.signal,
+    ).toBe('Odin Game-Engine Speed: Active');
 
     expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://elixir.test/events',
