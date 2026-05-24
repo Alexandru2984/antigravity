@@ -311,6 +311,10 @@ jobs:
               dependency_errors.append('feed-service must listen on PORT 4008')
           if 'healthcheck' not in feed_service:
               dependency_errors.append('feed-service must define a healthcheck')
+          if not feed_env.get('INTERNAL_SERVICE_TOKEN'):
+              dependency_errors.append(
+                  'feed-service must receive INTERNAL_SERVICE_TOKEN'
+              )
 
           review_service = services.get('review-service', {})
           review_env = review_service.get('environment', {})

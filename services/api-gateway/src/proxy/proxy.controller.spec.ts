@@ -104,6 +104,19 @@ describe('ProxyController', () => {
     expect(headers['x-internal-service-token']).toBe('internal-test-token');
   });
 
+  it('adds the internal token for feed service requests', () => {
+    const headers = buildHeaders(
+      {
+        headers: {
+          'x-internal-service-token': 'forged',
+        },
+      },
+      'feed',
+    );
+
+    expect(headers['x-internal-service-token']).toBe('internal-test-token');
+  });
+
   it('keeps image reads public but requires auth for uploads', () => {
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesRead)).toBe(
       true,
@@ -125,6 +138,18 @@ describe('ProxyController', () => {
     ).toBeUndefined();
     expect(
       Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsWrite),
+    ).toBeUndefined();
+  });
+
+  it('keeps feed reads public but requires auth for follow writes', () => {
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedRootRead)).toBe(
+      true,
+    );
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedRead)).toBe(
+      true,
+    );
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedWrite),
     ).toBeUndefined();
   });
 
@@ -230,6 +255,59 @@ describe('ProxyController', () => {
       res,
       'reviews',
       'api/reviews/review-123',
+    );
+  });
+
+  it('proxies feed routes to the feed-service path prefix', async () => {
+    const proxyRequest = jest
+      .spyOn(
+        controller as unknown as {
+          proxyRequest: jest.MockedFunction<
+            (
+              req: FastifyRequest,
+              res: unknown,
+              service: string,
+              path: string,
+            ) => Promise<void>
+          >;
+        },
+        'proxyRequest'
+      )
+      .mockResolvedValue(undefined);
+
+    const res = {};
+    const rootReq = {} as unknown as FastifyRequest;
+    const readReq = {
+      params: { '*': 'followed' },
+    } as unknown as FastifyRequest;
+    const writeReq = {
+      params: { '*': 'follow/seller-123' },
+    } as unknown as FastifyRequest;
+
+    await controller.proxyFeedRootRead(rootReq, res as never);
+    await controller.proxyFeedRead(readReq, res as never);
+    await controller.proxyFeedWrite(writeReq, res as never);
+
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      1,
+      rootReq,
+      res,
+      'feed',
+      'feed/',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      2,
+      readReq,
+      res,
+      'feed',
+      'feed/followed',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      3,
+      writeReq,
+      res,
+      'feed',
+      'feed/follow/seller-123',
     );
   });
 });

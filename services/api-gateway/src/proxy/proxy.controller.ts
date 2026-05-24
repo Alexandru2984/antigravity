@@ -19,7 +19,7 @@ import * as https from 'https';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
-const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images', 'reviews']);
+const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images', 'feed', 'reviews']);
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -143,11 +143,23 @@ export class ProxyController {
     return this.proxyRequest(req, res, 'profiles', '');
   }
 
-  // ── Feed (public) ─────────────────────────────────────────────
+  // ── Feed ─────────────────────────────────────────────────────
   @Public()
-  @All('feed/*')
-  proxyFeed(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'feed', wildcardPath(req));
+  @Get('feed')
+  proxyFeedRootRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'feed', 'feed/');
+  }
+
+  @Public()
+  @Get('feed/*')
+  proxyFeedRead(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'feed', 'feed/' + wildcardPath(req));
+  }
+
+  @Post('feed/*')
+  @Delete('feed/*')
+  proxyFeedWrite(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'feed', 'feed/' + wildcardPath(req));
   }
 
   // ── Reviews ──────────────────────────────────────────────────

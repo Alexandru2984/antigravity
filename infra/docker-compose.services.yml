@@ -323,6 +323,7 @@ services:
       SURREALDB_NS: polymarket
       SURREALDB_DB: feed
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
       KAFKA_BROKERS: kafka:29092
     networks:
       - polymarket

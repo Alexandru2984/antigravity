@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -43,10 +46,19 @@ type App struct {
 }
 
 func NewApp() *App {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: getEnv("REDIS_URL", "redis:6379"),
-	})
+	rdb := redis.NewClient(redisOptions())
 	return &App{redis: rdb}
+}
+
+func redisOptions() *redis.Options {
+	redisURL := getEnv("REDIS_URL", "redis:6379")
+	if strings.Contains(redisURL, "://") {
+		if options, err := redis.ParseURL(redisURL); err == nil {
+			return options
+		}
+	}
+
+	return &redis.Options{Addr: redisURL}
 }
 
 func getEnv(key, def string) string {
@@ -122,9 +134,8 @@ func (a *App) fetchFromCache(ctx context.Context, key string, page, limit int) [
 
 func (a *App) followSeller(w http.ResponseWriter, r *http.Request) {
 	sellerID := chi.URLParam(r, "sellerID")
-	userID := r.Header.Get("X-User-Id")
-	if userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	userID, ok := requireGatewayUser(w, r)
+	if !ok {
 		return
 	}
 
@@ -140,9 +151,8 @@ func (a *App) followSeller(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) unfollowSeller(w http.ResponseWriter, r *http.Request) {
 	sellerID := chi.URLParam(r, "sellerID")
-	userID := r.Header.Get("X-User-Id")
-	if userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	userID, ok := requireGatewayUser(w, r)
+	if !ok {
 		return
 	}
 
@@ -152,6 +162,29 @@ func (a *App) unfollowSeller(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"followed": false})
+}
+
+func requireGatewayUser(w http.ResponseWriter, r *http.Request) (string, bool) {
+	expectedToken := os.Getenv("INTERNAL_SERVICE_TOKEN")
+	if expectedToken == "" {
+		http.Error(w, "INTERNAL_SERVICE_TOKEN is not configured", http.StatusInternalServerError)
+		return "", false
+	}
+
+	expectedSum := sha256.Sum256([]byte(expectedToken))
+	actualSum := sha256.Sum256([]byte(r.Header.Get("X-Internal-Service-Token")))
+	if subtle.ConstantTimeCompare(expectedSum[:], actualSum[:]) != 1 {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return "", false
+	}
+
+	userID := r.Header.Get("X-User-Id")
+	if userID == "" {
+		http.Error(w, "missing user context", http.StatusUnauthorized)
+		return "", false
+	}
+
+	return userID, true
 }
 
 // ── Main ──────────────────────────────────────────────────────
