@@ -92,11 +92,18 @@ jobs:
           missing_dockerfiles = expected.reject do |service|
             File.file?(File.join('services', service, 'Dockerfile'))
           end
+          floating_base_images = expected.select do |service|
+            dockerfile = File.join('services', service, 'Dockerfile')
+            File.read(dockerfile).lines.any? do |line|
+              line.match?(/^FROM\s+\S+:latest(?:\s|$)/)
+            end
+          end
           matrix_drift = expected.sort == matrix_services.sort ? [] : matrix_services
 
-          unless missing_from_compose.empty? && missing_dockerfiles.empty? && matrix_drift.empty?
+          unless missing_from_compose.empty? && missing_dockerfiles.empty? && floating_base_images.empty? && matrix_drift.empty?
             puts "missing from compose: #{missing_from_compose.inspect}"
             puts "missing Dockerfiles: #{missing_dockerfiles.inspect}"
+            puts "floating latest base images: #{floating_base_images.inspect}"
             puts "matrix services must equal POLYGLOT_MESH_SERVICES: #{matrix_drift.inspect}"
             exit 1
           end
