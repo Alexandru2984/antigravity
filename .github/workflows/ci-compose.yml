@@ -347,6 +347,18 @@ jobs:
           search_env = search_service.get('environment', {})
           if str(search_env.get('PORT')) != '4003':
               dependency_errors.append('search-service must listen on PORT 4003')
+          if search_env.get('OPENSEARCH_URI') != 'https://opensearch:9200':
+              dependency_errors.append(
+                  'search-service must use authenticated HTTPS OpenSearch'
+              )
+          if search_env.get('OPENSEARCH_USERNAME') != 'admin':
+              dependency_errors.append('search-service must set OPENSEARCH_USERNAME')
+          if not search_env.get('OPENSEARCH_PASSWORD'):
+              dependency_errors.append('search-service must set OPENSEARCH_PASSWORD')
+          if str(search_env.get('OPENSEARCH_SSL_TRUST_ALL')).lower() != 'true':
+              dependency_errors.append(
+                  'search-service must trust the internal OpenSearch certificate'
+              )
           if 'healthcheck' not in search_service:
               dependency_errors.append('search-service must define a healthcheck')
 

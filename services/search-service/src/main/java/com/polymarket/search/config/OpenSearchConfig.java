@@ -9,6 +9,7 @@ import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.function.Factory;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
@@ -81,6 +82,7 @@ public class OpenSearchConfig {
         TlsStrategy tlsStrategy = ClientTlsStrategyBuilder
                 .create()
                 .setSslContext(sslContext)
+                .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                 .setTlsDetailsFactory(new Factory<SSLEngine, TlsDetails>() {
                     @Override
                     public TlsDetails create(final SSLEngine sslEngine) {

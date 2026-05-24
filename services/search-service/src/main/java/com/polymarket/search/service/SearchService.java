@@ -3,6 +3,7 @@ package com.polymarket.search.service;
 import com.polymarket.search.model.MarketDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
@@ -31,6 +32,19 @@ public class SearchService {
 
         if (category != null && !category.isEmpty()) {
             bool.filter(f -> f.term(t -> t.field("category").value(FieldValue.of(category))));
+        }
+
+        if (minVolume != null || maxVolume != null) {
+            bool.filter(f -> f.range(r -> {
+                var range = r.field("volume");
+                if (minVolume != null) {
+                    range.gte(JsonData.of(minVolume));
+                }
+                if (maxVolume != null) {
+                    range.lte(JsonData.of(maxVolume));
+                }
+                return range;
+            }));
         }
 
         SearchResponse<MarketDocument> response = client.search(s -> s

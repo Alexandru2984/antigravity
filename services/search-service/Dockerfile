@@ -9,7 +9,9 @@ RUN mvn package -DskipTests -q
 
 # ── Runner ─────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine AS runner
-RUN addgroup -S polymarket && adduser -S search -G polymarket
+RUN apk add --no-cache wget \
+  && addgroup -S polymarket \
+  && adduser -S search -G polymarket
 WORKDIR /app
 COPY --from=builder --chown=search:polymarket /app/target/search-service-0.1.0.jar ./app.jar
 USER search
