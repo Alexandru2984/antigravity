@@ -352,9 +352,24 @@ jobs:
 
           image_service = services.get('image-service', {})
           image_env = image_service.get('environment', {})
+          if str(image_env.get('HTTP_PORT')) != '4004':
+              dependency_errors.append('image-service must listen on HTTP_PORT 4004')
           if not image_env.get('INTERNAL_SERVICE_TOKEN'):
               dependency_errors.append(
                   'image-service must receive INTERNAL_SERVICE_TOKEN'
+              )
+          if str(image_env.get('MAX_UPLOAD_SIZE_MB')) != '10':
+              dependency_errors.append('image-service must cap uploads at 10 MB')
+          if image_env.get('MINIO_BUCKET_IMAGES') != 'listings-images':
+              dependency_errors.append(
+                  'image-service must receive the listings image bucket name'
+              )
+          if 'healthcheck' not in image_service:
+              dependency_errors.append('image-service must define a healthcheck')
+          image_healthcheck = ' '.join(image_service.get('healthcheck', {}).get('test', []))
+          if '/health' not in image_healthcheck or 'HTTP_PORT' not in image_healthcheck:
+              dependency_errors.append(
+                  'image-service healthcheck must use HTTP_PORT /health'
               )
 
           if (

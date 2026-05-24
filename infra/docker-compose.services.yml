@@ -212,6 +212,7 @@ services:
       KAFKA_BROKERS: kafka:29092
       MAX_UPLOAD_SIZE_MB: 10
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
+      IMAGE_PUBLIC_PATH_PREFIX: ${IMAGE_PUBLIC_PATH_PREFIX:-/api/v1/images}
     networks:
       - polymarket
     depends_on:
@@ -219,6 +220,11 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${HTTP_PORT:-4004}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Notification Service (Elixir / Phoenix Channels) ────────
   notification-service:

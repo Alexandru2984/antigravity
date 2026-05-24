@@ -1,0 +1,7 @@
+.git
+build/
+out/
+*.o
+*.a
+*.so
+compile_commands.json

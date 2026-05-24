@@ -4,19 +4,39 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <string>
+#include <string_view>
 #include <uuid/uuid.h>
 
 using namespace vips;
 
 namespace {
-constexpr size_t kMaxUploadBytes = 10 * 1024 * 1024;
+constexpr long kDefaultMaxUploadMb = 10;
 constexpr int64_t kMaxImagePixels = 40'000'000;
 constexpr int kTargetWidth = 800;
 constexpr const char *kInternalServiceTokenHeader = "x-internal-service-token";
 
+size_t configuredMaxUploadBytes() {
+    const char *raw = std::getenv("MAX_UPLOAD_SIZE_MB");
+    if (raw == nullptr || raw[0] == '\0') {
+        return kDefaultMaxUploadMb * 1024 * 1024;
+    }
+
+    char *end = nullptr;
+    const long megabytes = std::strtol(raw, &end, 10);
+    if (*end != '\0' || megabytes < 1 || megabytes > 50) {
+        return kDefaultMaxUploadMb * 1024 * 1024;
+    }
+
+    return static_cast<size_t>(megabytes) * 1024 * 1024;
+}
+
 std::string imageBucket() {
-    const char *bucket = std::getenv("IMAGE_BUCKET");
+    const char *bucket = std::getenv("MINIO_BUCKET_IMAGES");
+    if (bucket == nullptr || std::string_view(bucket).empty()) {
+        bucket = std::getenv("IMAGE_BUCKET");
+    }
     return bucket != nullptr && std::string(bucket).length() > 0 ? bucket : "listings-images";
 }
 
@@ -135,8 +155,11 @@ void ImageController::upload(const drogon::HttpRequestPtr& req,
         return;
     }
 
-    if (file.fileLength() > kMaxUploadBytes) {
-        callback(jsonError("Uploaded file exceeds 10 MB limit", drogon::k413RequestEntityTooLarge));
+    const auto maxUploadBytes = configuredMaxUploadBytes();
+    if (file.fileLength() > maxUploadBytes) {
+        callback(jsonError(
+            "Uploaded file exceeds " + std::to_string(maxUploadBytes / 1024 / 1024) + " MB limit",
+            drogon::k413RequestEntityTooLarge));
         return;
     }
 
@@ -170,14 +193,19 @@ void ImageController::upload(const drogon::HttpRequestPtr& req,
         double scale = std::min(1.0, static_cast<double>(kTargetWidth) / static_cast<double>(width));
         VImage resized = img.resize(scale, NULL);
 
-        void *outBuf;
-        size_t outSize;
+        void *outBuf = nullptr;
+        size_t outSize = 0;
         resized.write_to_buffer(".webp", &outBuf, &outSize, NULL);
+        std::unique_ptr<void, decltype(&g_free)> outBufGuard(outBuf, g_free);
 
         const std::string key = newImageKey();
         MinioClient minio;
-        minio.putObject(imageBucket(), key, static_cast<const char *>(outBuf), outSize, "image/webp");
-        g_free(outBuf);
+        minio.putObject(
+            imageBucket(),
+            key,
+            static_cast<const char *>(outBufGuard.get()),
+            outSize,
+            "image/webp");
 
         Json::Value ret;
         ret["id"] = key;
