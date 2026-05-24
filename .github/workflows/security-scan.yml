@@ -11,6 +11,41 @@ permissions:
   contents: read
 
 jobs:
+  tracked-secret-files:
+    name: Tracked Secret File Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block tracked runtime secrets and TLS keys
+        run: |
+          python3 - <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          tracked = subprocess.check_output(
+              ['git', 'ls-files'],
+              text=True,
+          ).splitlines()
+          blocked = []
+          patterns = [
+              re.compile(r'(^|/)\.env(\.|$)'),
+              re.compile(r'\.(key|pem)$'),
+              re.compile(r'^infra/(nginx/ssl|keys|secrets)/'),
+              re.compile(r'(^|/)priv/keys/'),
+          ]
+
+          for path in tracked:
+              if path == '.env.example':
+                  continue
+              if any(pattern.search(path) for pattern in patterns):
+                  blocked.append(path)
+
+          if blocked:
+              print('Runtime secret files must not be tracked:')
+              print('\n'.join(blocked))
+              sys.exit(1)
+          PY
 
   trivy-images:
     name: Trivy (Container Scanning)
