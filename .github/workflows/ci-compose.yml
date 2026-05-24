@@ -81,6 +81,43 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Compose YAML must not contain duplicate keys
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          import yaml
+          from yaml.nodes import MappingNode, SequenceNode
+
+          errors = []
+
+          def walk(node, path, source):
+              if isinstance(node, MappingNode):
+                  seen = {}
+                  for key_node, value_node in node.value:
+                      key = key_node.value
+                      location = f'{source}:{key_node.start_mark.line + 1}'
+                      if key in seen:
+                          errors.append(
+                              f'{location}: duplicate key {key!r}; first seen at {seen[key]}'
+                          )
+                      else:
+                          seen[key] = location
+                      walk(value_node, f'{path}.{key}', source)
+              elif isinstance(node, SequenceNode):
+                  for index, item in enumerate(node.value):
+                      walk(item, f'{path}[{index}]', source)
+
+          for compose_file in sorted(Path('infra').glob('docker-compose*.yml')):
+              root = yaml.compose(compose_file.read_text(encoding='utf-8'))
+              if root is not None:
+                  walk(root, '$', str(compose_file))
+
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          PY
+
       - name: Polyglot mesh transaction must require auth
         run: |
           python3 - <<'PY'
