@@ -267,7 +267,7 @@ describe('ComputeController', () => {
         },
         'http://swift.test': {
           status: 'ok',
-          service: 'swift-vapor-ios-legacy',
+          service: 'swift-stdlib-http',
         },
         'http://scala.test': {
           status: 'ok',
@@ -398,7 +398,7 @@ describe('ComputeController', () => {
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Swift-Mobile'].data
         .service,
-    ).toBe('swift-vapor-ios-legacy');
+    ).toBe('swift-stdlib-http');
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Scala-Stream'].data
         .service,

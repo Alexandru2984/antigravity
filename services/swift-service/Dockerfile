@@ -9,4 +9,4 @@ RUN useradd -r -s /usr/sbin/nologin app
 COPY --from=builder /app/.build/release/App .
 USER app
 EXPOSE 4063
-CMD ["./App", "serve", "--hostname", "0.0.0.0"]
+CMD ["./App"]
