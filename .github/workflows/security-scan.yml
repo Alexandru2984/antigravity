@@ -47,6 +47,67 @@ jobs:
               sys.exit(1)
           PY
 
+  internal-header-trust:
+    name: Internal Header Trust Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: User context headers must require internal service token
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          offenders = []
+          source_suffixes = {
+              '.cs', '.cpp', '.ex', '.exs', '.go', '.java', '.kt',
+              '.php', '.py', '.rb', '.rs', '.ts', '.tsx',
+          }
+          skipped_parts = {
+              '.git', 'node_modules', 'vendor', 'target', 'build',
+              'dist', '.next', 'tests', 'test', '__tests__',
+          }
+          user_header_read_markers = {
+              '.get("x-user-id"',
+              ".get('x-user-id'",
+              'header.get("x-user-id"',
+              "header.get('x-user-id'",
+              'header("x-user-id"',
+              "header('x-user-id'",
+              'headers["x-user-id"',
+              "headers['x-user-id'",
+              'getheader("x-user-id"',
+              "getheader('x-user-id'",
+          }
+          internal_token_markers = {
+              'x-internal-service-token',
+              'internal_service_token',
+          }
+
+          for path in Path('services').rglob('*'):
+              if not path.is_file() or path.suffix not in source_suffixes:
+                  continue
+              parts = set(path.parts)
+              if parts & skipped_parts:
+                  continue
+              if 'api-gateway' in parts:
+                  continue
+
+              source = path.read_text(encoding='utf-8', errors='ignore').lower()
+              if not any(marker in source for marker in user_header_read_markers):
+                  continue
+              if not any(marker in source for marker in internal_token_markers):
+                  offenders.append(str(path))
+
+          if offenders:
+              print(
+                  'Service code that trusts X-User-Id must also require '
+                  'X-Internal-Service-Token:'
+              )
+              print('\n'.join(offenders))
+              sys.exit(1)
+          PY
+
   trivy-images:
     name: Trivy (Container Scanning)
     runs-on: ubuntu-latest

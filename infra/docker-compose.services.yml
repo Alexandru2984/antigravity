@@ -437,6 +437,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       KAFKA_BROKERS: kafka:29092
       SECRET_KEY_BASE: ${CHAT_SECRET_KEY_BASE:?CHAT_SECRET_KEY_BASE is required}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
       MIX_ENV: dev
     networks:

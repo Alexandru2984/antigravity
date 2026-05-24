@@ -393,6 +393,11 @@ jobs:
                       f'nginx must wait for {dependency_name} service_healthy'
                   )
 
+          chat_service = services.get('chat-service', {})
+          chat_env = chat_service.get('environment', {})
+          if not chat_env.get('JWT_PUBLIC_KEY'):
+              dependency_errors.append('chat-service must receive JWT_PUBLIC_KEY')
+
           surrealdb_init = services.get('surrealdb-init', {})
           if not surrealdb_init:
               dependency_errors.append('surrealdb-init must prepare the data volume')
