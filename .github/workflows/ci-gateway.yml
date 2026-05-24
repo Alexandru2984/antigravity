@@ -26,6 +26,46 @@ jobs:
         run: cd services/api-gateway && npm run lint
       - name: Type-check
         run: cd services/api-gateway && npm run typecheck
+      - name: Gateway must not trust client user headers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          main = Path('services/api-gateway/src/main.ts').read_text(
+              encoding='utf-8'
+          )
+          auth_guard = Path(
+              'services/api-gateway/src/auth/auth.guard.ts'
+          ).read_text(encoding='utf-8')
+
+          forbidden_cors_headers = [
+              'X-User-Id',
+              'X-User-Email',
+              'X-User-Roles',
+          ]
+          leaked = [
+              header for header in forbidden_cors_headers
+              if re.search(rf"['\"]{re.escape(header)}['\"]", main)
+          ]
+          if leaked:
+              print('CORS must not allow client user context headers:', leaked)
+              sys.exit(1)
+
+          forbidden_assignments = [
+              "request.headers['x-user-id']",
+              "request.headers['x-user-email']",
+              "request.headers['x-user-roles']",
+          ]
+          mutated = [
+              assignment for assignment in forbidden_assignments
+              if assignment in auth_guard
+          ]
+          if mutated:
+              print('AuthGuard must store identity on request.user only:', mutated)
+              sys.exit(1)
+          PY
       - name: Test
         run: cd services/api-gateway && npm test -- --coverage
       - name: Audit

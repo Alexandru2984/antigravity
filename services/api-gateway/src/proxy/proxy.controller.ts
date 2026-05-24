@@ -208,10 +208,7 @@ export class ProxyController {
   }
 
   @Post('reviews')
-  proxyReviewsRootCreate(
-    @Req() req: FastifyRequest,
-    @Res() res: FastifyReply,
-  ) {
+  proxyReviewsRootCreate(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(req, res, 'reviews', 'api/reviews');
   }
 
@@ -321,7 +318,9 @@ export class ProxyController {
   ): http.OutgoingHttpHeaders {
     const headers: http.OutgoingHttpHeaders = { ...req.headers };
     this.deleteHeader(headers, INTERNAL_SERVICE_TOKEN_HEADER);
-    USER_CONTEXT_HEADERS.forEach((header) => this.deleteHeader(headers, header));
+    USER_CONTEXT_HEADERS.forEach((header) =>
+      this.deleteHeader(headers, header),
+    );
     this.deleteHeader(headers, 'host');
 
     headers.host = targetUrl.host;
@@ -357,7 +356,10 @@ export class ProxyController {
     return headers;
   }
 
-  private deleteHeader(headers: http.OutgoingHttpHeaders, header: string): void {
+  private deleteHeader(
+    headers: http.OutgoingHttpHeaders,
+    header: string,
+  ): void {
     Object.keys(headers).forEach((key) => {
       if (key.toLowerCase() === header) {
         delete headers[key];

@@ -34,6 +34,13 @@ describe('ProxyController', () => {
     );
   }
 
+  function publicMetadata(methodName: keyof ProxyController) {
+    return Reflect.getMetadata(
+      IS_PUBLIC_KEY,
+      ProxyController.prototype[methodName],
+    );
+  }
+
   it('strips client-supplied user and internal headers', () => {
     const headers = buildHeaders({
       headers: {
@@ -131,60 +138,32 @@ describe('ProxyController', () => {
   });
 
   it('keeps image reads public but requires auth for uploads', () => {
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesRead)).toBe(
-      true,
-    );
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesUpload),
-    ).toBeUndefined();
+    expect(publicMetadata('proxyImagesRead')).toBe(true);
+    expect(publicMetadata('proxyImagesUpload')).toBeUndefined();
   });
 
   it('keeps review reads public but requires auth for writes', () => {
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRootRead),
-    ).toBe(true);
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRead)).toBe(
-      true,
-    );
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsRootCreate),
-    ).toBeUndefined();
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyReviewsWrite),
-    ).toBeUndefined();
+    expect(publicMetadata('proxyReviewsRootRead')).toBe(true);
+    expect(publicMetadata('proxyReviewsRead')).toBe(true);
+    expect(publicMetadata('proxyReviewsRootCreate')).toBeUndefined();
+    expect(publicMetadata('proxyReviewsWrite')).toBeUndefined();
   });
 
   it('keeps feed reads public but requires auth for follow writes', () => {
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedRootRead)).toBe(
-      true,
-    );
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedRead)).toBe(
-      true,
-    );
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedWrite),
-    ).toBeUndefined();
+    expect(publicMetadata('proxyFeedRootRead')).toBe(true);
+    expect(publicMetadata('proxyFeedRead')).toBe(true);
+    expect(publicMetadata('proxyFeedWrite')).toBeUndefined();
   });
 
   it('keeps Stripe payment webhook public but requires auth for other payment routes', () => {
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyPaymentsWebhook),
-    ).toBe(true);
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyPayments),
-    ).toBeUndefined();
+    expect(publicMetadata('proxyPaymentsWebhook')).toBe(true);
+    expect(publicMetadata('proxyPayments')).toBeUndefined();
   });
 
   it('requires auth for profile routes', () => {
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyProfiles),
-    ).toBeUndefined();
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyProfilesRoot),
-    ).toBeUndefined();
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyMyProfile),
-    ).toBeUndefined();
+    expect(publicMetadata('proxyProfiles')).toBeUndefined();
+    expect(publicMetadata('proxyProfilesRoot')).toBeUndefined();
+    expect(publicMetadata('proxyMyProfile')).toBeUndefined();
   });
 
   it('proxies image routes to the image-service path prefix', async () => {
@@ -200,7 +179,7 @@ describe('ProxyController', () => {
             ) => Promise<void>
           >;
         },
-        'proxyRequest'
+        'proxyRequest',
       )
       .mockResolvedValue(undefined);
 
@@ -244,7 +223,7 @@ describe('ProxyController', () => {
             ) => Promise<void>
           >;
         },
-        'proxyRequest'
+        'proxyRequest',
       )
       .mockResolvedValue(undefined);
 
@@ -305,7 +284,7 @@ describe('ProxyController', () => {
             ) => Promise<void>
           >;
         },
-        'proxyRequest'
+        'proxyRequest',
       )
       .mockResolvedValue(undefined);
 
@@ -358,7 +337,7 @@ describe('ProxyController', () => {
             ) => Promise<void>
           >;
         },
-        'proxyRequest'
+        'proxyRequest',
       )
       .mockResolvedValue(undefined);
 
@@ -400,7 +379,7 @@ describe('ProxyController', () => {
             ) => Promise<void>
           >;
         },
-        'proxyRequest'
+        'proxyRequest',
       )
       .mockResolvedValue(undefined);
 

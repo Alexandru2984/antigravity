@@ -61,16 +61,19 @@ describe('ComputeController', () => {
     delete process.env.LISTING_SERVICE_URL;
   });
 
+  function publicMetadata(methodName: keyof ComputeController) {
+    return Reflect.getMetadata(
+      IS_PUBLIC_KEY,
+      ComputeController.prototype[methodName],
+    );
+  }
+
   it('keeps mesh node discovery public but requires auth for transactions', () => {
     expect(
       Reflect.getMetadata(IS_PUBLIC_KEY, ComputeController),
     ).toBeUndefined();
-    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.getMeshNodes)).toBe(
-      true,
-    );
-    expect(
-      Reflect.getMetadata(IS_PUBLIC_KEY, controller.executeTransaction),
-    ).toBeUndefined();
+    expect(publicMetadata('getMeshNodes')).toBe(true);
+    expect(publicMetadata('executeTransaction')).toBeUndefined();
   });
 
   it('persists mesh reports as listing attributes', async () => {

@@ -51,11 +51,7 @@ export class AuthGuard implements CanActivate {
         algorithms: ['RS256'],
       });
 
-      // Inject user context into request — downstream services receive these headers
-      (request as any).user = payload;
-      request.headers['x-user-id'] = payload.sub;
-      request.headers['x-user-email'] = payload.email;
-      request.headers['x-user-roles'] = payload.roles.join(',');
+      (request as FastifyRequest & { user?: JwtPayload }).user = payload;
 
       return true;
     } catch (err) {
