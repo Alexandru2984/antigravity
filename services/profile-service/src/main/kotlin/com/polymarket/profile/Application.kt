@@ -18,9 +18,13 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.security.KeyFactory
 import java.security.interfaces.RSAPublicKey
 import java.util.Base64
+import kotlin.system.exitProcess
 
 fun configuredCorsOrigins(): List<URI> {
     val configured = System.getenv("CORS_ORIGINS")
@@ -43,7 +47,11 @@ fun configuredCorsOrigins(): List<URI> {
         }
 }
 
-fun main() {
+fun main(args: Array<String>) {
+    if (args.contains("--health")) {
+        exitProcess(runHealthCheck())
+    }
+
     embeddedServer(Netty, port = System.getenv("PORT")?.toInt() ?: 4007) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; prettyPrint = false })
@@ -117,6 +125,22 @@ fun main() {
             }
         }
     }.start(wait = true)
+}
+
+fun runHealthCheck(): Int {
+    return try {
+        val port = System.getenv("PORT") ?: "4007"
+        val request = HttpRequest.newBuilder()
+            .uri(URI("http://127.0.0.1:$port/health"))
+            .GET()
+            .build()
+        val response = HttpClient.newHttpClient()
+            .send(request, HttpResponse.BodyHandlers.discarding())
+
+        if (response.statusCode() == 200) 0 else 1
+    } catch (_: Exception) {
+        1
+    }
 }
 
 fun buildJwtVerifier(): com.auth0.jwt.interfaces.JWTVerifier {

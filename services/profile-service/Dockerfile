@@ -13,5 +13,5 @@ COPY --from=builder --chown=profile:polymarket /app/build/libs/profile-service-f
 USER profile
 EXPOSE 4007
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD wget -qO- "http://127.0.0.1:${PORT:-4007}/health" || exit 1
+  CMD ["java", "-jar", "app.jar", "--health"]
 CMD ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

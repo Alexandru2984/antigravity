@@ -68,6 +68,6 @@ jobs:
         with:
           gradle-version: '8.8'
       - name: Build jar
-        run: cd services/profile-service && gradle shadowJar
+        run: cd services/profile-service && gradle buildFatJar
       - name: Build Docker
         run: docker build -t polymarket/profile-service:${{ github.sha }} services/profile-service/

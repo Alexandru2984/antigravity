@@ -150,6 +150,6 @@ SELECT 'CREATE DATABASE polymarket_admin'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_admin')\gexec
 -- Rails will manage its own schema via migrations
 
--- Restore default connection
-\c polymarket;
+-- Restore a guaranteed default connection.
+\c postgres;
 SELECT 'PolyMarket PostgreSQL init complete.' AS status;

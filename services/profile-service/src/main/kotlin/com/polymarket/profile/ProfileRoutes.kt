@@ -10,17 +10,19 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
+import java.util.UUID
 
 // ── Exposed Table ──────────────────────────────────────────────
 object Profiles : Table("profiles") {
-    val id            = varchar("id", 36)       // UUID from auth-service
-    val displayName   = varchar("display_name", 100).nullable()
+    val id            = uuid("user_id")       // UUID from auth-service
+    val username      = varchar("username", 100)
+    val displayName   = varchar("display_name", 255).nullable()
     val bio           = text("bio").nullable()
     val avatarUrl     = varchar("avatar_url", 500).nullable()
     val phone         = varchar("phone", 30).nullable()
-    val location      = varchar("location", 200).nullable()
-    val sellerRating  = decimal("seller_rating", 3, 2).nullable()
-    val totalSales    = integer("total_sales").default(0)
+    val location      = varchar("location", 255).nullable()
+    val sellerRating  = decimal("rating_avg", 3, 2).nullable()
+    val totalSales    = integer("listings_count").default(0)
     val isVerified    = bool("is_verified").default(false)
     val createdAt     = datetime("created_at").clientDefault { LocalDateTime.now() }
     val updatedAt     = datetime("updated_at").clientDefault { LocalDateTime.now() }
@@ -54,7 +56,7 @@ data class UpdateProfileRequest(
 object ProfileRoutes {
 
     fun toDto(row: ResultRow) = ProfileDto(
-        id          = row[Profiles.id],
+        id          = row[Profiles.id].toString(),
         displayName = row[Profiles.displayName],
         bio         = row[Profiles.bio],
         avatarUrl   = row[Profiles.avatarUrl],
@@ -65,9 +67,7 @@ object ProfileRoutes {
     )
 
     suspend fun getProfile(call: ApplicationCall) {
-        val userId = call.parameters["userId"] ?: run {
-            call.respond(io.ktor.http.HttpStatusCode.BadRequest, mapOf("error" to "Missing userId")); return
-        }
+        val userId = call.requireUuidParameter("userId") ?: return
         val profile = transaction {
             Profiles.selectAll().where { Profiles.id eq userId }.firstOrNull()?.let(::toDto)
         }
@@ -78,10 +78,10 @@ object ProfileRoutes {
     suspend fun updateProfile(call: ApplicationCall) {
         val callerPrincipal = call.principal<JWTPrincipal>()!!
         val callerId        = callerPrincipal.payload.subject
-        val callerRoles     = callerPrincipal.payload.getClaim("roles").asList(String::class.java)
-        val targetId        = call.parameters["userId"]!!
+        val callerRoles     = callerPrincipal.payload.getClaim("roles").asList(String::class.java) ?: emptyList()
+        val targetId        = call.requireUuidParameter("userId") ?: return
 
-        if (callerId != targetId && !callerRoles.contains("admin")) {
+        if (callerId != targetId.toString() && !callerRoles.contains("admin")) {
             call.respond(io.ktor.http.HttpStatusCode.Forbidden, mapOf("error" to "Forbidden")); return
         }
 
@@ -89,6 +89,7 @@ object ProfileRoutes {
         transaction {
             Profiles.upsert {
                 it[id]          = targetId
+                it[username]    = targetId.toString()
                 it[displayName] = req.displayName
                 it[bio]         = req.bio
                 it[avatarUrl]   = req.avatarUrl
@@ -102,24 +103,28 @@ object ProfileRoutes {
 
     suspend fun getMyProfile(call: ApplicationCall) {
         val principal = call.principal<JWTPrincipal>()!!
-        call.parameters["userId"]  // reuse getProfile with principal sub
-        val userId = principal.payload.subject
+        val userId = principal.payload.subject.toUuidOrNull() ?: run {
+            call.respond(io.ktor.http.HttpStatusCode.Unauthorized, mapOf("error" to "Invalid user id")); return
+        }
         val profile = transaction {
             Profiles.selectAll().where { Profiles.id eq userId }.firstOrNull()?.let(::toDto)
         }
         call.respond(profile ?: ProfileDto(
-            id = userId, displayName = null, bio = null, avatarUrl = null,
+            id = userId.toString(), displayName = null, bio = null, avatarUrl = null,
             location = null, sellerRating = null, totalSales = 0, isVerified = false
         ))
     }
 
     suspend fun updateMyProfile(call: ApplicationCall) {
         val principal = call.principal<JWTPrincipal>()!!
-        val userId    = principal.payload.subject
+        val userId    = principal.payload.subject.toUuidOrNull() ?: run {
+            call.respond(io.ktor.http.HttpStatusCode.Unauthorized, mapOf("error" to "Invalid user id")); return
+        }
         val req       = call.receive<UpdateProfileRequest>()
         transaction {
             Profiles.upsert {
                 it[id]          = userId
+                it[username]    = userId.toString()
                 it[displayName] = req.displayName
                 it[bio]         = req.bio
                 it[avatarUrl]   = req.avatarUrl
@@ -133,10 +138,34 @@ object ProfileRoutes {
 
     suspend fun getSellerListings(call: ApplicationCall) {
         // Delegates to listing-service — here we just return count from profiles
-        val userId = call.parameters["userId"]!!
+        val userId = call.requireUuidParameter("userId") ?: return
         val profile = transaction {
             Profiles.selectAll().where { Profiles.id eq userId }.firstOrNull()?.let(::toDto)
         }
-        call.respond(mapOf("seller_id" to userId, "total_sales" to (profile?.totalSales ?: 0)))
+        call.respond(
+            mapOf(
+                "seller_id" to userId.toString(),
+                "total_sales" to (profile?.totalSales ?: 0),
+            )
+        )
     }
+
+    private suspend fun ApplicationCall.requireUuidParameter(name: String): UUID? {
+        val raw = parameters[name] ?: run {
+            respond(io.ktor.http.HttpStatusCode.BadRequest, mapOf("error" to "Missing $name"))
+            return null
+        }
+
+        return raw.toUuidOrNull() ?: run {
+            respond(io.ktor.http.HttpStatusCode.BadRequest, mapOf("error" to "Invalid $name"))
+            null
+        }
+    }
+
+    private fun String.toUuidOrNull(): UUID? =
+        try {
+            UUID.fromString(this)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
 }

@@ -304,6 +304,11 @@ jobs:
               dependency_errors.append('profile-service must listen on PORT 4007')
           if 'healthcheck' not in profile_service:
               dependency_errors.append('profile-service must define a healthcheck')
+          profile_healthcheck = ' '.join(profile_service.get('healthcheck', {}).get('test', []))
+          if 'app.jar' not in profile_healthcheck or '--health' not in profile_healthcheck:
+              dependency_errors.append(
+                  'profile-service healthcheck must use app.jar --health'
+              )
 
           feed_service = services.get('feed-service', {})
           feed_env = feed_service.get('environment', {})

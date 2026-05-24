@@ -152,12 +152,22 @@ export class ProxyController {
   // ── Profiles ─────────────────────────────────────────────────
   @All('profiles/*')
   proxyProfiles(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'profiles', wildcardPath(req));
+    return this.proxyRequest(
+      req,
+      res,
+      'profiles',
+      'profiles/' + wildcardPath(req),
+    );
   }
 
   @All('profiles')
   proxyProfilesRoot(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'profiles', '');
+    return this.proxyRequest(req, res, 'profiles', 'profiles');
+  }
+
+  @All('me/profile')
+  proxyMyProfile(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'profiles', 'me/profile');
   }
 
   // ── Feed ─────────────────────────────────────────────────────

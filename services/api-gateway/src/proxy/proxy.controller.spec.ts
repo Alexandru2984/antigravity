@@ -175,6 +175,18 @@ describe('ProxyController', () => {
     ).toBeUndefined();
   });
 
+  it('requires auth for profile routes', () => {
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyProfiles),
+    ).toBeUndefined();
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyProfilesRoot),
+    ).toBeUndefined();
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyMyProfile),
+    ).toBeUndefined();
+  });
+
   it('proxies image routes to the image-service path prefix', async () => {
     const proxyRequest = jest
       .spyOn(
@@ -372,6 +384,57 @@ describe('ProxyController', () => {
       res,
       'payments',
       'payments/intent',
+    );
+  });
+
+  it('proxies profile routes to the profile-service path prefix', async () => {
+    const proxyRequest = jest
+      .spyOn(
+        controller as unknown as {
+          proxyRequest: jest.MockedFunction<
+            (
+              req: FastifyRequest,
+              res: unknown,
+              service: string,
+              path: string,
+            ) => Promise<void>
+          >;
+        },
+        'proxyRequest'
+      )
+      .mockResolvedValue(undefined);
+
+    const res = {};
+    const rootReq = {} as unknown as FastifyRequest;
+    const userReq = {
+      params: { '*': '550e8400-e29b-41d4-a716-446655440000' },
+    } as unknown as FastifyRequest;
+    const meReq = {} as unknown as FastifyRequest;
+
+    await controller.proxyProfilesRoot(rootReq, res as never);
+    await controller.proxyProfiles(userReq, res as never);
+    await controller.proxyMyProfile(meReq, res as never);
+
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      1,
+      rootReq,
+      res,
+      'profiles',
+      'profiles',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      2,
+      userReq,
+      res,
+      'profiles',
+      'profiles/550e8400-e29b-41d4-a716-446655440000',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      3,
+      meReq,
+      res,
+      'profiles',
+      'me/profile',
     );
   });
 });
