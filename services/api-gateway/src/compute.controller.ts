@@ -9,9 +9,11 @@ import {
   Req,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import axios from 'axios';
 import { Public } from './auth/auth.guard';
 import type { FastifyRequest } from 'fastify';
+import { POLYGLOT_TRANSACTION_RATE_LIMIT } from './rate-limit/rate-limit';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const DEFAULT_MAX_CONCURRENT_TRANSACTIONS = 2;
@@ -188,6 +190,7 @@ export class ComputeController {
   }
 
   @Post('transaction')
+  @Throttle({ default: POLYGLOT_TRANSACTION_RATE_LIMIT })
   async executeTransaction(@Req() req: FastifyRequest, @Body() body: unknown) {
     if (!this.isMeshEnabled()) {
       throw new ServiceUnavailableException('Polyglot mesh is disabled');

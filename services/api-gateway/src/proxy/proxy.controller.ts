@@ -12,10 +12,12 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/auth.guard';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import * as http from 'http';
 import * as https from 'https';
+import { AUTH_RATE_LIMIT, UPLOAD_RATE_LIMIT } from '../rate-limit/rate-limit';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
@@ -57,6 +59,7 @@ export class ProxyController {
 
   // ── Auth (public — login/register/refresh) ───────────────────
   @Public()
+  @Throttle({ default: AUTH_RATE_LIMIT })
   @All('auth/*')
   proxyAuth(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(req, res, 'auth', wildcardPath(req));
@@ -122,6 +125,7 @@ export class ProxyController {
   }
 
   @Post('images/upload')
+  @Throttle({ default: UPLOAD_RATE_LIMIT })
   proxyImagesUpload(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
     return this.proxyRequest(req, res, 'images', 'images/upload');
   }

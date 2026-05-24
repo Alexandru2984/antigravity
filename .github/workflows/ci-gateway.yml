@@ -36,6 +36,15 @@ jobs:
           main = Path('services/api-gateway/src/main.ts').read_text(
               encoding='utf-8'
           )
+          app_module = Path(
+              'services/api-gateway/src/app.module.ts'
+          ).read_text(encoding='utf-8')
+          proxy_controller = Path(
+              'services/api-gateway/src/proxy/proxy.controller.ts'
+          ).read_text(encoding='utf-8')
+          compute_controller = Path(
+              'services/api-gateway/src/compute.controller.ts'
+          ).read_text(encoding='utf-8')
           auth_guard = Path(
               'services/api-gateway/src/auth/auth.guard.ts'
           ).read_text(encoding='utf-8')
@@ -64,6 +73,26 @@ jobs:
           ]
           if mutated:
               print('AuthGuard must store identity on request.user only:', mutated)
+              sys.exit(1)
+
+          if 'bodyLimit: gatewayBodyLimitBytes()' not in main:
+              print('Gateway Fastify adapter must set an explicit bodyLimit')
+              sys.exit(1)
+
+          required_rate_limit_markers = {
+              'ThrottlerModule.forRoot(throttlerOptions())': app_module,
+              'useClass: ThrottlerGuard': app_module,
+              '@Throttle({ default: AUTH_RATE_LIMIT })': proxy_controller,
+              '@Throttle({ default: UPLOAD_RATE_LIMIT })': proxy_controller,
+              '@Throttle({ default: POLYGLOT_TRANSACTION_RATE_LIMIT })': compute_controller,
+          }
+          missing_rate_limits = [
+              marker
+              for marker, source in required_rate_limit_markers.items()
+              if marker not in source
+          ]
+          if missing_rate_limits:
+              print('Gateway rate limit guardrails missing:', missing_rate_limits)
               sys.exit(1)
           PY
       - name: Test

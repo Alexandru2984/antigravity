@@ -3,11 +3,14 @@ import { HttpStatus } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { ComputeController } from './compute.controller';
 import { IS_PUBLIC_KEY } from './auth/auth.guard';
+import { POLYGLOT_TRANSACTION_RATE_LIMIT } from './rate-limit/rate-limit';
 
 jest.mock('axios');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
+const THROTTLER_LIMIT_DEFAULT = 'THROTTLER:LIMITdefault';
+const THROTTLER_TTL_DEFAULT = 'THROTTLER:TTLdefault';
 
 function authenticatedRequest(
   userId = AUTH_USER_ID,
@@ -68,12 +71,26 @@ describe('ComputeController', () => {
     );
   }
 
+  function throttleMetadata(methodName: keyof ComputeController) {
+    const method = ComputeController.prototype[methodName];
+    return {
+      limit: Reflect.getMetadata(THROTTLER_LIMIT_DEFAULT, method),
+      ttl: Reflect.getMetadata(THROTTLER_TTL_DEFAULT, method),
+    };
+  }
+
   it('keeps mesh node discovery public but requires auth for transactions', () => {
     expect(
       Reflect.getMetadata(IS_PUBLIC_KEY, ComputeController),
     ).toBeUndefined();
     expect(publicMetadata('getMeshNodes')).toBe(true);
     expect(publicMetadata('executeTransaction')).toBeUndefined();
+  });
+
+  it('rate limits polyglot transactions', () => {
+    expect(throttleMetadata('executeTransaction')).toEqual(
+      POLYGLOT_TRANSACTION_RATE_LIMIT,
+    );
   });
 
   it('persists mesh reports as listing attributes', async () => {

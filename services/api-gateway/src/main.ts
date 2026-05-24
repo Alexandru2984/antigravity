@@ -5,6 +5,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { gatewayBodyLimitBytes } from './rate-limit/rate-limit';
 
 function getCorsOrigins(): string[] {
   const configured = process.env.CORS_ORIGINS ?? process.env.FRONTEND_URL;
@@ -22,7 +23,10 @@ function getCorsOrigins(): string[] {
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: false }),
+    new FastifyAdapter({
+      bodyLimit: gatewayBodyLimitBytes(),
+      logger: false,
+    }),
   );
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({

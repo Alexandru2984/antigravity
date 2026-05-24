@@ -1,6 +1,10 @@
 import { ProxyController } from './proxy.controller';
 import type { FastifyRequest } from 'fastify';
 import { IS_PUBLIC_KEY } from '../auth/auth.guard';
+import { AUTH_RATE_LIMIT, UPLOAD_RATE_LIMIT } from '../rate-limit/rate-limit';
+
+const THROTTLER_LIMIT_DEFAULT = 'THROTTLER:LIMITdefault';
+const THROTTLER_TTL_DEFAULT = 'THROTTLER:TTLdefault';
 
 describe('ProxyController', () => {
   let controller: ProxyController;
@@ -39,6 +43,14 @@ describe('ProxyController', () => {
       IS_PUBLIC_KEY,
       ProxyController.prototype[methodName],
     );
+  }
+
+  function throttleMetadata(methodName: keyof ProxyController) {
+    const method = ProxyController.prototype[methodName];
+    return {
+      limit: Reflect.getMetadata(THROTTLER_LIMIT_DEFAULT, method),
+      ttl: Reflect.getMetadata(THROTTLER_TTL_DEFAULT, method),
+    };
   }
 
   it('strips client-supplied user and internal headers', () => {
@@ -140,6 +152,11 @@ describe('ProxyController', () => {
   it('keeps image reads public but requires auth for uploads', () => {
     expect(publicMetadata('proxyImagesRead')).toBe(true);
     expect(publicMetadata('proxyImagesUpload')).toBeUndefined();
+  });
+
+  it('rate limits public auth and image upload routes', () => {
+    expect(throttleMetadata('proxyAuth')).toEqual(AUTH_RATE_LIMIT);
+    expect(throttleMetadata('proxyImagesUpload')).toEqual(UPLOAD_RATE_LIMIT);
   });
 
   it('keeps review reads public but requires auth for writes', () => {
