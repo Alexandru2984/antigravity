@@ -1,5 +1,5 @@
 # ── Stage 1: Chef (dependency caching) ─────────────────────────
-FROM lukemathwalker/cargo-chef:latest-rust-alpine AS chef
+FROM lukemathwalker/cargo-chef:0.1.77-rust-1.95.0-alpine3.22 AS chef
 WORKDIR /app
 
 FROM chef AS planner
@@ -18,7 +18,7 @@ COPY . .
 RUN cargo build --release --bin listing-service
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
-FROM alpine:3.19 AS runner
+FROM alpine:3.22 AS runner
 RUN apk add --no-cache libstdc++ librdkafka ca-certificates
 
 WORKDIR /app
