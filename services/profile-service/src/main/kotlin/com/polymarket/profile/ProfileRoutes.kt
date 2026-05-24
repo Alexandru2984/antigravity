@@ -81,7 +81,7 @@ object ProfileRoutes {
         val callerRoles     = callerPrincipal.payload.getClaim("roles").asList(String::class.java) ?: emptyList()
         val targetId        = call.requireUuidParameter("userId") ?: return
 
-        if (callerId != targetId.toString() && !callerRoles.contains("admin")) {
+        if (callerId != targetId.toString() && !hasAdminRole(callerRoles)) {
             call.respond(io.ktor.http.HttpStatusCode.Forbidden, mapOf("error" to "Forbidden")); return
         }
 
@@ -168,4 +168,7 @@ object ProfileRoutes {
         } catch (_: IllegalArgumentException) {
             null
         }
+
+    internal fun hasAdminRole(roles: List<String>): Boolean =
+        roles.any { it.trim().equals("admin", ignoreCase = true) }
 }
