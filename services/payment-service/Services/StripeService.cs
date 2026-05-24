@@ -8,7 +8,7 @@ namespace PaymentService.Services;
 public interface IStripeService
 {
     Task<PaymentIntentResult> CreateIntentAsync(Guid userId, Guid? listingId, decimal amount, string currency);
-    Task<Transaction> ConfirmPaymentAsync(string paymentIntentId);
+    Task<Transaction> ConfirmPaymentAsync(Guid userId, string paymentIntentId);
 }
 
 public record PaymentIntentResult(string ClientSecret, string PaymentIntentId, Guid TransactionId);
@@ -51,10 +51,10 @@ public class StripeService(PaymentDbContext db, IKafkaProducer kafka, ILogger<St
         return new PaymentIntentResult(intent.ClientSecret, intent.Id, tx.Id);
     }
 
-    public async Task<Transaction> ConfirmPaymentAsync(string paymentIntentId)
+    public async Task<Transaction> ConfirmPaymentAsync(Guid userId, string paymentIntentId)
     {
         var tx = await db.Transactions
-            .FirstOrDefaultAsync(t => t.StripePaymentIntentId == paymentIntentId)
+            .FirstOrDefaultAsync(t => t.StripePaymentIntentId == paymentIntentId && t.UserId == userId)
             ?? throw new KeyNotFoundException($"Transaction for {paymentIntentId} not found");
 
         var svc = new PaymentIntentService();

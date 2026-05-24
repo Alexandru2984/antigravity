@@ -316,6 +316,17 @@ jobs:
                   'feed-service must receive INTERNAL_SERVICE_TOKEN'
               )
 
+          payment_service = services.get('payment-service', {})
+          payment_env = payment_service.get('environment', {})
+          if str(payment_env.get('PORT')) != '4006':
+              dependency_errors.append('payment-service must listen on PORT 4006')
+          if 'healthcheck' not in payment_service:
+              dependency_errors.append('payment-service must define a healthcheck')
+          if not payment_env.get('INTERNAL_SERVICE_TOKEN'):
+              dependency_errors.append(
+                  'payment-service must receive INTERNAL_SERVICE_TOKEN'
+              )
+
           review_service = services.get('review-service', {})
           review_env = review_service.get('environment', {})
           if str(review_env.get('PORT')) != '4009':

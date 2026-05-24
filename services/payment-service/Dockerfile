@@ -18,10 +18,11 @@ USER app
 
 COPY --from=builder /publish .
 
-ENV ASPNETCORE_URLS=http://0.0.0.0:4026
-EXPOSE 4026
+ENV ASPNETCORE_URLS=http://0.0.0.0:4006
+ENV PORT=4006
+EXPOSE 4006
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
-    CMD wget -qO- http://localhost:4026/health || exit 1
+    CMD ["dotnet", "PaymentService.dll", "--health"]
 
 ENTRYPOINT ["dotnet", "PaymentService.dll"]

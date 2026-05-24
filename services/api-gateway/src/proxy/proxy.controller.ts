@@ -19,7 +19,13 @@ import * as https from 'https';
 
 const INTERNAL_SERVICE_TOKEN_HEADER = 'x-internal-service-token';
 const USER_CONTEXT_HEADERS = ['x-user-id', 'x-user-email', 'x-user-roles'];
-const INTERNAL_TOKEN_SERVICES = new Set(['listings', 'images', 'feed', 'reviews']);
+const INTERNAL_TOKEN_SERVICES = new Set([
+  'listings',
+  'images',
+  'payments',
+  'feed',
+  'reviews',
+]);
 
 // ── Service route map ──────────────────────────────────────────
 const SERVICE_MAP: Record<string, string> = {
@@ -127,9 +133,20 @@ export class ProxyController {
   }
 
   // ── Payments ─────────────────────────────────────────────────
+  @Public()
+  @Post('payments/webhook')
+  proxyPaymentsWebhook(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+    return this.proxyRequest(req, res, 'payments', 'payments/webhook');
+  }
+
   @All('payments/*')
   proxyPayments(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'payments', wildcardPath(req));
+    return this.proxyRequest(
+      req,
+      res,
+      'payments',
+      'payments/' + wildcardPath(req),
+    );
   }
 
   // ── Profiles ─────────────────────────────────────────────────

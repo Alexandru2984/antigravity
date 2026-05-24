@@ -6,6 +6,20 @@ using Serilog;
 using Stripe;
 using OpenTelemetry.Trace;
 
+if (args.Contains("--health"))
+{
+    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+    try
+    {
+        var response = await client.GetAsync($"http://127.0.0.1:{GetHealthPort()}/health");
+        return response.IsSuccessStatusCode ? 0 : 1;
+    }
+    catch
+    {
+        return 1;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
@@ -50,3 +64,20 @@ var payments = app.MapGroup("/payments");
 PaymentEndpoints.MapPaymentEndpoints(payments);
 
 app.Run();
+
+return 0;
+
+static string GetHealthPort()
+{
+    var port = Environment.GetEnvironmentVariable("PORT");
+    if (!string.IsNullOrWhiteSpace(port))
+    {
+        return port;
+    }
+
+    var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:4006";
+    var lastUrl = urls.Split(';', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? urls;
+    var lastColon = lastUrl.LastIndexOf(':');
+
+    return lastColon >= 0 ? lastUrl[(lastColon + 1)..].TrimEnd('/') : "4006";
+}

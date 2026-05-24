@@ -262,8 +262,10 @@ services:
       DATABASE_URL: "Host=postgres;Database=polymarket_payments;Username=polymarket;Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
       Stripe__SecretKey: "${STRIPE_SECRET_KEY}"
       Stripe__WebhookSecret: "${STRIPE_WEBHOOK_SECRET}"
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
       Kafka__BootstrapServers: kafka:29092
       OTEL__Endpoint: http://otel-collector:4317
+      PORT: 4006
     networks:
       - polymarket
     depends_on:
@@ -271,6 +273,11 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "dotnet", "PaymentService.dll", "--health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Profile Service (Kotlin / Ktor) ─────────────────────────
   profile-service:

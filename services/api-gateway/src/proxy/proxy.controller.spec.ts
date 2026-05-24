@@ -117,6 +117,19 @@ describe('ProxyController', () => {
     expect(headers['x-internal-service-token']).toBe('internal-test-token');
   });
 
+  it('adds the internal token for payment service requests', () => {
+    const headers = buildHeaders(
+      {
+        headers: {
+          'x-internal-service-token': 'forged',
+        },
+      },
+      'payments',
+    );
+
+    expect(headers['x-internal-service-token']).toBe('internal-test-token');
+  });
+
   it('keeps image reads public but requires auth for uploads', () => {
     expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyImagesRead)).toBe(
       true,
@@ -150,6 +163,15 @@ describe('ProxyController', () => {
     );
     expect(
       Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyFeedWrite),
+    ).toBeUndefined();
+  });
+
+  it('keeps Stripe payment webhook public but requires auth for other payment routes', () => {
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyPaymentsWebhook),
+    ).toBe(true);
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.proxyPayments),
     ).toBeUndefined();
   });
 
@@ -308,6 +330,48 @@ describe('ProxyController', () => {
       res,
       'feed',
       'feed/follow/seller-123',
+    );
+  });
+
+  it('proxies payment routes to the payment-service path prefix', async () => {
+    const proxyRequest = jest
+      .spyOn(
+        controller as unknown as {
+          proxyRequest: jest.MockedFunction<
+            (
+              req: FastifyRequest,
+              res: unknown,
+              service: string,
+              path: string,
+            ) => Promise<void>
+          >;
+        },
+        'proxyRequest'
+      )
+      .mockResolvedValue(undefined);
+
+    const res = {};
+    const webhookReq = {} as unknown as FastifyRequest;
+    const intentReq = {
+      params: { '*': 'intent' },
+    } as unknown as FastifyRequest;
+
+    await controller.proxyPaymentsWebhook(webhookReq, res as never);
+    await controller.proxyPayments(intentReq, res as never);
+
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      1,
+      webhookReq,
+      res,
+      'payments',
+      'payments/webhook',
+    );
+    expect(proxyRequest).toHaveBeenNthCalledWith(
+      2,
+      intentReq,
+      res,
+      'payments',
+      'payments/intent',
     );
   });
 });

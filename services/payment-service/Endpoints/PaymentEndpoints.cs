@@ -1,6 +1,9 @@
 using PaymentService.Services;
 using PaymentService.Data;
+using PaymentService.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using Stripe;
 
 namespace PaymentService;
@@ -15,10 +18,18 @@ public static class PaymentEndpoints
             IStripeService stripe,
             HttpContext ctx) =>
         {
-            var userIdStr = ctx.Request.Headers["X-User-Id"].FirstOrDefault() ?? Guid.Empty.ToString();
-            if (!Guid.TryParse(userIdStr, out var userId)) userId = Guid.Empty;
+            var (userId, authFailure) = RequireGatewayUser(ctx);
+            if (authFailure is not null)
+            {
+                return authFailure;
+            }
 
-            var result = await stripe.CreateIntentAsync(userId, req.ListingId, req.Amount, req.Currency);
+            if (req.Amount <= 0 || string.IsNullOrWhiteSpace(req.Currency))
+            {
+                return Results.BadRequest(new { error = "Invalid payment request" });
+            }
+
+            var result = await stripe.CreateIntentAsync(userId!.Value, req.ListingId, req.Amount, req.Currency);
             return Results.Ok(new
             {
                 client_secret = result.ClientSecret,
@@ -30,16 +41,40 @@ public static class PaymentEndpoints
         // POST /payments/confirm — confirm payment
         group.MapPost("/confirm", async (
             ConfirmRequest req,
-            IStripeService stripe) =>
+            IStripeService stripe,
+            HttpContext ctx) =>
         {
-            var tx = await stripe.ConfirmPaymentAsync(req.PaymentIntentId);
+            var (userId, authFailure) = RequireGatewayUser(ctx);
+            if (authFailure is not null)
+            {
+                return authFailure;
+            }
+
+            Transaction tx;
+            try
+            {
+                tx = await stripe.ConfirmPaymentAsync(userId!.Value, req.PaymentIntentId);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.NotFound();
+            }
+
             return Results.Ok(new { status = tx.Status, transaction_id = tx.Id });
         });
 
         // GET /payments/:id — get transaction
-        group.MapGet("/{id:guid}", async (Guid id, PaymentDbContext db) =>
+        group.MapGet("/{id:guid}", async (Guid id, PaymentDbContext db, HttpContext ctx) =>
         {
-            var tx = await db.Transactions.FindAsync(id);
+            var (userId, authFailure) = RequireGatewayUser(ctx);
+            if (authFailure is not null)
+            {
+                return authFailure;
+            }
+
+            var tx = await db.Transactions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId!.Value);
             return tx is null ? Results.NotFound() : Results.Ok(tx);
         });
 
@@ -94,6 +129,39 @@ public static class PaymentEndpoints
         });
 
         return group;
+    }
+
+    private static (Guid? UserId, IResult? Failure) RequireGatewayUser(HttpContext ctx)
+    {
+        var expectedToken = Environment.GetEnvironmentVariable("INTERNAL_SERVICE_TOKEN") ?? "";
+        if (string.IsNullOrWhiteSpace(expectedToken))
+        {
+            return (null, Results.Problem(
+                "INTERNAL_SERVICE_TOKEN is not configured",
+                statusCode: StatusCodes.Status500InternalServerError));
+        }
+
+        var actualToken = ctx.Request.Headers["X-Internal-Service-Token"].FirstOrDefault() ?? "";
+        if (!ConstantTimeEquals(expectedToken, actualToken))
+        {
+            return (null, Results.Unauthorized());
+        }
+
+        var userIdStr = ctx.Request.Headers["X-User-Id"].FirstOrDefault() ?? "";
+        if (!Guid.TryParse(userIdStr, out var userId))
+        {
+            return (null, Results.Unauthorized());
+        }
+
+        return (userId, null);
+    }
+
+    private static bool ConstantTimeEquals(string expected, string actual)
+    {
+        var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(expected));
+        var actualHash = SHA256.HashData(Encoding.UTF8.GetBytes(actual));
+
+        return CryptographicOperations.FixedTimeEquals(expectedHash, actualHash);
     }
 }
 
