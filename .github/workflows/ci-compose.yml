@@ -286,10 +286,17 @@ jobs:
               dependency_errors.append(
                   'api-gateway must wait for auth-service service_healthy'
               )
-          if api_gateway_env.get('ODIN_SERVICE_URL') != 'http://odin-service:4065':
-              dependency_errors.append(
-                  'api-gateway must route Odin mesh calls to odin-service:4065'
-              )
+          mesh_urls = {
+              'PHP_SERVICE_URL': 'http://php-service:4061',
+              'SWIFT_SERVICE_URL': 'http://swift-service:4063',
+              'ODIN_SERVICE_URL': 'http://odin-service:4065',
+              'SCALA_SERVICE_URL': 'http://scala-service:4058',
+          }
+          for env_name, expected_url in mesh_urls.items():
+              if api_gateway_env.get(env_name) != expected_url:
+                  dependency_errors.append(
+                      f'api-gateway must set {env_name}={expected_url}'
+                  )
 
           surrealdb_init = services.get('surrealdb-init', {})
           if not surrealdb_init:

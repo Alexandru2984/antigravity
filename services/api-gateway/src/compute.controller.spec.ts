@@ -33,12 +33,15 @@ describe('ComputeController', () => {
     process.env.NIM_SERVICE_URL = 'http://nim.test';
     process.env.LUA_SERVICE_URL = 'http://lua.test';
     process.env.ELIXIR_SERVICE_URL = 'http://elixir.test';
+    process.env.SCALA_SERVICE_URL = 'http://scala.test';
     process.env.JULIA_SERVICE_URL = 'http://julia.test';
     process.env.R_SERVICE_URL = 'http://r.test';
+    process.env.PHP_SERVICE_URL = 'http://php.test';
     process.env.ML_SERVICE_URL = 'http://ml.test';
     process.env.COBOL_SERVICE_URL = 'http://cobol.test';
     process.env.ASSEMBLY_SERVICE_URL = 'http://assembly.test';
     process.env.ZIG_SERVICE_URL = 'http://zig.test';
+    process.env.SWIFT_SERVICE_URL = 'http://swift.test';
     process.env.BRAINFUCK_SERVICE_URL = 'http://brainfuck.test';
     process.env.ODIN_SERVICE_URL = 'http://odin.test';
     process.env.LISTING_SERVICE_URL = 'http://listing.test';
@@ -55,12 +58,15 @@ describe('ComputeController', () => {
     delete process.env.NIM_SERVICE_URL;
     delete process.env.LUA_SERVICE_URL;
     delete process.env.ELIXIR_SERVICE_URL;
+    delete process.env.SCALA_SERVICE_URL;
     delete process.env.JULIA_SERVICE_URL;
     delete process.env.R_SERVICE_URL;
+    delete process.env.PHP_SERVICE_URL;
     delete process.env.ML_SERVICE_URL;
     delete process.env.COBOL_SERVICE_URL;
     delete process.env.ASSEMBLY_SERVICE_URL;
     delete process.env.ZIG_SERVICE_URL;
+    delete process.env.SWIFT_SERVICE_URL;
     delete process.env.BRAINFUCK_SERVICE_URL;
     delete process.env.ODIN_SERVICE_URL;
     delete process.env.LISTING_SERVICE_URL;
@@ -254,6 +260,19 @@ describe('ComputeController', () => {
           result: 144,
         },
         'http://odin.test/speed': 'Odin Game-Engine Speed: Active\n',
+        'http://php.test': {
+          status: 'ok',
+          service: 'PHP-legacy-web',
+          php_version: '8.2.0',
+        },
+        'http://swift.test': {
+          status: 'ok',
+          service: 'swift-vapor-ios-legacy',
+        },
+        'http://scala.test': {
+          status: 'ok',
+          service: 'scala-akka-http',
+        },
       };
       if (url in responses) {
         return Promise.resolve({ data: responses[url] });
@@ -372,6 +391,18 @@ describe('ComputeController', () => {
     expect(
       listingPayload.attributes.polyglot_mesh.reports['Odin-Speed'].data.signal,
     ).toBe('Odin Game-Engine Speed: Active');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['PHP-Legacy'].data
+        .service,
+    ).toBe('PHP-legacy-web');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Swift-Mobile'].data
+        .service,
+    ).toBe('swift-vapor-ios-legacy');
+    expect(
+      listingPayload.attributes.polyglot_mesh.reports['Scala-Stream'].data
+        .service,
+    ).toBe('scala-akka-http');
 
     expect(mockedAxios.post.mock.calls).toContainEqual([
       'http://elixir.test/events',

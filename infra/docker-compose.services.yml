@@ -70,9 +70,12 @@ services:
       ELIXIR_SERVICE_URL: http://elixir-service:4057
       LUA_SERVICE_URL: http://lua-service:4059
       R_SERVICE_URL: http://r-service:4060
+      PHP_SERVICE_URL: http://php-service:4061
       ZIG_SERVICE_URL: http://zig-service:4062
+      SWIFT_SERVICE_URL: http://swift-service:4063
       NIM_SERVICE_URL: http://nim-service:4064
       ODIN_SERVICE_URL: http://odin-service:4065
+      SCALA_SERVICE_URL: http://scala-service:4058
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: api-gateway
     networks:

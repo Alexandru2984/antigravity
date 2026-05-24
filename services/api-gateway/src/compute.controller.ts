@@ -32,8 +32,10 @@ const SERVICE_URL_DEFAULTS = {
   nim: { env: 'NIM_SERVICE_URL', url: 'http://nim-service:4064' },
   lua: { env: 'LUA_SERVICE_URL', url: 'http://lua-service:4059' },
   elixir: { env: 'ELIXIR_SERVICE_URL', url: 'http://elixir-service:4057' },
+  scala: { env: 'SCALA_SERVICE_URL', url: 'http://scala-service:4058' },
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
+  php: { env: 'PHP_SERVICE_URL', url: 'http://php-service:4061' },
   ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
   cobol: { env: 'COBOL_SERVICE_URL', url: 'http://cobol-service:4022' },
   assembly: {
@@ -41,6 +43,7 @@ const SERVICE_URL_DEFAULTS = {
     url: 'http://assembly-service:4021',
   },
   zig: { env: 'ZIG_SERVICE_URL', url: 'http://zig-service:4062' },
+  swift: { env: 'SWIFT_SERVICE_URL', url: 'http://swift-service:4063' },
   brainfuck: {
     env: 'BRAINFUCK_SERVICE_URL',
     url: 'http://brainfuck-service:4020',
@@ -112,25 +115,25 @@ export class ComputeController {
       {
         name: 'Brainfuck-Crypt',
         language: 'Brainfuck',
-        port: 4050,
+        port: 4020,
         description: 'Esoteric security hash Generation',
       },
       {
         name: 'Assembly-Fibo',
         language: 'Assembly',
-        port: 4051,
+        port: 4021,
         description: 'Hyper-optimized hardware signature matching',
       },
       {
         name: 'COBOL-Ledger',
         language: 'COBOL',
-        port: 4052,
+        port: 4022,
         description: 'Legacy mainframe merchant financial tracking',
       },
       {
         name: 'Clojure-Rules',
         language: 'Clojure',
-        port: 4053,
+        port: 4023,
         description: 'Functional marketing rules compiler',
       },
       {
@@ -179,7 +182,7 @@ export class ComputeController {
         name: 'Swift-Mobile',
         language: 'Swift',
         port: 4063,
-        description: 'Mobile listing payload payload parsing',
+        description: 'Mobile listing payload parsing',
       },
       {
         name: 'Nim-Optimizer',
@@ -524,7 +527,58 @@ export class ComputeController {
     }
     reports.push(odinReport);
 
-    // Step 14: Call Rust Listing service to persist in MongoDB and publish to Kafka
+    // Step 14: PHP legacy compatibility probe
+    const phpReport = {
+      service: 'PHP-Legacy',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.get(this.serviceUrl('php'), {
+        timeout: 1500,
+      });
+      phpReport.status = 'online';
+      phpReport.data = res.data;
+    } catch (e) {
+      phpReport.data = { error: e.message };
+    }
+    reports.push(phpReport);
+
+    // Step 15: Swift mobile payload compatibility probe
+    const swiftReport = {
+      service: 'Swift-Mobile',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.get(this.serviceUrl('swift'), {
+        timeout: 1500,
+      });
+      swiftReport.status = 'online';
+      swiftReport.data = res.data;
+    } catch (e) {
+      swiftReport.data = { error: e.message };
+    }
+    reports.push(swiftReport);
+
+    // Step 16: Scala Akka routing probe
+    const scalaReport = {
+      service: 'Scala-Stream',
+      status: 'offline',
+      data: null as any,
+    };
+    try {
+      const res = await axios.get(this.serviceUrl('scala'), {
+        timeout: 1500,
+      });
+      scalaReport.status = 'online';
+      scalaReport.data = res.data;
+    } catch (e) {
+      scalaReport.data = { error: e.message };
+    }
+    reports.push(scalaReport);
+
+    // Step 17: Call Rust Listing service to persist in MongoDB and publish to Kafka
     const rustReport = {
       service: 'Rust-Persist-Core',
       status: 'offline',
@@ -589,7 +643,7 @@ export class ComputeController {
       }
       reports.push(rustReport);
 
-      // Step 15: Elixir event broker notification after durable persistence
+      // Step 18: Elixir event broker notification after durable persistence
       if (rustReport.status === 'online') {
         const elixirReport = {
           service: 'Elixir-Broker',
