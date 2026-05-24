@@ -361,6 +361,38 @@ jobs:
                       f'api-gateway must set {env_name}={expected_url}'
                   )
 
+          frontend_service = services.get('frontend', {})
+          if 'healthcheck' not in frontend_service:
+              dependency_errors.append('frontend must define a healthcheck')
+          frontend_healthcheck = ' '.join(
+              frontend_service.get('healthcheck', {}).get('test', [])
+          )
+          if '127.0.0.1:3000' not in frontend_healthcheck:
+              dependency_errors.append(
+                  'frontend healthcheck must probe localhost:3000'
+              )
+          frontend_dependency = (
+              frontend_service
+              .get('depends_on', {})
+              .get('api-gateway', {})
+          )
+          if frontend_dependency.get('condition') != 'service_healthy':
+              dependency_errors.append(
+                  'frontend must wait for api-gateway service_healthy'
+              )
+
+          nginx_service = services.get('nginx', {})
+          for dependency_name in ['api-gateway', 'frontend']:
+              dependency = (
+                  nginx_service
+                  .get('depends_on', {})
+                  .get(dependency_name, {})
+              )
+              if dependency.get('condition') != 'service_healthy':
+                  dependency_errors.append(
+                      f'nginx must wait for {dependency_name} service_healthy'
+                  )
+
           surrealdb_init = services.get('surrealdb-init', {})
           if not surrealdb_init:
               dependency_errors.append('surrealdb-init must prepare the data volume')
