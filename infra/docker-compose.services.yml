@@ -707,8 +707,17 @@ services:
     container_name: polymarket-elixir-mesh
     restart: unless-stopped
     mem_limit: 200m
+    expose:
+      - "4057"
+    environment:
+      PORT: 4057
     networks:
       - polymarket
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4057}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   scala-service:
     <<: *readonly_app_security

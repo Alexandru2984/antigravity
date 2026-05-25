@@ -1,17 +1,23 @@
 defmodule Polyglot.Router do
   use Plug.Router
 
-  plug :match
-  plug Plug.Parsers,
+  plug(:match)
+
+  plug(Plug.Parsers,
     parsers: [:json],
     pass: ["application/json"],
     json_decoder: Jason,
     length: 8_192
+  )
 
-  plug :dispatch
+  plug(:dispatch)
 
   get "/" do
     json(conn, 200, %{status: "ok", service: "elixir-concurrency", beam: true})
+  end
+
+  get "/health" do
+    json(conn, 200, %{status: "ok", service: "elixir-service"})
   end
 
   post "/events" do

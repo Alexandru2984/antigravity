@@ -1,0 +1,49 @@
+name: CI - Elixir Mesh Service
+
+on:
+  push:
+    paths:
+      - 'services/elixir-service/**'
+      - '.github/workflows/ci-elixir-mesh.yml'
+  pull_request:
+    paths:
+      - 'services/elixir-service/**'
+      - '.github/workflows/ci-elixir-mesh.yml'
+
+jobs:
+  test:
+    name: Test Elixir Mesh Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.15'
+          otp-version: '26'
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            services/elixir-service/deps
+            services/elixir-service/_build
+          key: elixir-service-${{ runner.os }}-${{ hashFiles('services/elixir-service/mix.lock') }}
+
+      - name: Install deps
+        run: cd services/elixir-service && mix deps.get
+
+      - name: Check format
+        run: |
+          cd services/elixir-service
+          mix format --check-formatted \
+            mix.exs \
+            config/config.exs \
+            config/test.exs \
+            lib/application.ex \
+            lib/router.ex \
+            test/test_helper.exs \
+            test/**/*.exs
+
+      - name: Run tests
+        run: cd services/elixir-service && mix test
