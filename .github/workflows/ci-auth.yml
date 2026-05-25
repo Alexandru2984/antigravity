@@ -106,6 +106,37 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: JWT private key must stay runtime-only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          config = Path('services/auth-service/config/config.exs').read_text(
+              encoding='utf-8'
+          )
+          runtime = Path('services/auth-service/config/runtime.exs').read_text(
+              encoding='utf-8'
+          )
+          dockerignore = Path('services/auth-service/.dockerignore').read_text(
+              encoding='utf-8'
+          )
+
+          errors = []
+          if 'JWT_PRIVATE_KEY' in config or 'jwt_private.pem' in config:
+              errors.append('config.exs must not read or embed JWT private keys')
+          if 'JWT_PRIVATE_KEY' not in runtime:
+              errors.append('runtime.exs must load JWT_PRIVATE_KEY at runtime')
+          if 'config_env() == :prod' not in runtime or 'environment variable JWT_PRIVATE_KEY is missing' not in runtime:
+              errors.append('runtime.exs must require JWT_PRIVATE_KEY in prod')
+          if 'priv/keys/' not in dockerignore:
+              errors.append('.dockerignore must exclude priv/keys/')
+
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          PY
+
       - name: Credo (lint)
         run: cd services/auth-service && mix credo --strict
 
