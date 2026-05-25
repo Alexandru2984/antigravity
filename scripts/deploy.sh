@@ -6,28 +6,48 @@ set -euo pipefail
 REBUILD=${1:-""}
 INFRA_COMPOSE=(docker compose -f infra/docker-compose.yml)
 SERVICES_COMPOSE=(docker compose -f infra/docker-compose.yml -f infra/docker-compose.services.yml)
+KEY_DIR=infra/keys
+JWT_PRIVATE_KEY_FILE="$KEY_DIR/jwt_private.pem"
+JWT_PUBLIC_KEY_FILE="$KEY_DIR/jwt_public.pem"
 
 echo "🚀 PolyMarket Deploy — $(date)"
 echo "────────────────────────────────"
-
-# ── RSA key generation (if missing) ───────────────────────────
-if [[ ! -f infra/keys/jwt_private.pem ]]; then
-    echo "📀 Generating RSA keypair for JWT..."
-    mkdir -p infra/keys
-    openssl genrsa -out infra/keys/jwt_private.pem 4096
-    openssl rsa -in infra/keys/jwt_private.pem -pubout -out infra/keys/jwt_public.pem
-    echo "✅ Keys generated in infra/keys/"
-fi
-
-# ── Load/export keys as env vars ──────────────────────────────
-export JWT_PRIVATE_KEY=$(cat infra/keys/jwt_private.pem)
-export JWT_PUBLIC_KEY=$(cat infra/keys/jwt_public.pem)
 
 # ── Load .env if present ──────────────────────────────────────
 if [[ -f .env ]]; then
     echo "📋 Loading .env..."
     set -a; source .env; set +a
 fi
+
+# ── RSA key generation / loading ──────────────────────────────
+if [[ -z "${JWT_PRIVATE_KEY:-}" || -z "${JWT_PUBLIC_KEY:-}" ]]; then
+    if [[ ! -f "$JWT_PRIVATE_KEY_FILE" || ! -f "$JWT_PUBLIC_KEY_FILE" ]]; then
+        echo "📀 Generating RSA keypair for JWT..."
+        mkdir -p "$KEY_DIR"
+        chmod 700 "$KEY_DIR"
+        openssl genrsa -out "$JWT_PRIVATE_KEY_FILE" 4096
+        openssl rsa -in "$JWT_PRIVATE_KEY_FILE" -pubout -out "$JWT_PUBLIC_KEY_FILE"
+        chmod 600 "$JWT_PRIVATE_KEY_FILE"
+        chmod 644 "$JWT_PUBLIC_KEY_FILE"
+        echo "✅ Keys generated in $KEY_DIR/"
+    fi
+
+    export JWT_PRIVATE_KEY
+    JWT_PRIVATE_KEY=$(cat "$JWT_PRIVATE_KEY_FILE")
+    export JWT_PUBLIC_KEY
+    JWT_PUBLIC_KEY=$(cat "$JWT_PUBLIC_KEY_FILE")
+fi
+
+reject_placeholder() {
+    local name=$1
+    local value=${!name:-}
+    case "$value" in
+        ""|*replace_with*|*changeme*|*dummy*|*example*|*"...")
+            echo "❌ ERROR: $name still looks like a placeholder. Set a real value in .env"
+            exit 1
+            ;;
+    esac
+}
 
 # ── Validate required secrets ──────────────────────────────────
 REQUIRED=(
@@ -55,12 +75,43 @@ REQUIRED=(
     FRONTEND_URL
     CORS_ORIGINS
     POLYGLOT_MESH_ENABLED
+    JWT_PRIVATE_KEY
+    JWT_PUBLIC_KEY
 )
 for var in "${REQUIRED[@]}"; do
     if [[ -z "${!var:-}" ]]; then
         echo "❌ ERROR: $var is not set. Add it to .env"
         exit 1
     fi
+done
+
+SECRET_VARS=(
+    STRIPE_SECRET_KEY
+    STRIPE_WEBHOOK_SECRET
+    POSTGRES_PASSWORD
+    MONGO_PASSWORD
+    MYSQL_ROOT_PASSWORD
+    MYSQL_PASSWORD
+    REDIS_PASSWORD
+    CLICKHOUSE_PASSWORD
+    TIMESCALE_PASSWORD
+    SURREALDB_PASSWORD
+    MINIO_ROOT_USER
+    MINIO_ROOT_PASSWORD
+    NEO4J_PASSWORD
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD
+    SECRET_KEY_BASE
+    NOTIFICATION_SECRET_KEY_BASE
+    CHAT_SECRET_KEY_BASE
+    ADMIN_SECRET_KEY_BASE
+    REVIEW_APP_KEY
+    INTERNAL_SERVICE_TOKEN
+    GRAFANA_ADMIN_PASSWORD
+    JWT_PRIVATE_KEY
+    JWT_PUBLIC_KEY
+)
+for var in "${SECRET_VARS[@]}"; do
+    reject_placeholder "$var"
 done
 
 # ── Pull/build images ─────────────────────────────────────────

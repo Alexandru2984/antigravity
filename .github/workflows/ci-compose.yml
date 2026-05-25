@@ -129,6 +129,29 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Deploy must reject placeholder secrets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path('scripts/deploy.sh').read_text(encoding='utf-8')
+          required = [
+              'reject_placeholder()',
+              '*replace_with*',
+              '*changeme*',
+              '*dummy*',
+              '*"..."',
+              'JWT_PRIVATE_KEY',
+              'JWT_PUBLIC_KEY',
+              'chmod 600 "$JWT_PRIVATE_KEY_FILE"',
+          ]
+          missing = [marker for marker in required if marker not in source]
+          if missing:
+              print('deploy.sh must reject placeholder secrets and protect JWT keys:', missing)
+              sys.exit(1)
+          PY
+
       - name: Compose YAML must not contain duplicate keys
         run: |
           python3 - <<'PY'
