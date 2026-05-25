@@ -59,6 +59,19 @@ jobs:
       - name: Install deps
         run: cd services/auth-service && mix deps.get
 
+      - name: Generate test JWT keys
+        run: |
+          openssl genrsa -out /tmp/auth-service-jwt-private.pem 2048
+          openssl rsa -in /tmp/auth-service-jwt-private.pem -pubout -out /tmp/auth-service-jwt-public.pem
+          {
+            echo 'JWT_PRIVATE_KEY<<EOF'
+            cat /tmp/auth-service-jwt-private.pem
+            echo 'EOF'
+            echo 'JWT_PUBLIC_KEY<<EOF'
+            cat /tmp/auth-service-jwt-public.pem
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+
       - name: Compile (warnings as errors)
         run: cd services/auth-service && mix compile --warnings-as-errors
 
