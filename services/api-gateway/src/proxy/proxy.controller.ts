@@ -30,13 +30,13 @@ const INTERNAL_TOKEN_SERVICES = new Set([
 ]);
 
 // ── Service route map ──────────────────────────────────────────
-const SERVICE_MAP: Record<string, string> = {
+export const SERVICE_MAP: Record<string, string> = {
   auth: process.env.AUTH_SERVICE_URL ?? 'http://auth-service:4001',
   listings: process.env.LISTING_SERVICE_URL ?? 'http://listing-service:4002',
   search: process.env.SEARCH_SERVICE_URL ?? 'http://search-service:4003',
   images: process.env.IMAGE_SERVICE_URL ?? 'http://image-service:4004',
   notifications:
-    process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:4025',
+    process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:4005',
   payments: process.env.PAYMENT_SERVICE_URL ?? 'http://payment-service:4006',
   profiles: process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:4007',
   feed: process.env.FEED_SERVICE_URL ?? 'http://feed-service:4008',

@@ -1,4 +1,4 @@
-import { ProxyController } from './proxy.controller';
+import { ProxyController, SERVICE_MAP } from './proxy.controller';
 import type { FastifyRequest } from 'fastify';
 import { IS_PUBLIC_KEY } from '../auth/auth.guard';
 import { AUTH_RATE_LIMIT, UPLOAD_RATE_LIMIT } from '../rate-limit/rate-limit';
@@ -157,6 +157,11 @@ describe('ProxyController', () => {
   it('rate limits public auth and image upload routes', () => {
     expect(throttleMetadata('proxyAuth')).toEqual(AUTH_RATE_LIMIT);
     expect(throttleMetadata('proxyImagesUpload')).toEqual(UPLOAD_RATE_LIMIT);
+  });
+
+  it('keeps proxy service defaults aligned with compose ports', () => {
+    expect(SERVICE_MAP.notifications).toBe('http://notification-service:4005');
+    expect(SERVICE_MAP.config).toBe('http://config-service:4014');
   });
 
   it('keeps review reads public but requires auth for writes', () => {

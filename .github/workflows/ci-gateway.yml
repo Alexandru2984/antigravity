@@ -79,6 +79,16 @@ jobs:
               print('Gateway Fastify adapter must set an explicit bodyLimit')
               sys.exit(1)
 
+          stale_service_ports = [
+              'http://notification-service:4025',
+          ]
+          stale_matches = [
+              port for port in stale_service_ports if port in proxy_controller
+          ]
+          if stale_matches:
+              print('Gateway proxy has stale service ports:', stale_matches)
+              sys.exit(1)
+
           required_rate_limit_markers = {
               'ThrottlerModule.forRoot(throttlerOptions())': app_module,
               'useClass: ThrottlerGuard': app_module,
