@@ -41,6 +41,9 @@ check_service() {
     local stack=$1
     local name=$2
     local compose=()
+    local container_id
+    local running
+    local health
 
     if [[ "$stack" == "infra" ]]; then
         compose=("${INFRA_COMPOSE[@]}")
@@ -48,11 +51,29 @@ check_service() {
         compose=("${SERVICES_COMPOSE[@]}")
     fi
 
-    if "${compose[@]}" ps --services --filter status=running | grep -qx "$name"; then
-        echo "  OK   $name container running"
+    container_id=$("${compose[@]}" ps -q "$name")
+    if [[ -z "$container_id" ]]; then
+        echo "  FAIL $name container not running"
+        (( FAIL += 1 ))
+        return
+    fi
+
+    running=$(docker inspect --format='{{.State.Running}}' "$container_id" 2>/dev/null || echo "false")
+    if [[ "$running" != "true" ]]; then
+        echo "  FAIL $name container not running"
+        (( FAIL += 1 ))
+        return
+    fi
+
+    health=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$container_id" 2>/dev/null || echo "unknown")
+    if [[ "$health" == "healthy" ]]; then
+        echo "  OK   $name container healthy"
+        (( PASS += 1 ))
+    elif [[ "$health" == "no-healthcheck" ]]; then
+        echo "  OK   $name container running (no healthcheck)"
         (( PASS += 1 ))
     else
-        echo "  FAIL $name container not running"
+        echo "  FAIL $name container health=$health"
         (( FAIL += 1 ))
     fi
 }

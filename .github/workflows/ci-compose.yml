@@ -167,6 +167,33 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Health check must inspect container health
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path('scripts/health-check.sh').read_text(encoding='utf-8')
+          required = [
+              'ps -q "$name"',
+              'docker inspect',
+              '{{.State.Running}}',
+              '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}',
+          ]
+          missing = [marker for marker in required if marker not in source]
+          if missing:
+              print('health-check.sh must inspect Compose service container state:', missing)
+              sys.exit(1)
+
+          forbidden = [
+              'ps --services --filter status=running',
+          ]
+          stale = [marker for marker in forbidden if marker in source]
+          if stale:
+              print('health-check.sh must not treat running services as healthy:', stale)
+              sys.exit(1)
+          PY
+
       - name: Compose YAML must not contain duplicate keys
         run: |
           python3 - <<'PY'
