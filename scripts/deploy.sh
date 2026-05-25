@@ -128,7 +128,7 @@ echo "🏗️  Starting infrastructure..."
 "${INFRA_COMPOSE[@]}" up -d
 
 echo "⏳ Waiting for infrastructure to be healthy..."
-sleep 10
+bash infra/db/wait-for-dbs.sh
 
 # ── Start services ─────────────────────────────────────────────
 echo "▶️  Starting microservices..."

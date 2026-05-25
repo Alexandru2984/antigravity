@@ -152,6 +152,21 @@ jobs:
               sys.exit(1)
           PY
 
+      - name: Deploy must wait for healthy infrastructure
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path('scripts/deploy.sh').read_text(encoding='utf-8')
+          if 'bash infra/db/wait-for-dbs.sh' not in source:
+              print('deploy.sh must wait for infra/db/wait-for-dbs.sh after infra up')
+              sys.exit(1)
+          if 'sleep 10' in source:
+              print('deploy.sh must not use a fixed sleep for infrastructure readiness')
+              sys.exit(1)
+          PY
+
       - name: Compose YAML must not contain duplicate keys
         run: |
           python3 - <<'PY'
