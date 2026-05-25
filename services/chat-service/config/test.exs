@@ -1,5 +1,7 @@
 import Config
 
+config :chat_service, start_repo?: false
+
 config :chat_service, ChatService.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 1

@@ -1,0 +1,52 @@
+name: CI - Chat Service
+
+on:
+  push:
+    paths:
+      - 'services/chat-service/**'
+      - '.github/workflows/ci-chat.yml'
+  pull_request:
+    paths:
+      - 'services/chat-service/**'
+      - '.github/workflows/ci-chat.yml'
+
+jobs:
+  test:
+    name: Test Chat Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16'
+          otp-version: '26'
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            services/chat-service/deps
+            services/chat-service/_build
+          key: chat-service-${{ runner.os }}-${{ hashFiles('services/chat-service/mix.lock') }}
+
+      - name: Install deps
+        run: cd services/chat-service && mix deps.get
+
+      - name: Check format
+        run: |
+          cd services/chat-service
+          mix format --check-formatted \
+            config/config.exs \
+            config/runtime.exs \
+            config/test.exs \
+            lib/chat_service/application.ex \
+            lib/chat_service/messages.ex \
+            lib/chat_service/repo.ex \
+            lib/chat_service_web/channels/room_channel.ex \
+            lib/chat_service_web/user_socket.ex \
+            test/**/*.exs
+
+      - name: Run tests
+        run: cd services/chat-service && mix test
+
