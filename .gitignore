@@ -14,6 +14,7 @@
 *.key
 *.pem
 secrets/
+infra/keys/
 infra/nginx/ssl/
 
 # ── Node.js / TypeScript ─────────────────────────────────────

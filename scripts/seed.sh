@@ -4,10 +4,42 @@
 # Seeds Postgres, MongoDB, MySQL, ClickHouse, Neo4j, SurrealDB
 # ============================================================
 
-set -e
+set -euo pipefail
+
+CONFIRMATION_TOKEN="reset-demo-data"
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<EOF
+Usage:
+  POLYMARKET_SEED_CONFIRM=$CONFIRMATION_TOKEN bash scripts/seed.sh
+  bash scripts/seed.sh --$CONFIRMATION_TOKEN
+
+This script resets demo data across Postgres, MongoDB, MySQL, ClickHouse,
+Neo4j, and SurrealDB. Do not run it against production data.
+EOF
+  exit 0
+fi
+
+if [[ "${1:-}" == "--$CONFIRMATION_TOKEN" ]]; then
+  POLYMARKET_SEED_CONFIRM="$CONFIRMATION_TOKEN"
+fi
 
 if [[ -f .env ]]; then
   set -a; source .env; set +a
+fi
+
+if [[ "${POLYMARKET_SEED_CONFIRM:-}" != "$CONFIRMATION_TOKEN" ]]; then
+  cat >&2 <<EOF
+ERROR: Refusing to reset demo data without explicit confirmation.
+
+This script runs destructive operations, including TRUNCATE, DELETE,
+MATCH ... DETACH DELETE, and REMOVE TABLE across multiple databases.
+
+Run only for local/demo data:
+  POLYMARKET_SEED_CONFIRM=$CONFIRMATION_TOKEN bash scripts/seed.sh
+  bash scripts/seed.sh --$CONFIRMATION_TOKEN
+EOF
+  exit 2
 fi
 
 REQUIRED=(

@@ -94,21 +94,21 @@ cp .env.example .env
 
 ### 2. Generate JWT Keys (one-time)
 ```bash
-mkdir -p infra/secrets
-openssl genrsa -out infra/secrets/jwt_private.pem 4096
-openssl rsa -in infra/secrets/jwt_private.pem -pubout -out infra/secrets/jwt_public.pem
+mkdir -p infra/keys
+openssl genrsa -out infra/keys/jwt_private.pem 4096
+openssl rsa -in infra/keys/jwt_private.pem -pubout -out infra/keys/jwt_public.pem
 ```
 
 ### 3. Start Everything
 ```bash
-make quickstart    # = make up-all + make init + make seed
+POLYMARKET_SEED_CONFIRM=reset-demo-data make quickstart
 ```
 
 This will:
 1. Start all 9 databases + Kafka + Zookeeper + MinIO
 2. Start observability stack (Prometheus, Grafana, Loki, Jaeger, OTEL Collector)
 3. Initialize DB schemas, Kafka topics, MinIO buckets
-4. Seed demo data (users, listings, categories)
+4. Reset and seed demo data (users, listings, categories)
 
 ### 4. Start Services
 ```bash
@@ -280,7 +280,7 @@ make lint-listing-service  # lint a specific service
 
 ```bash
 make help          # show all available commands
-make quickstart    # full setup: up + init + seed
+POLYMARKET_SEED_CONFIRM=reset-demo-data make quickstart  # full demo setup: up + init + destructive seed
 make up            # start infrastructure (DBs, Kafka, MinIO)
 make up-obs        # start observability stack
 make up-all        # start everything (infra + observability)

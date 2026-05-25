@@ -6,6 +6,7 @@ on:
       - 'infra/docker-compose*.yml'
       - 'scripts/deploy.sh'
       - 'scripts/health-check.sh'
+      - 'scripts/seed.sh'
       - 'infra/db/wait-for-dbs.sh'
       - 'Makefile'
       - 'README.md'
@@ -17,6 +18,7 @@ on:
       - 'infra/docker-compose*.yml'
       - 'scripts/deploy.sh'
       - 'scripts/health-check.sh'
+      - 'scripts/seed.sh'
       - 'infra/db/wait-for-dbs.sh'
       - 'Makefile'
       - 'README.md'
@@ -106,6 +108,24 @@ jobs:
           stale = [marker for marker in forbidden if marker in source]
           if stale:
               print('wait-for-dbs.sh must not inspect hardcoded container names:', stale)
+              sys.exit(1)
+          PY
+
+      - name: Demo seed must require destructive confirmation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path('scripts/seed.sh').read_text(encoding='utf-8')
+          required = [
+              'POLYMARKET_SEED_CONFIRM',
+              'reset-demo-data',
+              'Refusing to reset demo data without explicit confirmation',
+          ]
+          missing = [marker for marker in required if marker not in source]
+          if missing:
+              print('seed.sh must require explicit destructive confirmation:', missing)
               sys.exit(1)
           PY
 

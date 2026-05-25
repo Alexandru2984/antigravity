@@ -67,7 +67,7 @@ minio-init: ## Create MinIO buckets
 
 init: db-init kafka-init minio-init ## Run all initialization steps
 
-seed: ## Insert demo/test data
+seed: ## Reset and insert demo/test data (requires POLYMARKET_SEED_CONFIRM=reset-demo-data)
 	@echo "🌱 Seeding data..."
 	@bash scripts/seed.sh
 	@echo "✅ Data seeded."
