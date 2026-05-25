@@ -63,7 +63,35 @@ jobs:
         run: cd services/auth-service && mix compile --warnings-as-errors
 
       - name: Format check
-        run: cd services/auth-service && mix format --check-formatted
+        run: |
+          cd services/auth-service
+          mix format --check-formatted \
+            lib/auth_service_web/endpoint.ex \
+            lib/auth_service_web/router.ex
+
+      - name: CORS must use explicit headers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          offenders = []
+          for path in [
+              Path('services/auth-service/lib/auth_service_web/endpoint.ex'),
+              Path('services/auth-service/lib/auth_service_web/router.ex'),
+          ]:
+              source = path.read_text(encoding='utf-8')
+              if 'allow_headers: :all' in source:
+                  offenders.append(f'{path}: allow_headers: :all')
+              for header in ['x-user-id', 'x-user-email', 'x-user-roles']:
+                  if header in source.lower():
+                      offenders.append(f'{path}: exposes {header} via CORS')
+
+          if offenders:
+              print('Auth CORS must use explicit public headers only:')
+              print('\n'.join(offenders))
+              sys.exit(1)
+          PY
 
       - name: Credo (lint)
         run: cd services/auth-service && mix credo --strict

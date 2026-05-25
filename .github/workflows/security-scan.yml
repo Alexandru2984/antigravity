@@ -108,6 +108,47 @@ jobs:
               sys.exit(1)
           PY
 
+  cors-headers:
+    name: CORS Header Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: CORS must not expose internal user headers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          offenders = []
+          cors_files = [
+              Path('services/api-gateway/src/main.ts'),
+              Path('services/auth-service/lib/auth_service_web/endpoint.ex'),
+              Path('services/auth-service/lib/auth_service_web/router.ex'),
+              Path('services/listing-service/src/main.rs'),
+              Path('services/notification-service/lib/notification_service_web/endpoint.ex'),
+              Path('services/chat-service/lib/chat_service_web/endpoint.ex'),
+              Path('services/profile-service/src/main/kotlin/com/polymarket/profile/Application.kt'),
+          ]
+          internal_headers = ['x-user-id', 'x-user-email', 'x-user-roles']
+
+          for path in cors_files:
+              source = path.read_text(encoding='utf-8', errors='ignore')
+              lower = source.lower()
+              if re.search(r'allow_headers\s*:\s*:all', source):
+                  offenders.append(f'{path}: allow_headers: :all')
+              if 'allow_headers(any)' in lower or 'allowheaders(any)' in lower:
+                  offenders.append(f'{path}: wildcard CORS headers')
+              for header in internal_headers:
+                  if header in lower:
+                      offenders.append(f'{path}: exposes {header} via CORS')
+
+          if offenders:
+              print('CORS allow-lists must not expose internal user headers:')
+              print('\n'.join(offenders))
+              sys.exit(1)
+          PY
+
   trivy-images:
     name: Trivy (Container Scanning)
     runs-on: ubuntu-latest

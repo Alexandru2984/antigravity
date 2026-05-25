@@ -88,9 +88,6 @@ async fn main() -> Result<()> {
             header::AUTHORIZATION,
             header::CONTENT_TYPE,
             HeaderName::from_static("x-request-id"),
-            HeaderName::from_static("x-user-id"),
-            HeaderName::from_static("x-user-email"),
-            HeaderName::from_static("x-user-roles"),
         ])
         .allow_credentials(true)
         .max_age(Duration::from_secs(600));

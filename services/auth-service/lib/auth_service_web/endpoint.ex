@@ -7,20 +7,24 @@ defmodule AuthServiceWeb.Endpoint do
     signing_salt: "signing_salt"
   ]
 
-  plug Plug.RequestId
-  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+  plug(Plug.RequestId)
+  plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint])
 
-  plug Plug.Parsers,
+  plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
+  )
 
-  plug Plug.MethodOverride
-  plug Plug.Head
-  plug Plug.Session, @session_options
-  plug Corsica,
+  plug(Plug.MethodOverride)
+  plug(Plug.Head)
+  plug(Plug.Session, @session_options)
+
+  plug(Corsica,
     origins: [Application.get_env(:auth_service, :frontend_url, "http://localhost:3000")],
     allow_credentials: true,
-    allow_headers: :all
-  plug AuthServiceWeb.Router
+    allow_headers: ["authorization", "content-type", "x-request-id"]
+  )
+
+  plug(AuthServiceWeb.Router)
 end
