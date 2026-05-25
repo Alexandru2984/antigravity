@@ -5,7 +5,7 @@ COPY pom.xml .
 # Download deps first (cached layer)
 RUN mvn dependency:go-offline -q
 COPY src ./src
-RUN mvn package -DskipTests -q
+RUN mvn package -Dspring.profiles.active=test -q
 
 # ── Runner ─────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine AS runner

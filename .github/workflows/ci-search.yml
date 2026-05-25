@@ -17,6 +17,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Search CI must not skip tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          offenders = []
+          forbidden = (
+              '-D' + 'skipTests',
+              '-D' + 'maven.test.skip=true',
+          )
+          for path in (Path('.github/workflows/ci-search.yml'), Path('services/search-service/Dockerfile')):
+              source = path.read_text()
+              for token in forbidden:
+                  if token in source:
+                      offenders.append(f'{path}: {token}')
+
+          if offenders:
+              raise SystemExit('Search service build must not skip tests:\n' + '\n'.join(offenders))
+          PY
+
       - uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -27,7 +47,7 @@ jobs:
         run: cd services/search-service && mvn test -Dspring.profiles.active=test
 
       - name: Package
-        run: cd services/search-service && mvn package -DskipTests
+        run: cd services/search-service && mvn package -Dspring.profiles.active=test
 
   docker:
     name: Build Docker Image
@@ -41,6 +61,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      - run: cd services/search-service && mvn package -DskipTests
+      - run: cd services/search-service && mvn package -Dspring.profiles.active=test
       - name: Build Docker
         run: docker build -t polymarket/search-service:${{ github.sha }} services/search-service/

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,6 +52,15 @@ class SearchControllerTest {
     @Test
     void rejectsInvertedVolumeRange() {
         assertBadRequest(0, 10, 200L, 100L);
+    }
+
+    @Test
+    void returnsHealthPayload() {
+        var response = controller.health();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals("ok", response.getBody().get("status"));
     }
 
     private void assertBadRequest(int page, int size, Long minVolume, Long maxVolume) {
