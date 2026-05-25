@@ -4,18 +4,22 @@
 # Polls docker container health states until all DBs are ready
 # ============================================================
 
-set -e
+set -euo pipefail
 
-CONTAINERS=(
+COMPOSE=(docker compose -f infra/docker-compose.yml)
+
+SERVICES=(
    "postgres"
    "mongo"
    "mysql"
    "redis"
    "clickhouse"
+   "opensearch"
    "timescale"
    "neo4j"
    "surrealdb"
    "kafka"
+   "minio"
 )
 
 MAX_RETRIES=30
@@ -23,11 +27,11 @@ SLEEP_SECS=3
 
 echo "⏳ Waiting for database and messaging infrastructure to become healthy..."
 
-for CONTAINER in "${CONTAINERS[@]}"; do
-  echo -n "🔍 Checking $CONTAINER... "
+for SERVICE in "${SERVICES[@]}"; do
+  echo -n "🔍 Checking $SERVICE... "
   
-  # Ensure container exists and is running
-  if ! docker ps -q -f name="^/${CONTAINER}$" > /dev/null; then
+  CONTAINER_ID=$("${COMPOSE[@]}" ps -q "$SERVICE")
+  if [[ -z "$CONTAINER_ID" ]]; then
     echo "❌ NOT RUNNING! Please run 'make up' first."
     exit 1
   fi
@@ -35,7 +39,7 @@ for CONTAINER in "${CONTAINERS[@]}"; do
   RETRIES=0
   while true; do
     # Fetch health status
-    STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$CONTAINER" 2>/dev/null || echo "error")
+    STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$CONTAINER_ID" 2>/dev/null || echo "error")
     
     if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "no-healthcheck" ]; then
       echo "✅ READY ($STATUS)"
@@ -43,7 +47,7 @@ for CONTAINER in "${CONTAINERS[@]}"; do
     fi
 
     if [ "$RETRIES" -ge "$MAX_RETRIES" ]; then
-      echo "❌ TIMEOUT! Container $CONTAINER failed to become healthy (Status: $STATUS)."
+      echo "❌ TIMEOUT! Service $SERVICE failed to become healthy (Status: $STATUS)."
       exit 1
     fi
 

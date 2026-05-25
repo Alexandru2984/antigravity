@@ -6,6 +6,7 @@ on:
       - 'infra/docker-compose*.yml'
       - 'scripts/deploy.sh'
       - 'scripts/health-check.sh'
+      - 'infra/db/wait-for-dbs.sh'
       - 'Makefile'
       - 'README.md'
       - 'frontend/Dockerfile'
@@ -16,6 +17,7 @@ on:
       - 'infra/docker-compose*.yml'
       - 'scripts/deploy.sh'
       - 'scripts/health-check.sh'
+      - 'infra/db/wait-for-dbs.sh'
       - 'Makefile'
       - 'README.md'
       - 'frontend/Dockerfile'
@@ -78,6 +80,32 @@ jobs:
               sys.exit(1)
           if '2>/dev/null' in target or '|| true' in target:
               print('db-init must not hide init script failures')
+              sys.exit(1)
+          PY
+
+      - name: DB wait must use Compose services
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          source = Path('infra/db/wait-for-dbs.sh').read_text(encoding='utf-8')
+          required = [
+              'docker compose -f infra/docker-compose.yml',
+              'ps -q "$SERVICE"',
+          ]
+          missing = [marker for marker in required if marker not in source]
+          if missing:
+              print('wait-for-dbs.sh must inspect Compose service containers:', missing)
+              sys.exit(1)
+
+          forbidden = [
+              'docker ps -q -f name="^/${CONTAINER}$"',
+              '"$CONTAINER"',
+          ]
+          stale = [marker for marker in forbidden if marker in source]
+          if stale:
+              print('wait-for-dbs.sh must not inspect hardcoded container names:', stale)
               sys.exit(1)
           PY
 
