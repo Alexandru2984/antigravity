@@ -37,12 +37,8 @@ jobs:
           DATABASE_URL: postgresql://polymarket:test@localhost:5432/polymarket_admin_test
         run: |
           cd services/admin-panel
-          if [ -f config/application.rb ]; then
-            bundle exec rails db:schema:load
-            bundle exec rspec
-          else
-            echo "Skipping Rails DB/RSpec: admin-panel is not a full Rails app yet."
-          fi
+          bundle exec rails db:prepare
+          bundle exec rspec
       - name: Build Docker
         if: github.ref == 'refs/heads/main'
         run: docker build -t polymarket/admin-panel:${{ github.sha }} services/admin-panel/

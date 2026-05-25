@@ -5,7 +5,7 @@ COPY Gemfile Gemfile.lock* ./
 RUN bundle config set without 'development test' && bundle install --jobs 4
 
 FROM ruby:3.3.11-alpine
-RUN apk add --no-cache postgresql-libs yaml
+RUN apk add --no-cache postgresql-libs tzdata yaml
 RUN adduser -D -s /bin/sh app
 WORKDIR /app
 COPY --from=builder /usr/local/bundle /usr/local/bundle

@@ -291,6 +291,14 @@ GEM
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     securerandom (0.4.1)
+    sprockets (4.2.2)
+      concurrent-ruby (~> 1.0)
+      logger
+      rack (>= 2.2.4, < 4)
+    sprockets-rails (3.5.2)
+      actionpack (>= 6.1)
+      activesupport (>= 6.1)
+      sprockets (>= 3.0.0)
     stringio (3.2.0)
     thor (1.5.0)
     timeout (0.6.1)
@@ -323,6 +331,7 @@ DEPENDENCIES
   rspec-rails (~> 7.0)
   rubocop
   rubocop-rails
+  sprockets-rails (~> 3.5)
   tzinfo-data
 
 RUBY VERSION

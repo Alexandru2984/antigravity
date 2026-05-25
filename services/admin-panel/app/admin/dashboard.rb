@@ -8,9 +8,9 @@ ActiveAdmin.register_page 'Dashboard' do
       column do
         panel 'PolyMarket Admin' do
           ul do
-            li link_to('Listings', admin_listings_path)
-            li link_to('Users',    admin_users_path)
-            li link_to('Reviews',  admin_reviews_path)
+            li 'Listings administration is waiting for a domain model.'
+            li 'Users administration is waiting for auth-service integration.'
+            li 'Reviews administration is waiting for review-service integration.'
           end
         end
       end
