@@ -149,6 +149,39 @@ jobs:
               sys.exit(1)
           PY
 
+  security-ci-guardrails:
+    name: Security CI Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependency audits must fail closed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          workflow_paths = [
+              Path('.github/workflows/security-scan.yml'),
+              Path('.github/workflows/ci-gateway.yml'),
+              Path('.github/workflows/ci-listing.yml'),
+          ]
+          offenders = []
+          ignored_failure_token = '||' + ' true'
+          for path in workflow_paths:
+              source = path.read_text(encoding='utf-8')
+              if re.search(r'^\s*continue-on-error:\s*true\s*$', source, re.M):
+                  offenders.append(f'{path}: continue-on-error: true')
+              for line_no, line in enumerate(source.splitlines(), start=1):
+                  if ignored_failure_token in line:
+                      offenders.append(f'{path}:{line_no}: {line.strip()}')
+
+          if offenders:
+              print('Security dependency audits must not hide failures:')
+              print('\n'.join(offenders))
+              sys.exit(1)
+          PY
+
   trivy-images:
     name: Trivy (Container Scanning)
     runs-on: ubuntu-latest
@@ -215,10 +248,8 @@ jobs:
           node-version: '20'
       - name: npm audit (gateway)
         run: cd services/api-gateway && npm audit --audit-level=high
-        continue-on-error: true
       - name: npm audit (frontend)
         run: cd frontend && npm audit --audit-level=high
-        continue-on-error: true
 
       # Rust
       - uses: dtolnay/rust-toolchain@stable
@@ -226,7 +257,6 @@ jobs:
         run: |
           cargo install cargo-audit
           cd services/listing-service && cargo audit
-        continue-on-error: true
 
       # Python
       - uses: actions/setup-python@v5
@@ -234,10 +264,13 @@ jobs:
           python-version: '3.12'
       - name: pip-audit (analytics + ml)
         run: |
-          pip install pip-audit
-          pip-audit -r services/analytics-service/requirements.txt || true
-          pip-audit -r services/ml-service/requirements.txt || true
-        continue-on-error: true
+          python -m pip install pip-audit poetry==1.8.4 poetry-plugin-export==1.8.0
+          cd services/analytics-service
+          poetry export --format requirements.txt --without-hashes --output /tmp/analytics-requirements.txt
+          pip-audit -r /tmp/analytics-requirements.txt
+          cd ../ml-service
+          poetry export --format requirements.txt --without-hashes --output /tmp/ml-requirements.txt
+          pip-audit -r /tmp/ml-requirements.txt
 
       # PHP
       - uses: shivammathur/setup-php@v2
@@ -249,7 +282,6 @@ jobs:
             -o /usr/local/bin/local-php-security-checker
           chmod +x /usr/local/bin/local-php-security-checker
           cd services/review-service && local-php-security-checker
-        continue-on-error: true
 
   secret-detection:
     name: Secret Detection (Gitleaks)

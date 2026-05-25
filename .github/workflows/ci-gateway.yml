@@ -108,7 +108,6 @@ jobs:
       - name: Test
         run: cd services/api-gateway && npm test -- --coverage
       - name: Audit
-        continue-on-error: true
         run: cd services/api-gateway && npm audit --audit-level=high
 
   docker:

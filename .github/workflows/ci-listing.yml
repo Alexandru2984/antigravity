@@ -74,5 +74,4 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Audit dependencies
-        continue-on-error: true
         run: cd services/listing-service && cargo audit
