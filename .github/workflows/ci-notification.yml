@@ -1,0 +1,53 @@
+name: CI - Notification Service
+
+on:
+  push:
+    paths:
+      - 'services/notification-service/**'
+      - '.github/workflows/ci-notification.yml'
+  pull_request:
+    paths:
+      - 'services/notification-service/**'
+      - '.github/workflows/ci-notification.yml'
+
+jobs:
+  test:
+    name: Test Notification Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.16'
+          otp-version: '26'
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            services/notification-service/deps
+            services/notification-service/_build
+          key: notification-service-${{ runner.os }}-${{ hashFiles('services/notification-service/mix.lock') }}
+
+      - name: Install deps
+        run: cd services/notification-service && mix deps.get
+
+      - name: Check format
+        run: |
+          cd services/notification-service
+          mix format --check-formatted \
+            mix.exs \
+            config/config.exs \
+            config/runtime.exs \
+            config/test.exs \
+            lib/notification_service/application.ex \
+            lib/notification_service/kafka_consumer.ex \
+            lib/notification_service_web/channels/user_socket.ex \
+            lib/notification_service_web/endpoint.ex \
+            lib/notification_service_web/router.ex \
+            test/test_helper.exs \
+            test/**/*.exs
+
+      - name: Run tests
+        run: cd services/notification-service && mix test

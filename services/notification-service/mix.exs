@@ -29,14 +29,8 @@ defmodule NotificationService.MixProject do
       {:plug_cowboy, "~> 2.7"},
       {:corsica, "~> 2.1"},
       {:jason, "~> 1.4"},
-      {:brod, "~> 3.18"},
-      {:redix, "~> 1.4"},
-      {:poolboy, "~> 1.5"},
-      {:opentelemetry, "~> 1.4"},
-      {:opentelemetry_api, "~> 1.4"},
-      {:opentelemetry_exporter, "~> 1.7"},
-      {:opentelemetry_phoenix, "~> 1.2"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:brod, "~> 3.18", only: [:dev, :prod]},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 end

@@ -12,15 +12,14 @@ defmodule NotificationService.KafkaConsumer do
   use GenServer
   require Logger
 
-  @client_id   :notification_kafka
-  @group_id    "notification-service"
-  @brokers     Application.compile_env(:notification_service, :kafka_brokers, [{"localhost", 9092}])
+  @client_id :notification_kafka
+  @group_id "notification-service"
 
   @topics [
     "polymarket.listings.created",
     "polymarket.payments.completed",
     "polymarket.users.registered",
-    "polymarket.notifications.send",
+    "polymarket.notifications.send"
   ]
 
   def start_link(opts \\ []) do
@@ -28,37 +27,55 @@ defmodule NotificationService.KafkaConsumer do
   end
 
   def init(_opts) do
-    case :brod.start_client(@brokers, @client_id, auto_start_producers: false) do
-      :ok -> :ok
-      {:error, {:already_started, _}} -> :ok
+    brokers = Application.fetch_env!(:notification_service, :kafka_brokers)
+
+    case apply(:brod, :start_client, [brokers, @client_id, [auto_start_producers: false]]) do
+      :ok ->
+        subscribe_topics()
+
+      {:error, {:already_started, _}} ->
+        subscribe_topics()
+
       {:error, reason} ->
         Logger.warning("[Kafka Consumer] Connection failed: #{inspect(reason)}")
     end
 
-    Enum.each(@topics, fn topic ->
-      :brod.start_link_group_subscriber(
-        @client_id,
-        @group_id,
-        [topic],
-        _group_config  = [{:offset_commit_policy, :commit_to_kafka_v2}],
-        _consumer_config = [{:begin_offset, :latest}],
-        __MODULE__,
-        []
-      )
-    end)
-
     {:ok, %{}}
+  end
+
+  defp subscribe_topics do
+    Enum.each(@topics, fn topic ->
+      case apply(:brod, :start_link_group_subscriber, [
+             @client_id,
+             @group_id,
+             [topic],
+             _group_config = [{:offset_commit_policy, :commit_to_kafka_v2}],
+             _consumer_config = [{:begin_offset, :latest}],
+             __MODULE__,
+             []
+           ]) do
+        {:ok, _pid} ->
+          :ok
+
+        {:error, {:already_started, _pid}} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("[Kafka] Subscribe failed for #{topic}: #{inspect(reason)}")
+      end
+    end)
   end
 
   # ── :brod callbacks ─────────────────────────────────────────
   def init(_group_id, _state), do: {:ok, %{}}
 
-  def handle_message(topic, partition, message, state) do
-    value = elem(message, 3)  # {offset, key, value, ts}
+  def handle_message(topic, _partition, message, state) do
+    # {offset, key, value, ts}
+    value = elem(message, 3)
 
     case Jason.decode(value) do
       {:ok, payload} -> dispatch(topic, payload)
-      {:error, _}    -> Logger.warning("[Kafka] Bad JSON on #{topic}: #{value}")
+      {:error, _} -> Logger.warning("[Kafka] Bad JSON on #{topic}: #{value}")
     end
 
     {:ok, :ack, state}
@@ -73,7 +90,10 @@ defmodule NotificationService.KafkaConsumer do
     })
   end
 
-  defp dispatch("polymarket.payments.completed", %{"buyer_id" => buyer, "seller_id" => seller} = payload) do
+  defp dispatch(
+         "polymarket.payments.completed",
+         %{"buyer_id" => buyer, "seller_id" => seller} = payload
+       ) do
     for user_id <- [buyer, seller] do
       Phoenix.PubSub.broadcast(NotificationService.PubSub, "user:#{user_id}", {
         :notification,
