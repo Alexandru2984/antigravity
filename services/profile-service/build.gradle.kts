@@ -21,6 +21,14 @@ ktor {
     fatJar { archiveFileName.set("profile-service-fat.jar") }
 }
 
+tasks.named("buildFatJar") {
+    dependsOn(tasks.named("test"))
+}
+
+tasks.named("shadowJar") {
+    dependsOn(tasks.named("test"))
+}
+
 repositories {
     mavenCentral()
 }

@@ -42,6 +42,41 @@ jobs:
       - name: CORS wildcard guard
         run: "! grep -R \"anyHost()\" services/profile-service/src/main/kotlin"
 
+      - name: Packaging must run tests first
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          workflow = Path(".github/workflows/ci-profile.yml").read_text()
+          dockerfile = Path("services/profile-service/Dockerfile").read_text()
+          build_file = Path("services/profile-service/build.gradle.kts").read_text()
+
+          fat_jar_only = r"gradle\s+" + "buildFatJar" + r"\b"
+          tested_fat_jar = r"gradle\s+test\s+" + "buildFatJar" + r"\b"
+
+          offenders = []
+          if re.search(fat_jar_only, workflow) and not re.search(tested_fat_jar, workflow):
+              offenders.append("ci-profile.yml must run tests before fat jar packaging")
+          if re.search(fat_jar_only, dockerfile) and not re.search(tested_fat_jar, dockerfile):
+              offenders.append("profile-service Dockerfile must run tests before fat jar packaging")
+          build_fat_jar_depends_on_test = re.search(
+              r'tasks\.named\("buildFatJar"\)\s*\{[^}]*dependsOn\(tasks\.named\("test"\)\)',
+              build_file,
+              re.DOTALL,
+          )
+          shadow_jar_depends_on_test = re.search(
+              r'tasks\.named\("shadowJar"\)\s*\{[^}]*dependsOn\(tasks\.named\("test"\)\)',
+              build_file,
+              re.DOTALL,
+          )
+          if not build_fat_jar_depends_on_test or not shadow_jar_depends_on_test:
+              offenders.append("profile-service Gradle packaging tasks must depend on tests")
+
+          if offenders:
+              raise SystemExit("\n".join(offenders))
+          PY
+
       - name: Build
         run: cd services/profile-service && gradle assemble
 
@@ -68,6 +103,6 @@ jobs:
         with:
           gradle-version: '8.8'
       - name: Build jar
-        run: cd services/profile-service && gradle buildFatJar
+        run: cd services/profile-service && gradle test buildFatJar
       - name: Build Docker
         run: docker build -t polymarket/profile-service:${{ github.sha }} services/profile-service/
