@@ -448,6 +448,27 @@ jobs:
           if 'healthcheck' not in auth_service:
               dependency_errors.append('auth-service must define a healthcheck')
 
+          expected_runtime_env = {
+              'api-gateway': {'NODE_ENV': 'production'},
+              'auth-service': {'MIX_ENV': 'prod'},
+              'search-service': {'SPRING_PROFILES_ACTIVE': 'prod'},
+              'notification-service': {'MIX_ENV': 'prod'},
+              'chat-service': {'MIX_ENV': 'prod'},
+              'admin-panel': {'RAILS_ENV': 'production', 'PORT': '4016'},
+              'frontend': {
+                  'NODE_ENV': 'production',
+                  'NEXT_PUBLIC_API_URL': '',
+                  'NEXT_PUBLIC_WS_URL': 'wss://polyglot.micutu.com',
+              },
+          }
+          for service_name, expected_env in expected_runtime_env.items():
+              env = services.get(service_name, {}).get('environment', {})
+              for key, expected_value in expected_env.items():
+                  if str(env.get(key, '')) != expected_value:
+                      dependency_errors.append(
+                          f'{service_name} must set {key}={expected_value!r}'
+                      )
+
           api_gateway = services.get('api-gateway', {})
           api_gateway_env = api_gateway.get('environment', {})
           if str(api_gateway_env.get('PORT')) != '4000':
@@ -492,6 +513,18 @@ jobs:
           if frontend_dependency.get('condition') != 'service_healthy':
               dependency_errors.append(
                   'frontend must wait for api-gateway service_healthy'
+              )
+
+          admin_service = services.get('admin-panel', {})
+          admin_env = admin_service.get('environment', {})
+          if str(admin_env.get('PORT')) != '4016':
+              dependency_errors.append('admin-panel must listen on PORT 4016')
+          if 'healthcheck' not in admin_service:
+              dependency_errors.append('admin-panel must define a healthcheck')
+          admin_healthcheck = ' '.join(admin_service.get('healthcheck', {}).get('test', []))
+          if '/health' not in admin_healthcheck or '4016' not in admin_healthcheck:
+              dependency_errors.append(
+                  'admin-panel healthcheck must use PORT 4016 /health'
               )
 
           nginx_service = services.get('nginx', {})

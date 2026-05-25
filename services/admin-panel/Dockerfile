@@ -12,5 +12,6 @@ COPY --from=builder /usr/local/bundle /usr/local/bundle
 COPY . .
 RUN chown -R app:app /app
 USER app
-EXPOSE 4026
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0", "-p", "4026"]
+ENV PORT=4016
+EXPOSE 4016
+CMD ["sh", "-c", "bundle exec rails server -b 0.0.0.0 -p ${PORT:-4016}"]

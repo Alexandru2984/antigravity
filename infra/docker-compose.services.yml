@@ -40,7 +40,7 @@ services:
       - "4000"
     environment:
       PORT: 4000
-      NODE_ENV: development
+      NODE_ENV: production
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?INTERNAL_SERVICE_TOKEN is required}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
@@ -111,7 +111,7 @@ services:
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?SECRET_KEY_BASE is required}
-      MIX_ENV: dev
+      MIX_ENV: prod
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     networks:
       - polymarket
@@ -175,7 +175,7 @@ services:
       - "4003"
     environment:
       PORT: 4003
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: prod
       OPENSEARCH_URI: https://opensearch:9200
       OPENSEARCH_USERNAME: admin
       OPENSEARCH_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?OPENSEARCH_INITIAL_ADMIN_PASSWORD is required}
@@ -247,7 +247,7 @@ services:
       KAFKA_BROKERS: kafka:29092
       SECRET_KEY_BASE: ${NOTIFICATION_SECRET_KEY_BASE:?NOTIFICATION_SECRET_KEY_BASE is required}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
-      MIX_ENV: dev
+      MIX_ENV: prod
     networks:
       - polymarket
     depends_on:
@@ -445,7 +445,7 @@ services:
       SECRET_KEY_BASE: ${CHAT_SECRET_KEY_BASE:?CHAT_SECRET_KEY_BASE is required}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?JWT_PUBLIC_KEY is required}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
-      MIX_ENV: dev
+      MIX_ENV: prod
     networks:
       - polymarket
     depends_on:
@@ -573,7 +573,7 @@ services:
     expose:
       - "4016"
     environment:
-      RAILS_ENV: development
+      RAILS_ENV: production
       PORT: 4016
       DATABASE_URL: postgresql://polymarket:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/polymarket_admin
       SECRET_KEY_BASE: ${ADMIN_SECRET_KEY_BASE:?ADMIN_SECRET_KEY_BASE is required}
@@ -583,6 +583,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4016}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Frontend (Next.js) ───────────────────────────────────────
   frontend:
@@ -596,10 +601,10 @@ services:
     expose:
       - "3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      NEXT_PUBLIC_WS_URL: ws://localhost:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://polyglot.micutu.com}
       NEXT_PUBLIC_STRIPE_PK: "${STRIPE_PUBLISHABLE_KEY}"
-      NODE_ENV: development
+      NODE_ENV: production
     networks:
       - polymarket
     depends_on:
