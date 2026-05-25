@@ -26,7 +26,29 @@ jobs:
         run: cd frontend && npm ci
 
       - name: ESLint
-        run: cd frontend && npm run lint || true
+        run: cd frontend && npm run lint
+
+      - name: Frontend CI must fail on lint errors
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          source = Path('.github/workflows/ci-frontend.yml').read_text(
+              encoding='utf-8'
+          )
+          lint_step = re.search(
+              r'- name: ESLint\s+run: (?P<command>.+)',
+              source,
+          )
+          if not lint_step:
+              print('ESLint step not found')
+              sys.exit(1)
+          if '|| true' in lint_step.group('command'):
+              print('Frontend ESLint step must not hide failures with || true')
+              sys.exit(1)
+          PY
 
       - name: TypeScript check
         run: cd frontend && npm run typecheck
