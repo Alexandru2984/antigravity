@@ -26,9 +26,9 @@ WORKDIR /app
 COPY --from=builder /app/_build/prod/rel/chat_service ./
 
 USER app
-EXPOSE 4031
+EXPOSE 4011
 
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4031/health || exit 1
+    CMD wget -qO- "http://127.0.0.1:${PORT:-4011}/health" || exit 1
 
 CMD ["./bin/chat_service", "start"]

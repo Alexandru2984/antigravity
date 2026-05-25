@@ -4,10 +4,11 @@ defmodule ChatService.Messages.Message do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "messages" do
-    field :listing_id, :string
-    field :sender_id,  :string
-    field :body,       :string
-    timestamps()
+    field(:listing_id, :string)
+    field(:sender_id, Ecto.UUID)
+    field(:body, :string, source: :content)
+
+    timestamps(inserted_at_source: :created_at, updated_at: false, type: :utc_datetime)
   end
 
   def changeset(msg, attrs) do
@@ -25,11 +26,13 @@ defmodule ChatService.Messages do
 
   def list_for_listing(listing_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 50)
+
     Repo.all(
-      from m in Message,
+      from(m in Message,
         where: m.listing_id == ^listing_id,
         order_by: [asc: m.inserted_at],
         limit: ^limit
+      )
     )
   end
 

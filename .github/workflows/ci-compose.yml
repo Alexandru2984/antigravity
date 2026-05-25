@@ -397,6 +397,15 @@ jobs:
           chat_env = chat_service.get('environment', {})
           if not chat_env.get('JWT_PUBLIC_KEY'):
               dependency_errors.append('chat-service must receive JWT_PUBLIC_KEY')
+          if str(chat_env.get('PORT')) != '4011':
+              dependency_errors.append('chat-service must listen on PORT 4011')
+          if 'healthcheck' not in chat_service:
+              dependency_errors.append('chat-service must define a healthcheck')
+          chat_healthcheck = ' '.join(chat_service.get('healthcheck', {}).get('test', []))
+          if '/health' not in chat_healthcheck or '4011' not in chat_healthcheck:
+              dependency_errors.append(
+                  'chat-service healthcheck must use PORT 4011 /health'
+              )
 
           surrealdb_init = services.get('surrealdb-init', {})
           if not surrealdb_init:

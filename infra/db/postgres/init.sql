@@ -111,14 +111,19 @@ CREATE TABLE IF NOT EXISTS conversations (
 
 CREATE TABLE IF NOT EXISTS messages (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    conversation_id UUID        NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    conversation_id UUID        REFERENCES conversations(id) ON DELETE CASCADE,
+    listing_id      VARCHAR(100),
     sender_id       UUID        NOT NULL,
     content         TEXT        NOT NULL,
     is_read         BOOLEAN     NOT NULL DEFAULT false,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS listing_id VARCHAR(100);
+ALTER TABLE messages ALTER COLUMN conversation_id DROP NOT NULL;
+
 CREATE INDEX IF NOT EXISTS idx_messages_conv_id   ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_listing_id ON messages(listing_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_conv_buyer_seller  ON conversations(buyer_id, seller_id);
 

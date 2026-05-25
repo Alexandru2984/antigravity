@@ -1,7 +1,6 @@
 defmodule ChatServiceWeb.RoomChannel do
   use Phoenix.Channel
   alias ChatService.Messages
-  alias ChatService.PubSub
 
   @impl true
   def join("room:" <> listing_id, _payload, socket) do
@@ -20,29 +19,33 @@ defmodule ChatServiceWeb.RoomChannel do
   @impl true
   def handle_in("new_message", %{"body" => body}, socket) when byte_size(body) > 0 do
     listing_id = socket.assigns.listing_id
-    user_id    = socket.assigns.user_id
+    user_id = socket.assigns.user_id
 
-    msg = Messages.create!(%{
-      listing_id: listing_id,
-      sender_id:  user_id,
-      body:       body,
-    })
+    msg =
+      Messages.create!(%{
+        listing_id: listing_id,
+        sender_id: user_id,
+        body: body
+      })
 
     # Broadcast to everyone in the room
     broadcast!(socket, "new_message", %{
-      id:         msg.id,
-      sender_id:  msg.sender_id,
-      body:       msg.body,
-      sent_at:    DateTime.to_iso8601(msg.inserted_at),
+      id: msg.id,
+      sender_id: msg.sender_id,
+      body: msg.body,
+      sent_at: DateTime.to_iso8601(msg.inserted_at)
     })
 
     # Emit Kafka event for notification-service
     :brod.produce_sync(
-      :kafka_client, "messages.sent", 0, user_id,
+      :kafka_client,
+      "messages.sent",
+      0,
+      user_id,
       Jason.encode!(%{
         listing_id: listing_id,
-        sender_id:  user_id,
-        preview:    String.slice(body, 0, 80),
+        sender_id: user_id,
+        preview: String.slice(body, 0, 80)
       })
     )
 
