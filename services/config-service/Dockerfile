@@ -9,11 +9,14 @@ RUN dotnet publish -c Release -o /publish --no-restore
 # ── Runtime stage ─────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 RUN id -u app >/dev/null 2>&1 || (useradd -r -s /bin/false app && chown app:app /app)
 USER app
 COPY --from=builder /publish .
-ENV ASPNETCORE_URLS=http://0.0.0.0:4034
-EXPOSE 4034
+ENV PORT=4014
+EXPOSE 4014
 HEALTHCHECK --interval=30s --timeout=5s \
-    CMD wget -qO- http://localhost:4034/health || exit 1
+    CMD curl -fsS "http://127.0.0.1:${PORT:-4014}/health" || exit 1
 ENTRYPOINT ["dotnet", "ConfigService.dll"]

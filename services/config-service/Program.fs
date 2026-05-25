@@ -38,13 +38,16 @@ let upsertFlag (name: string) : HttpHandler =
         task {
             let! body = ctx.ReadBodyFromRequestAsync()
 
-            let parsed = JsonSerializer.Deserialize<UpsertPayload>(body)
+            try
+                let parsed = JsonSerializer.Deserialize<UpsertPayload>(body)
 
-            match parsed with
-            | null -> return! RequestErrors.BAD_REQUEST "Invalid JSON" next ctx
-            | payload ->
-                upsert name payload.enabled payload.description
-                return! json {| updated = name |} next ctx
+                match parsed with
+                | null -> return! RequestErrors.BAD_REQUEST "Invalid JSON" next ctx
+                | payload ->
+                    upsert name payload.enabled payload.description
+                    return! json {| updated = name |} next ctx
+            with :? JsonException ->
+                return! RequestErrors.BAD_REQUEST "Invalid JSON" next ctx
         }
 
 let isEnabled (name: string) : HttpHandler =
@@ -80,7 +83,7 @@ let main args =
     let port =
         Environment.GetEnvironmentVariable("PORT")
         |> Option.ofObj
-        |> Option.defaultValue "4034"
+        |> Option.defaultValue "4014"
 
     app.Run($"http://0.0.0.0:{port}")
     0

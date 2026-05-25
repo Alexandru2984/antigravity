@@ -31,18 +31,24 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - name: Restore
-        run: cd services/config-service && dotnet restore
+        run: |
+          cd services/config-service
+          dotnet restore
+          dotnet restore tests/ConfigService.Tests/ConfigService.Tests.fsproj
       - name: fantomas (format check)
         run: |
           cd services/config-service
           dotnet tool restore
           dotnet fantomas --check .
       - name: Build
-        run: cd services/config-service && dotnet build --no-restore -warnaserror
+        run: |
+          cd services/config-service
+          dotnet build --no-restore -warnaserror
+          dotnet build tests/ConfigService.Tests/ConfigService.Tests.fsproj --no-restore -warnaserror
       - name: Test
         env:
           ConnectionStrings__Postgres: "Host=localhost;Database=polymarket_config_test;Username=polymarket;Password=test"
-        run: cd services/config-service && dotnet test --no-build
+        run: cd services/config-service && dotnet test tests/ConfigService.Tests/ConfigService.Tests.fsproj --no-build
       - name: Build Docker
         if: github.ref == 'refs/heads/main'
         run: docker build -t polymarket/config-service:${{ github.sha }} services/config-service/
