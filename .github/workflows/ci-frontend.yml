@@ -53,12 +53,54 @@ jobs:
       - name: TypeScript check
         run: cd frontend && npm run typecheck
 
+      - name: Frontend public env must match production edge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+
+          workflow = Path('.github/workflows/ci-frontend.yml').read_text(
+              encoding='utf-8'
+          )
+          compose = Path('infra/docker-compose.services.yml').read_text(
+              encoding='utf-8'
+          )
+          env_example = Path('.env.example').read_text(encoding='utf-8')
+
+          errors = []
+          stale_localhost_api = 'NEXT_PUBLIC_API_URL: http://localhost' + ':4000'
+          if 'NEXT_PUBLIC_API_URL: ""' not in workflow:
+              errors.append('frontend CI build must use same-origin API URL')
+          if stale_localhost_api in workflow:
+              errors.append('frontend CI must not build against localhost:4000')
+          for marker in [
+              'NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}',
+              'NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://polyglot.micutu.com}',
+              'NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://polyglot.micutu.com}',
+          ]:
+              if marker not in compose:
+                  errors.append(f'missing compose frontend env marker: {marker}')
+          for marker in [
+              'NEXT_PUBLIC_API_URL=',
+              'NEXT_PUBLIC_WS_URL=wss://polyglot.micutu.com',
+              'NEXT_PUBLIC_APP_URL=https://polyglot.micutu.com',
+          ]:
+              if marker not in env_example:
+                  errors.append(f'missing .env.example frontend marker: {marker}')
+
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          PY
+
       - name: Unit tests (Vitest)
         run: cd frontend && npm test
 
       - name: Next.js build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_PUBLIC_API_URL: ""
+          NEXT_PUBLIC_WS_URL: wss://polyglot.micutu.com
+          NEXT_PUBLIC_APP_URL: https://polyglot.micutu.com
           NEXT_PUBLIC_STRIPE_PK: pk_test_placeholder
         run: cd frontend && npm run build
 
