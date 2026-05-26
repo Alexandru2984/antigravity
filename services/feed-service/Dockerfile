@@ -1,3 +1,13 @@
+# ── Test stage ───────────────────────────────────────────────
+FROM golang:1.22-alpine AS test
+WORKDIR /app
+
+COPY go.mod go.sum* ./
+RUN go mod download
+
+COPY . .
+RUN go test ./... && touch /tmp/tests-passed
+
 # ── Build stage ──────────────────────────────────────────────
 FROM golang:1.22-alpine AS builder
 WORKDIR /app
@@ -6,6 +16,7 @@ COPY go.mod go.sum* ./
 RUN go mod download
 
 COPY . .
+COPY --from=test /tmp/tests-passed /tmp/tests-passed
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o feed-service ./cmd/main.go
 
 # ── Runtime stage ─────────────────────────────────────────────

@@ -33,6 +33,56 @@ func TestRedisOptionsFallsBackToAddr(t *testing.T) {
 	}
 }
 
+func TestNormalizePagination(t *testing.T) {
+	tests := []struct {
+		name       string
+		pageValue  string
+		limitValue string
+		wantPage   int
+		wantLimit  int
+	}{
+		{
+			name:      "defaults empty values",
+			wantPage:  1,
+			wantLimit: 20,
+		},
+		{
+			name:       "accepts valid values",
+			pageValue:  "3",
+			limitValue: "50",
+			wantPage:   3,
+			wantLimit:  50,
+		},
+		{
+			name:       "clamps invalid page and high limit",
+			pageValue:  "0",
+			limitValue: "101",
+			wantPage:   1,
+			wantLimit:  20,
+		},
+		{
+			name:       "clamps non numeric input",
+			pageValue:  "abc",
+			limitValue: "def",
+			wantPage:   1,
+			wantLimit:  20,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			page, limit := normalizePagination(tt.pageValue, tt.limitValue)
+
+			if page != tt.wantPage {
+				t.Fatalf("page = %d, want %d", page, tt.wantPage)
+			}
+			if limit != tt.wantLimit {
+				t.Fatalf("limit = %d, want %d", limit, tt.wantLimit)
+			}
+		})
+	}
+}
+
 func TestRequireGatewayUserRequiresConfiguredToken(t *testing.T) {
 	os.Unsetenv("INTERNAL_SERVICE_TOKEN")
 

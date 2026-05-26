@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: cd services/feed-service && go test ./... -race -coverprofile=coverage.out
       - name: Build
-        run: cd services/feed-service && go build ./...
+        run: cd services/feed-service && go build -o /tmp/feed-service-ci ./cmd/main.go
 
   docker:
     needs: test

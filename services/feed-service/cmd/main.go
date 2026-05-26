@@ -82,15 +82,7 @@ func (a *App) getFeed(w http.ResponseWriter, r *http.Request) {
 		userID = uuid.NewString() // anonymous feed
 	}
 
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-
+	page, limit := normalizePagination(r.URL.Query().Get("page"), r.URL.Query().Get("limit"))
 	// Try personalized feed from Redis sorted set first
 	cacheKey := "feed:user:" + userID
 	items := a.fetchFromCache(ctx, cacheKey, page, limit)
@@ -107,6 +99,19 @@ func (a *App) getFeed(w http.ResponseWriter, r *http.Request) {
 		Page:  page,
 		Limit: limit,
 	})
+}
+
+func normalizePagination(pageValue, limitValue string) (int, int) {
+	page, _ := strconv.Atoi(pageValue)
+	limit, _ := strconv.Atoi(limitValue)
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	return page, limit
 }
 
 func (a *App) fetchFromCache(ctx context.Context, key string, page, limit int) []FeedItem {
