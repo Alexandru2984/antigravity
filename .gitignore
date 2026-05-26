@@ -89,6 +89,7 @@ go.sum.bak
 
 # ── PHP / Composer ────────────────────────────────────────────
 composer.lock
+!services/review-service/composer.lock
 .phpunit.result.cache
 storage/logs/
 public/storage
