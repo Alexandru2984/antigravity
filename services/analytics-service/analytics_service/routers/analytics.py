@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from analytics_service.clickhouse import get_clickhouse_client
+
+from analytics_service.clickhouse import clickhouse_database, get_clickhouse_client
 
 router = APIRouter()
 
@@ -7,12 +8,13 @@ router = APIRouter()
 @router.get("/overview")
 async def overview():
     ch = get_clickhouse_client()
-    rows = ch.execute("""
+    database = clickhouse_database()
+    rows = ch.execute(f"""
         SELECT
             event_type,
             count() AS total,
-            countIf(occurred_at >= now() - INTERVAL 24 HOUR) AS last_24h
-        FROM analytics.events
+            countIf(created_at >= now() - INTERVAL 24 HOUR) AS last_24h
+        FROM {database}.events
         GROUP BY event_type
         ORDER BY total DESC
     """)
@@ -22,13 +24,14 @@ async def overview():
 @router.get("/listings")
 async def listings_stats(days: int = 7):
     ch = get_clickhouse_client()
-    rows = ch.execute("""
+    database = clickhouse_database()
+    rows = ch.execute(f"""
         SELECT
-            toDate(occurred_at) AS day,
+            toDate(created_at) AS day,
             count() AS listings_created
-        FROM analytics.events
+        FROM {database}.events
         WHERE event_type = 'listing_created'
-          AND occurred_at >= now() - INTERVAL %(days)s DAY
+          AND created_at >= now() - INTERVAL %(days)s DAY
         GROUP BY day
         ORDER BY day
     """, {"days": days})
@@ -38,14 +41,15 @@ async def listings_stats(days: int = 7):
 @router.get("/payments")
 async def payments_stats(days: int = 7):
     ch = get_clickhouse_client()
-    rows = ch.execute("""
+    database = clickhouse_database()
+    rows = ch.execute(f"""
         SELECT
-            toDate(occurred_at)  AS day,
+            toDate(created_at)  AS day,
             count()              AS transactions,
-            sum(JSONExtract(metadata, 'amount', 'Float64')) AS total_amount
-        FROM analytics.events
+            sum(coalesce(amount_cents, 0)) / 100 AS total_amount
+        FROM {database}.events
         WHERE event_type = 'payment_processed'
-          AND occurred_at >= now() - INTERVAL %(days)s DAY
+          AND created_at >= now() - INTERVAL %(days)s DAY
         GROUP BY day
         ORDER BY day
     """, {"days": days})
