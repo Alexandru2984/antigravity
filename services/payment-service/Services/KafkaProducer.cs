@@ -1,4 +1,5 @@
 using Confluent.Kafka;
+using PaymentService;
 using System.Text.Json;
 
 namespace PaymentService.Services;
@@ -16,9 +17,7 @@ public class KafkaProducer : IKafkaProducer, IDisposable
     public KafkaProducer(IConfiguration config, ILogger<KafkaProducer> logger)
     {
         _logger = logger;
-        var bootstrapServers = config["KAFKA_BROKERS"]
-            ?? Environment.GetEnvironmentVariable("KAFKA_BROKERS")
-            ?? "kafka:9092";
+        var bootstrapServers = PaymentRuntimeConfigLoader.KafkaBootstrapServers(config);
 
         var producerConfig = new ProducerConfig
         {

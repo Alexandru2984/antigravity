@@ -88,9 +88,7 @@ public static class PaymentEndpoints
         {
             var json = await new StreamReader(ctx.Request.Body).ReadToEndAsync();
             var sig = ctx.Request.Headers["Stripe-Signature"].FirstOrDefault() ?? "";
-            var secret = config["STRIPE_WEBHOOK_SECRET"]
-                ?? Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET")
-                ?? "";
+            var secret = PaymentRuntimeConfigLoader.StripeWebhookSecret(config);
 
             try
             {
