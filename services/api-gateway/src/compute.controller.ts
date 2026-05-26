@@ -590,7 +590,7 @@ export class ComputeController {
     if (isContractValid) {
       try {
         const listingServiceUrl =
-          process.env.LISTING_SERVICE_URL || 'http://listing-service:4022';
+          process.env.LISTING_SERVICE_URL || 'http://listing-service:4002';
         const internalServiceToken = process.env.INTERNAL_SERVICE_TOKEN;
         if (!internalServiceToken) {
           throw new Error('INTERNAL_SERVICE_TOKEN is not configured');

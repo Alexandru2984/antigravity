@@ -101,6 +101,40 @@ describe('ComputeController', () => {
     expect(nodes.find((node) => node.name === 'Python-ML')?.port).toBe(4012);
   });
 
+  it('falls back to the compose-aligned listing service port', async () => {
+    delete process.env.LISTING_SERVICE_URL;
+    mockedAxios.get.mockRejectedValue(new Error('offline'));
+    mockedAxios.post.mockImplementation((url: string) => {
+      if (url === 'http://contract-validator.test/validate') {
+        return Promise.resolve({ data: { valid: true, errors: [] } });
+      }
+      if (url === 'http://listing-service:4002/listings') {
+        return Promise.resolve({ data: { id: 'listing-1' } });
+      }
+      return Promise.reject(new Error('offline'));
+    });
+
+    await controller.executeTransaction(authenticatedRequest(), {
+      title: 'MacBook Pro M3',
+      price: 1200,
+      category: 'electronics',
+    });
+
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'http://listing-service:4002/listings',
+      expect.objectContaining({
+        title: 'MacBook Pro M3',
+        price: 120000,
+      }),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-user-id': AUTH_USER_ID,
+          'x-internal-service-token': 'test-internal-token',
+        }),
+      }),
+    );
+  });
+
   it('rate limits polyglot transactions', () => {
     expect(throttleMetadata('executeTransaction')).toEqual(
       POLYGLOT_TRANSACTION_RATE_LIMIT,
