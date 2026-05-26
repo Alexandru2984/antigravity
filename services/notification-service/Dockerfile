@@ -1,3 +1,28 @@
+FROM elixir:1.16-alpine AS test
+RUN apk add --no-cache build-base git
+RUN mix local.hex --force && mix local.rebar --force
+ENV MIX_ENV=test
+WORKDIR /app
+COPY mix.exs mix.lock ./
+RUN mix deps.get && mix deps.compile
+COPY config/ config/
+COPY lib/ lib/
+COPY test/ test/
+RUN mix format --check-formatted \
+      mix.exs \
+      config/config.exs \
+      config/runtime.exs \
+      config/test.exs \
+      lib/notification_service/application.ex \
+      lib/notification_service/kafka_consumer.ex \
+      lib/notification_service_web/channels/user_socket.ex \
+      lib/notification_service_web/endpoint.ex \
+      lib/notification_service_web/router.ex \
+      test/test_helper.exs \
+      test/**/*.exs \
+  && mix test \
+  && touch /tmp/tests-passed
+
 # ── Builder ─────────────────────────────────────────────────────
 FROM elixir:1.16-alpine AS builder
 RUN apk add --no-cache build-base git
@@ -8,6 +33,7 @@ COPY mix.exs mix.lock ./
 RUN mix deps.get --only prod && mix deps.compile
 COPY config/ config/
 COPY lib/     lib/
+COPY --from=test /tmp/tests-passed /tmp/tests-passed
 RUN mix compile
 RUN mix release
 
