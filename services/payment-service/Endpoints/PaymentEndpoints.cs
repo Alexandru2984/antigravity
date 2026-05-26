@@ -24,7 +24,7 @@ public static class PaymentEndpoints
                 return authFailure;
             }
 
-            if (req.Amount <= 0 || string.IsNullOrWhiteSpace(req.Currency))
+            if (!PaymentRules.IsValidCreateIntent(req))
             {
                 return Results.BadRequest(new { error = "Invalid payment request" });
             }

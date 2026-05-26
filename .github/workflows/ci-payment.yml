@@ -34,20 +34,29 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: cd services/payment-service && dotnet restore
+        run: |
+          cd services/payment-service
+          dotnet restore
+          dotnet restore tests/PaymentService.Tests/PaymentService.Tests.csproj
 
       - name: Format check
-        run: cd services/payment-service && dotnet format --verify-no-changes
+        run: |
+          cd services/payment-service
+          dotnet format --verify-no-changes
+          dotnet format tests/PaymentService.Tests/PaymentService.Tests.csproj --verify-no-changes
 
       - name: Build
-        run: cd services/payment-service && dotnet build --no-restore -warnaserror
+        run: |
+          cd services/payment-service
+          dotnet build --no-restore -warnaserror
+          dotnet build tests/PaymentService.Tests/PaymentService.Tests.csproj --no-restore -warnaserror
 
       - name: Test
         env:
           ConnectionStrings__Postgres: "Host=localhost;Database=polymarket_payments_test;Username=polymarket;Password=test"
           Stripe__SecretKey: "sk_test_placeholder"
           Stripe__WebhookSecret: "whsec_placeholder"
-        run: cd services/payment-service && dotnet test --no-build --logger trx
+        run: cd services/payment-service && dotnet test tests/PaymentService.Tests/PaymentService.Tests.csproj --no-build --logger trx
 
   docker:
     name: Build Docker Image

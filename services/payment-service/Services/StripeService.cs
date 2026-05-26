@@ -21,8 +21,8 @@ public class StripeService(PaymentDbContext db, IKafkaProducer kafka, ILogger<St
     {
         var opts = new PaymentIntentCreateOptions
         {
-            Amount = (long)(amount * 100),  // Stripe uses smallest currency unit
-            Currency = currency.ToLower(),
+            Amount = PaymentRules.ToStripeMinorUnits(amount),
+            Currency = PaymentRules.NormalizeCurrency(currency),
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions { Enabled = true },
             Metadata = new Dictionary<string, string>
             {
