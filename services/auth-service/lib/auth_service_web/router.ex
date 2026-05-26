@@ -1,11 +1,13 @@
 defmodule AuthServiceWeb.Router do
   use AuthServiceWeb, :router
 
+  @frontend_url Application.compile_env(:auth_service, :frontend_url, "http://localhost:3000")
+
   pipeline :api do
     plug(:accepts, ["json"])
 
     plug(Corsica,
-      origins: [Application.get_env(:auth_service, :frontend_url, "http://localhost:3000")],
+      origins: [@frontend_url],
       allow_credentials: true,
       allow_headers: ["authorization", "content-type", "x-request-id"]
     )

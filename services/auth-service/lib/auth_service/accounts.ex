@@ -2,13 +2,13 @@ defmodule AuthService.Accounts do
   @moduledoc """
   The Accounts context — user registration, login, token management.
   """
-  import Ecto.Query
   alias AuthService.{Repo, Guardian}
   alias AuthService.Accounts.User
   alias AuthService.{RedisPool, Token}
   alias AuthService.Kafka.Producer, as: KafkaProducer
 
-  @refresh_token_ttl_seconds 30 * 24 * 60 * 60  # 30 days
+  # 30 days
+  @refresh_token_ttl_seconds 30 * 24 * 60 * 60
 
   # ── Registration ───────────────────────────────────────────────
 
@@ -22,6 +22,7 @@ defmodule AuthService.Accounts do
         roles: user.roles,
         ts: DateTime.utc_now() |> DateTime.to_iso8601()
       })
+
       {:ok, user, tokens}
     end
   end
@@ -45,11 +46,13 @@ defmodule AuthService.Accounts do
 
       true ->
         update_last_login(user)
+
         KafkaProducer.produce("polymarket.users.logged_in", %{
           event: "user.logged_in",
           user_id: user.id,
           ts: DateTime.utc_now() |> DateTime.to_iso8601()
         })
+
         issue_tokens(user)
     end
   end
@@ -58,6 +61,7 @@ defmodule AuthService.Accounts do
 
   def refresh_tokens(refresh_token) do
     key = redis_refresh_key(refresh_token)
+
     case RedisPool.command(["GET", key]) do
       {:ok, nil} ->
         {:error, :invalid_refresh_token}
@@ -67,7 +71,7 @@ defmodule AuthService.Accounts do
         RedisPool.command(["DEL", key])
 
         case Repo.get(User, user_id) do
-          nil  -> {:error, :user_not_found}
+          nil -> {:error, :user_not_found}
           user -> issue_tokens(user)
         end
 
@@ -87,23 +91,26 @@ defmodule AuthService.Accounts do
   # ── Helpers ────────────────────────────────────────────────────
 
   defp issue_tokens(user) do
-    with {:ok, access_token, claims} <- Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {1, :hour}),
-         refresh_token               <- Token.generate_opaque(),
-         :ok                         <- store_refresh_token(refresh_token, user.id) do
-      {:ok, %{
-        access_token:  access_token,
-        refresh_token: refresh_token,
-        token_type:    "bearer",
-        expires_in:    3600,
-        user:          user
-      }}
+    with {:ok, access_token, _claims} <-
+           Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {1, :hour}),
+         refresh_token <- Token.generate_opaque(),
+         :ok <- store_refresh_token(refresh_token, user.id) do
+      {:ok,
+       %{
+         access_token: access_token,
+         refresh_token: refresh_token,
+         token_type: "bearer",
+         expires_in: 3600,
+         user: user
+       }}
     end
   end
 
   defp store_refresh_token(token, user_id) do
     key = redis_refresh_key(token)
+
     case RedisPool.command(["SETEX", key, @refresh_token_ttl_seconds, to_string(user_id)]) do
-      {:ok, _}        -> :ok
+      {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end

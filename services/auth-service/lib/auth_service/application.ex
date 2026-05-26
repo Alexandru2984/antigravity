@@ -9,16 +9,24 @@ defmodule AuthService.Application do
     OpentelemetryPhoenix.setup(adapter: :cowboy2)
     OpentelemetryEcto.setup([:auth_service, :repo])
 
-    children = [
-      AuthService.Repo,
-      {Phoenix.PubSub, name: AuthService.PubSub},
-      AuthService.RedisPool,
-      AuthService.Kafka.Producer,
-      AuthServiceWeb.Endpoint,
-    ]
+    children =
+      [
+        AuthService.Repo,
+        {Phoenix.PubSub, name: AuthService.PubSub},
+        AuthService.RedisPool,
+        maybe_kafka_producer(),
+        AuthServiceWeb.Endpoint
+      ]
+      |> Enum.reject(&is_nil/1)
 
     opts = [strategy: :one_for_one, name: AuthService.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp maybe_kafka_producer do
+    if Application.get_env(:auth_service, :start_kafka_producer?, true) do
+      AuthService.Kafka.Producer
+    end
   end
 
   @impl true

@@ -79,8 +79,15 @@ jobs:
         run: |
           cd services/auth-service
           mix format --check-formatted \
+            mix.exs \
+            config/config.exs \
+            config/runtime.exs \
+            config/test.exs \
+            lib/auth_service/application.ex \
             lib/auth_service_web/endpoint.ex \
-            lib/auth_service_web/router.ex
+            lib/auth_service_web/router.ex \
+            test/test_helper.exs \
+            test/**/*.exs
 
       - name: CORS must use explicit headers
         run: |
@@ -148,7 +155,7 @@ jobs:
           DATABASE_URL: postgresql://polymarket:polymarket_test@localhost:5432/polymarket_auth_test
           REDIS_URL: redis://localhost:6379
           SECRET_KEY_BASE: testingsecretkeybase64bitsmin
-        run: cd services/auth-service && mix test --cover
+        run: cd services/auth-service && mix test
 
   docker:
     name: Build Docker Image

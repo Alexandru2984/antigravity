@@ -1,6 +1,8 @@
 defmodule AuthServiceWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :auth_service
 
+  @frontend_url Application.compile_env(:auth_service, :frontend_url, "http://localhost:3000")
+
   @session_options [
     store: :cookie,
     key: "_auth_service_key",
@@ -21,7 +23,7 @@ defmodule AuthServiceWeb.Endpoint do
   plug(Plug.Session, @session_options)
 
   plug(Corsica,
-    origins: [Application.get_env(:auth_service, :frontend_url, "http://localhost:3000")],
+    origins: [@frontend_url],
     allow_credentials: true,
     allow_headers: ["authorization", "content-type", "x-request-id"]
   )

@@ -7,12 +7,14 @@ if System.get_env("PHX_SERVER") || config_env() == :prod do
   config :auth_service, AuthServiceWeb.Endpoint, server: true
 end
 
+prod? = config_env() == :prod
+
 jwt_private_key =
   case System.get_env("JWT_PRIVATE_KEY") do
     value when is_binary(value) and value != "" ->
       value
 
-    _ when config_env() == :prod ->
+    _ when prod? ->
       raise """
       environment variable JWT_PRIVATE_KEY is missing.
       """
@@ -35,7 +37,7 @@ config :auth_service, AuthService.Guardian,
     "pem" => jwt_private_key
   }
 
-if config_env() == :prod do
+if prod? do
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default is provided here, but in production we require it to be set.
   secret_key_base =
