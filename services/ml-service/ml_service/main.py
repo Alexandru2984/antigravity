@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 
-app = FastAPI()
+from ml_service.routers.ml import router as ml_router
+
+app = FastAPI(title="ML Service")
 
 
 class ListingSignal(BaseModel):
@@ -78,6 +80,11 @@ def health_check():
     return {"status": "ok", "service": "python-ml"}
 
 
+@app.get("/ready")
+def ready_check():
+    return {"status": "ready", "service": "python-ml"}
+
+
 @app.get("/")
 def health():
     return {"status": "online", "role": "Algorithmic Recommendations"}
@@ -103,3 +110,6 @@ def get_recommendation(
 @app.post("/recommend")
 def recommend_for_listing(signal: ListingSignal):
     return recommendations_for(signal)
+
+
+app.include_router(ml_router, prefix="/ml")

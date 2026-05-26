@@ -95,6 +95,12 @@ describe('ComputeController', () => {
     expect(publicMetadata('executeTransaction')).toBeUndefined();
   });
 
+  it('reports the compose-aligned ML service port', async () => {
+    const nodes = await controller.getMeshNodes();
+
+    expect(nodes.find((node) => node.name === 'Python-ML')?.port).toBe(4012);
+  });
+
   it('rate limits polyglot transactions', () => {
     expect(throttleMetadata('executeTransaction')).toEqual(
       POLYGLOT_TRANSACTION_RATE_LIMIT,

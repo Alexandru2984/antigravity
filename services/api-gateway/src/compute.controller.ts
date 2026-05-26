@@ -36,7 +36,7 @@ const SERVICE_URL_DEFAULTS = {
   julia: { env: 'JULIA_SERVICE_URL', url: 'http://julia-service:4054' },
   r: { env: 'R_SERVICE_URL', url: 'http://r-service:4060' },
   php: { env: 'PHP_SERVICE_URL', url: 'http://php-service:4061' },
-  ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4028' },
+  ml: { env: 'ML_SERVICE_URL', url: 'http://ml-service:4012' },
   cobol: { env: 'COBOL_SERVICE_URL', url: 'http://cobol-service:4022' },
   assembly: {
     env: 'ASSEMBLY_SERVICE_URL',
@@ -103,7 +103,7 @@ export class ComputeController {
       {
         name: 'Python-ML',
         language: 'Python',
-        port: 4028,
+        port: 4012,
         description: 'Neo4j-powered recommendations',
       },
       {
