@@ -739,8 +739,17 @@ services:
     container_name: polymarket-scala-mesh
     restart: unless-stopped
     mem_limit: 512m
+    expose:
+      - "4058"
+    environment:
+      PORT: 4058
     networks:
       - polymarket
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4058}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   lua-service:
     <<: *readonly_app_security
