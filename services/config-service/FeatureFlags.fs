@@ -17,7 +17,7 @@ let private connStr () =
         |> Option.ofObj)
     |> Option.defaultValue "Host=localhost;Port=5432;Database=polymarket_config;Username=polymarket;Password=polymarket"
 
-let private flagValue enabled =
+let serializeFlagValue enabled =
     JsonSerializer.Serialize {| enabled = enabled |}
 
 let private readFlag (read: CommonExtensionsAndTypesForNpgsqlFSharp.RowReader) =
@@ -83,7 +83,7 @@ let upsert (name: string) (enabled: bool) (description: string) : unit =
     """
     |> Sql.parameters
         [ "@name", Sql.string name
-          "@value", Sql.string (flagValue enabled)
+          "@value", Sql.string (serializeFlagValue enabled)
           "@enabled", Sql.bool enabled
           "@description", Sql.string description ]
     |> Sql.executeNonQuery

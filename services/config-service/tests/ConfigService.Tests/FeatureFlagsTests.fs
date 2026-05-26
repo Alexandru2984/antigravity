@@ -6,7 +6,14 @@ open Xunit
 
 module FeatureFlagsTests =
 
+    [<Theory>]
+    [<InlineData(true, """{"enabled":true}""")>]
+    [<InlineData(false, """{"enabled":false}""")>]
+    let ``serializeFlagValue writes the storage json shape`` (enabled: bool, expected: string) =
+        Assert.Equal(expected, serializeFlagValue enabled)
+
     [<Fact>]
+    [<Trait("Category", "Integration")>]
     let ``upsert writes and reads feature flags using the init sql schema`` () =
         let name = "test-flag-" + Guid.NewGuid().ToString("N")
 
