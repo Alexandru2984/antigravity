@@ -1,3 +1,22 @@
+# ── Test stage ───────────────────────────────────────────────
+FROM php:8.3-cli-alpine AS test
+
+RUN apk add --no-cache git unzip librdkafka-dev autoconf build-base sqlite-dev
+RUN docker-php-ext-install pdo_mysql pdo_sqlite
+RUN pecl install rdkafka && docker-php-ext-enable rdkafka
+
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+COPY composer.json composer.lock* ./
+RUN composer install --optimize-autoloader --no-interaction
+
+COPY . .
+RUN mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
+    && vendor/bin/pint --test \
+    && vendor/bin/phpunit \
+    && touch /tmp/tests-passed
+
 # ── Build stage ──────────────────────────────────────────────
 FROM php:8.3-cli-alpine AS builder
 
@@ -12,8 +31,10 @@ COPY composer.json composer.lock* ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 COPY . .
+COPY --from=test /tmp/tests-passed /tmp/tests-passed
 RUN mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
-    && php artisan --version
+    && php artisan --version \
+    && rm -rf tests phpunit.xml
 
 # ── Runtime stage ─────────────────────────────────────────────
 FROM php:8.3-cli-alpine

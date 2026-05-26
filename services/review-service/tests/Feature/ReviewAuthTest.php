@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Review;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -50,6 +51,65 @@ class ReviewAuthTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'listing_id' => 'listing-1',
             'reviewer_id' => 'user-123',
+        ]);
+    }
+
+    public function test_reviewer_can_update_own_review(): void
+    {
+        $review = Review::create([
+            'id' => 'review-1',
+            'listing_id' => 'listing-1',
+            'reviewer_id' => 'user-123',
+            'rating' => 4,
+            'body' => 'Original review body is long enough.',
+        ]);
+
+        $this->withHeaders([
+            'X-Internal-Service-Token' => 'test-internal-token',
+            'X-User-Id' => 'user-123',
+        ])
+            ->putJson('/api/reviews/'.$review->id, [
+                'rating' => 5,
+                'body' => 'Updated review body is long enough.',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'id' => 'review-1',
+                'rating' => 5,
+                'body' => 'Updated review body is long enough.',
+            ]);
+
+        $this->assertDatabaseHas('reviews', [
+            'id' => 'review-1',
+            'rating' => 5,
+            'body' => 'Updated review body is long enough.',
+        ]);
+    }
+
+    public function test_user_cannot_update_someone_elses_review(): void
+    {
+        $review = Review::create([
+            'id' => 'review-2',
+            'listing_id' => 'listing-1',
+            'reviewer_id' => 'owner-user',
+            'rating' => 4,
+            'body' => 'Original review body is long enough.',
+        ]);
+
+        $this->withHeaders([
+            'X-Internal-Service-Token' => 'test-internal-token',
+            'X-User-Id' => 'other-user',
+        ])
+            ->putJson('/api/reviews/'.$review->id, [
+                'rating' => 1,
+                'body' => 'Malicious update body is long enough.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('reviews', [
+            'id' => 'review-2',
+            'rating' => 4,
+            'body' => 'Original review body is long enough.',
         ]);
     }
 

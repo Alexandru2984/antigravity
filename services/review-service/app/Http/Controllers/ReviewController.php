@@ -35,7 +35,7 @@ class ReviewController extends Controller
         ]);
 
         try {
-            if (class_exists(Producer::class)) {
+            if (! app()->environment('testing') && class_exists(Producer::class)) {
                 $kafka = new Producer;
                 $kafka->addBrokers(env('KAFKA_BROKERS', 'kafka:9092'));
                 $topic = $kafka->newTopic('reviews.created');
