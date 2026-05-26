@@ -1,3 +1,23 @@
+FROM elixir:1.15-alpine AS test
+ENV MIX_ENV=test
+WORKDIR /app
+RUN mix local.hex --force && mix local.rebar --force
+COPY mix.exs mix.lock ./
+RUN mix deps.get && mix deps.compile
+COPY config/ config/
+COPY lib/ lib/
+COPY test/ test/
+RUN mix format --check-formatted \
+      mix.exs \
+      config/config.exs \
+      config/test.exs \
+      lib/application.ex \
+      lib/router.ex \
+      test/test_helper.exs \
+      test/**/*.exs \
+  && mix test \
+  && touch /tmp/tests-passed
+
 FROM elixir:1.15-alpine AS builder
 ENV MIX_ENV=prod
 WORKDIR /app
@@ -6,6 +26,7 @@ COPY mix.exs mix.lock ./
 RUN mix deps.get --only prod && mix deps.compile
 COPY config/ config/
 COPY lib/ lib/
+COPY --from=test /tmp/tests-passed /tmp/tests-passed
 RUN mix compile
 RUN mix release
 
