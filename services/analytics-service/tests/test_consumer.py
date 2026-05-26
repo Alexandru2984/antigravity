@@ -41,3 +41,15 @@ async def test_handle_listing_created_maps_to_active_clickhouse_schema(
 
 def test_price_to_cents_handles_empty_values() -> None:
     assert consumer.price_to_cents(None) is None
+
+
+def test_kafka_brokers_requires_explicit_runtime_config() -> None:
+    with pytest.raises(RuntimeError, match="KAFKA_BROKERS is required"):
+        consumer.kafka_brokers({})
+
+    with pytest.raises(RuntimeError, match="KAFKA_BROKERS is required"):
+        consumer.kafka_brokers({"KAFKA_BROKERS": " "})
+
+
+def test_kafka_brokers_uses_compose_internal_listener() -> None:
+    assert consumer.kafka_brokers({"KAFKA_BROKERS": "kafka:29092"}) == "kafka:29092"

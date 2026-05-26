@@ -9,7 +9,6 @@ from analytics_service.clickhouse import get_clickhouse_client
 
 logger = logging.getLogger(__name__)
 
-KAFKA_BROKERS  = os.getenv("KAFKA_BROKERS", "kafka:9092")
 KAFKA_GROUP_ID = "analytics-service"
 
 TOPICS = [
@@ -25,7 +24,7 @@ TOPICS = [
 async def start_kafka_consumer():
     consumer = AIOKafkaConsumer(
         *TOPICS,
-        bootstrap_servers=KAFKA_BROKERS,
+        bootstrap_servers=kafka_brokers(),
         group_id=KAFKA_GROUP_ID,
         auto_offset_reset="earliest",
         value_deserializer=lambda v: json.loads(v.decode("utf-8")),
@@ -129,3 +128,11 @@ def price_to_cents(value: object) -> int | None:
     if not isinstance(value, int | float | str):
         raise ValueError("amount must be numeric")
     return round(float(value) * 100)
+
+
+def kafka_brokers(env: dict[str, str] | None = None) -> str:
+    source = os.environ if env is None else env
+    value = source.get("KAFKA_BROKERS")
+    if value is None or value.strip() == "":
+        raise RuntimeError("KAFKA_BROKERS is required")
+    return value
