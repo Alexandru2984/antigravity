@@ -39,6 +39,15 @@ create_topic "listings.updated"      6  604800000
 create_topic "listings.deleted"      3  604800000
 create_topic "listings.viewed"       12 86400000    # 1 day (clickstream)
 
+# Listing-service and notification-service currently publish/consume these
+# prefixed domain topics. Keep the unprefixed topics above for analytics
+# pipelines that already consume them.
+create_topic "polymarket.listings.created" 6 604800000
+create_topic "polymarket.listings.updated" 6 604800000
+create_topic "polymarket.listings.deleted" 3 604800000
+create_topic "polymarket.listings.expired" 3 604800000
+create_topic "polymarket.listings.sold"    3 604800000
+
 # ── Payment Events ───────────────────────────────────────────
 # Financial events: longer retention for audit
 create_topic "payments.initiated"    3  2592000000  # 30 days

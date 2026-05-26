@@ -16,6 +16,12 @@ import java.util.Map;
 @Slf4j
 public class ListingIndexingConsumer {
 
+    static final String LISTINGS_CREATED_TOPIC = "polymarket.listings.created";
+    static final String LISTINGS_UPDATED_TOPIC = "polymarket.listings.updated";
+    static final String LISTINGS_DELETED_TOPIC = "polymarket.listings.deleted";
+    static final String LISTINGS_EXPIRED_TOPIC = "polymarket.listings.expired";
+    static final String LISTINGS_SOLD_TOPIC = "polymarket.listings.sold";
+
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final SearchService searchService;
@@ -24,11 +30,15 @@ public class ListingIndexingConsumer {
     /**
      * Indexes newly created or updated listings into OpenSearch.
      */
-    @KafkaListener(topics = "polymarket.listings.created", groupId = "search-service-indexer")
+    @KafkaListener(topics = {LISTINGS_CREATED_TOPIC, LISTINGS_UPDATED_TOPIC}, groupId = "search-service-indexer")
     public void onListingCreated(ConsumerRecord<String, String> record) {
         try {
             Map<String, Object> payload = objectMapper.readValue(record.value(), MAP_TYPE);
-            String id = (String) payload.get("id");
+            String id = listingId(payload);
+            if (id == null) {
+                log.warn("[Kafka→OS] Ignoring listing event without id: topic={}", record.topic());
+                return;
+            }
             searchService.indexListing(id, payload);
             log.info("[Kafka→OS] Indexed listing {}", id);
         } catch (Exception e) {
@@ -39,16 +49,28 @@ public class ListingIndexingConsumer {
     /**
      * Removes deleted or expired listings from the search index.
      */
-    @KafkaListener(topics = {"polymarket.listings.deleted", "polymarket.listings.expired"},
+    @KafkaListener(topics = {LISTINGS_DELETED_TOPIC, LISTINGS_EXPIRED_TOPIC, LISTINGS_SOLD_TOPIC},
                    groupId = "search-service-indexer")
     public void onListingRemoved(ConsumerRecord<String, String> record) {
         try {
             Map<String, Object> payload = objectMapper.readValue(record.value(), MAP_TYPE);
-            String id = (String) payload.get("id");
+            String id = listingId(payload);
+            if (id == null) {
+                log.warn("[Kafka→OS] Ignoring listing removal without id: topic={}", record.topic());
+                return;
+            }
             searchService.removeListing(id);
             log.info("[Kafka→OS] Removed listing {}", id);
         } catch (Exception e) {
             log.error("[Kafka→OS] Failed to remove listing: {}", e.getMessage(), e);
         }
+    }
+
+    private String listingId(Map<String, Object> payload) {
+        Object rawId = payload.get("id");
+        if (rawId instanceof String id && !id.isBlank()) {
+            return id;
+        }
+        return null;
     }
 }
