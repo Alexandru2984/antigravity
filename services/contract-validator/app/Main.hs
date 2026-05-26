@@ -15,6 +15,8 @@ import Data.Char (isHexDigit)
 import GHC.Generics
 import Network.Wai.Handler.Warp (run)
 import Servant
+import System.Environment (lookupEnv)
+import Text.Read (readMaybe)
 
 -- ── Request/Response types ────────────────────────────────────
 
@@ -133,6 +135,13 @@ api = Proxy
 
 main :: IO ()
 main = do
-  let port = 4035 :: Int
+  port <- configuredPort
   putStrLn $ "contract-validator running on :" <> show port
   run port (serve api server)
+
+configuredPort :: IO Int
+configuredPort = do
+  raw <- lookupEnv "PORT"
+  return $ case raw >>= readMaybe of
+    Just port | port > 0 && port <= 65535 -> port
+    _ -> 4035

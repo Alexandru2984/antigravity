@@ -161,6 +161,11 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4002}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Search Service (Java / Spring Boot) ─────────────────────
   search-service:
@@ -525,6 +530,11 @@ services:
         condition: service_healthy
       clickhouse:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- \"http://127.0.0.1:$${PORT:-4013}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Config Service (F# / Giraffe) ───────────────────────────
   config-service:
@@ -571,6 +581,11 @@ services:
       - ../contracts:/app/contracts:ro
     networks:
       - polymarket
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS \"http://127.0.0.1:$${PORT:-4035}/health\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ── Admin Panel (Ruby / Rails) ───────────────────────────────
   admin-panel:
