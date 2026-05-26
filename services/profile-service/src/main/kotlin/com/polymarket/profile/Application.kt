@@ -26,6 +26,12 @@ import java.security.interfaces.RSAPublicKey
 import java.util.Base64
 import kotlin.system.exitProcess
 
+data class DatabaseSettings(
+    val jdbcUrl: String,
+    val username: String,
+    val password: String,
+)
+
 fun configuredCorsOrigins(): List<URI> {
     val configured = System.getenv("CORS_ORIGINS")
         ?: System.getenv("FRONTEND_URL")
@@ -92,11 +98,11 @@ fun main(args: Array<String>) {
         }
 
         // ── Database ───────────────────────────────────────────────
+        val databaseSettings = configuredDatabaseSettings()
         val ds = HikariDataSource(HikariConfig().apply {
-            jdbcUrl  = System.getenv("PROFILE_DATABASE_URL")
-                ?: "jdbc:postgresql://localhost:5432/polymarket_profiles"
-            username = System.getenv("POSTGRES_USER") ?: "polymarket"
-            password = System.getenv("POSTGRES_PASSWORD") ?: "polymarket_dev"
+            jdbcUrl  = databaseSettings.jdbcUrl
+            username = databaseSettings.username
+            password = databaseSettings.password
             maximumPoolSize = 10
             driverClassName = "org.postgresql.Driver"
         })
@@ -125,6 +131,18 @@ fun main(args: Array<String>) {
             }
         }
     }.start(wait = true)
+}
+
+fun configuredDatabaseSettings(
+    env: (String) -> String? = System::getenv,
+): DatabaseSettings {
+    return DatabaseSettings(
+        jdbcUrl = env("PROFILE_DATABASE_URL")
+            ?: "jdbc:postgresql://localhost:5432/polymarket_profiles",
+        username = env("POSTGRES_USER") ?: "polymarket",
+        password = env("POSTGRES_PASSWORD")
+            ?: throw IllegalStateException("POSTGRES_PASSWORD env var required"),
+    )
 }
 
 fun runHealthCheck(): Int {
