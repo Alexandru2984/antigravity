@@ -498,6 +498,7 @@ services:
     expose:
       - "4013"
     environment:
+      PORT: 4013
       HTTP_PORT: 4013
       KAFKA_BROKERS: kafka:29092
       TIMESCALE_URL: jdbc:postgresql://timescale:5432/polymarket_metrics

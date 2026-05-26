@@ -11,6 +11,17 @@ import play.api.libs.json.Json
 import java.sql.DriverManager
 import scala.concurrent.ExecutionContext
 import com.typesafe.config.ConfigFactory
+import play.api.libs.json.JsValue
+
+object StreamProcessorSupport {
+  def eventType(topic: String): String = topic.replace(".", "_")
+
+  def userId(payload: JsValue): String =
+    (payload \ "user_id")
+      .asOpt[String]
+      .orElse((payload \ "seller_id").asOpt[String])
+      .getOrElse("")
+}
 
 object StreamProcessor extends App {
   implicit val system: ActorSystem[Nothing] =
@@ -19,37 +30,42 @@ object StreamProcessor extends App {
 
   val config = ConfigFactory.load()
   val kafkaBrokers = sys.env.getOrElse("KAFKA_BROKERS", "kafka:9092")
-  val chUrl        = sys.env.getOrElse("CLICKHOUSE_JDBC_URL",
-                       "jdbc:clickhouse://clickhouse:8123/analytics")
+  val chUrl = sys.env.getOrElse(
+    "CLICKHOUSE_JDBC_URL",
+    "jdbc:clickhouse://clickhouse:8123/analytics"
+  )
 
-  val consumerSettings = ConsumerSettings(system, new StringDeserializer, new StringDeserializer)
-    .withBootstrapServers(kafkaBrokers)
-    .withGroupId("stream-processor")
-    .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+  val consumerSettings =
+    ConsumerSettings(system, new StringDeserializer, new StringDeserializer)
+      .withBootstrapServers(kafkaBrokers)
+      .withGroupId("stream-processor")
+      .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
 
   val topics = Set(
-    "listings.created", "listings.updated",
-    "payments.processed", "users.registered",
+    "listings.created",
+    "listings.updated",
+    "payments.processed",
+    "users.registered",
     "reviews.created"
   )
 
   Consumer
     .plainSource(consumerSettings, Subscriptions.topics(topics))
     .map { record =>
-      val topic   = record.topic()
+      val topic = record.topic()
       val payload = Json.parse(record.value())
       (topic, payload)
     }
     .runWith(Sink.foreach { case (topic, payload) =>
-      val conn = DriverManager.getConnection(chUrl,
+      val conn = DriverManager.getConnection(
+        chUrl,
         sys.env.getOrElse("CLICKHOUSE_USER", "default"),
-        sys.env.getOrElse("CLICKHOUSE_PASSWORD", ""))
+        sys.env.getOrElse("CLICKHOUSE_PASSWORD", "")
+      )
       try {
-        val eventType = topic.replace(".", "_")
-        val entityId  = (payload \ "id").asOpt[String].getOrElse("")
-        val userId    = (payload \ "user_id").asOpt[String]
-          .orElse((payload \ "seller_id").asOpt[String])
-          .getOrElse("")
+        val eventType = StreamProcessorSupport.eventType(topic)
+        val entityId = (payload \ "id").asOpt[String].getOrElse("")
+        val userId = StreamProcessorSupport.userId(payload)
         val meta = payload.toString()
 
         val stmt = conn.prepareStatement(
@@ -75,7 +91,7 @@ object StreamProcessor extends App {
     get { complete("""{"status":"ok","service":"stream-processor"}""") }
   }
 
-  val port = sys.env.getOrElse("PORT", "4033").toInt
+  val port = sys.env.getOrElse("PORT", "4013").toInt
   Http().newServerAt("0.0.0.0", port).bind(route)
   system.log.info(s"Stream processor running on port $port")
 }
