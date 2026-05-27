@@ -14,6 +14,11 @@
 *.key
 *.pem
 secrets/
+# Allow ONLY the SOPS-encrypted secrets file to be committed; the age private
+# key lives outside the repo (~/.config/sops/age/keys.txt) so this is safe.
+!deploy/secrets/
+deploy/secrets/*
+!deploy/secrets/secrets.env
 infra/keys/
 infra/nginx/ssl/
 

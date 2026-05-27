@@ -1,0 +1,7 @@
+# SOPS creation rules — encrypt secrets with the project age key.
+# The matching PRIVATE key lives at ~/.config/sops/age/keys.txt (NOT in git).
+creation_rules:
+  - path_regex: deploy/secrets/.*\.env$
+    age: age1z8j55zlhnk8jz6cjwffz3d3f353ewu6tg4pefhga9fdu9drt2pjs9dyh9q
+  - path_regex: deploy/secrets/.*\.(ya?ml|json)$
+    age: age1z8j55zlhnk8jz6cjwffz3d3f353ewu6tg4pefhga9fdu9drt2pjs9dyh9q
