@@ -2,7 +2,7 @@ defmodule AuthServiceWeb do
   def controller do
     quote do
       use Phoenix.Controller,
-        formats: [json: AuthService.AuthJSON],
+        formats: [:json],
         layouts: [html: AuthServiceWeb.Layouts]
 
       import Plug.Conn

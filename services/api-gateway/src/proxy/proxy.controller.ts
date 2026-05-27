@@ -62,7 +62,8 @@ export class ProxyController {
   @Throttle({ default: AUTH_RATE_LIMIT })
   @All('auth/*')
   proxyAuth(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
-    return this.proxyRequest(req, res, 'auth', wildcardPath(req));
+    // auth-service routes live under /auth/*, so keep the prefix when proxying.
+    return this.proxyRequest(req, res, 'auth', 'auth/' + wildcardPath(req));
   }
 
   // ── Listings ─────────────────────────────────────────────────

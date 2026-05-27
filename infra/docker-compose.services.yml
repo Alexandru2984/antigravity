@@ -632,6 +632,10 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://polyglot.micutu.com}
       NEXT_PUBLIC_STRIPE_PK: "${STRIPE_PUBLISHABLE_KEY}"
       NODE_ENV: production
+      # Next.js standalone server binds to $HOSTNAME; Docker defaults it to the
+      # container id, so it would only listen on the eth0 IP and the loopback
+      # healthcheck (127.0.0.1:3000) would fail. Force binding to all interfaces.
+      HOSTNAME: "0.0.0.0"
     networks:
       - polymarket
     depends_on:

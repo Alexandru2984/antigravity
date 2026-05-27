@@ -58,8 +58,8 @@ done
 
 echo "🌱 Starting PolyMarket database seeding process..."
 
-# Pre-computed Bcrypt hash for password 'password123'
-PASSWORD_HASH='$2b$12$KkQ1pY.yJbe928K9y5bZneH6XF622iYkGg0E0.9fO1P5gXvV34gG2'
+# Pre-computed Bcrypt hash for password 'password123' (bcrypt, cost 12)
+PASSWORD_HASH='$2b$12$QS1UI3J202ohl/kaxwfFhOoS3bZGest7vUJ2l.N.Ng/Alz5hKcGhu'
 
 BUYER_UUID="11111111-1111-1111-1111-111111111111"
 SELLER_UUID="22222222-2222-2222-2222-222222222222"
@@ -70,7 +70,7 @@ echo "🗄️  Seeding Auth Database (Postgres)..."
 docker exec -i polymarket-postgres psql -U polymarket -d polymarket_auth <<EOF
 TRUNCATE TABLE refresh_tokens, users CASCADE;
 
-INSERT INTO users (id, email, password_hash, roles, is_active, created_at, updated_at) VALUES
+INSERT INTO users (id, email, password_hash, roles, is_active, inserted_at, updated_at) VALUES
 ('$BUYER_UUID', 'buyer@polymarket.com', '$PASSWORD_HASH', '{user}', true, NOW(), NOW()),
 ('$SELLER_UUID', 'seller@polymarket.com', '$PASSWORD_HASH', '{user}', true, NOW(), NOW()),
 ('$ADMIN_UUID', 'admin@polymarket.com', '$PASSWORD_HASH', '{user,admin}', true, NOW(), NOW());
@@ -111,21 +111,22 @@ db.listings.insertMany([
     _id: ObjectId("664cb3f928e4fb801d000001"),
     title: "iPhone 15 Pro Max - 256GB - Titanium",
     description: "Selling a perfect condition iPhone 15 Pro Max. Used for 2 months, 100% battery capacity. Comes with original box and invoice.",
-    price: 480000, // 4800.00 RON in cents
+    price: NumberInt(480000), // 4800.00 RON in cents
     currency: "RON",
     category: "Electronics",
-    sub_category: "Mobile Phones",
+    subcategory: "Mobile Phones",
     status: "active",
-    seller_id: "$SELLER_UUID",
-    images: ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800"],
+    seller_id: UUID("$SELLER_UUID"),
+    images: [{ url: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800", key: "listings/664cb3f928e4fb801d000001/main.jpg" }],
+    location: { city: "Bucuresti", county: "Bucuresti" },
     attributes: {
       brand: "Apple",
       color: "Natural Titanium",
       storage: "256GB",
       condition: "Like New"
     },
-    views: 142,
-    favorites_count: 18,
+    views: NumberInt(142),
+    favorites_count: NumberInt(18),
     created_at: new Date(),
     updated_at: new Date()
   },
@@ -133,21 +134,22 @@ db.listings.insertMany([
     _id: ObjectId("664cb3f928e4fb801d000002"),
     title: "Sony WH-1000XM5 Noise Cancelling Headphones",
     description: "Industry leading noise-canceling headphones in black. Brand new in sealed box, received as a gift. 2-year warranty.",
-    price: 135000, // 1350.00 RON in cents
+    price: NumberInt(135000), // 1350.00 RON in cents
     currency: "RON",
     category: "Electronics",
-    sub_category: "Audio",
+    subcategory: "Audio",
     status: "active",
-    seller_id: "$SELLER_UUID",
-    images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"],
+    seller_id: UUID("$SELLER_UUID"),
+    images: [{ url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800", key: "listings/664cb3f928e4fb801d000002/main.jpg" }],
+    location: { city: "Cluj-Napoca", county: "Cluj" },
     attributes: {
       brand: "Sony",
       color: "Black",
       wireless: true,
       condition: "Brand New"
     },
-    views: 89,
-    favorites_count: 6,
+    views: NumberInt(89),
+    favorites_count: NumberInt(6),
     created_at: new Date(),
     updated_at: new Date()
   }
@@ -159,17 +161,16 @@ echo "🗄️  Seeding Review Database (MySQL)..."
 docker exec -i polymarket-mysql mysql -u polymarket -p"$MYSQL_PASSWORD" polymarket_reviews <<EOF
 DELETE FROM reviews;
 
-INSERT INTO reviews (id, transaction_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at) VALUES
-(1, 't1111111-1111-1111-1111-111111111111', '$BUYER_UUID', '$SELLER_UUID', 5, 'Super prompt seller! The iPhone was exactly as described, highly recommend John!', NOW(), NOW()),
-(2, 't2222222-2222-2222-2222-222222222222', '$SELLER_UUID', '$BUYER_UUID', 5, 'Excellent buyer. Prompt payment, very friendly communication.', NOW(), NOW());
+INSERT INTO reviews (id, listing_id, reviewer_id, rating, title, body, is_verified_purchase, created_at, updated_at) VALUES
+('a1111111-1111-1111-1111-111111111111', '664cb3f928e4fb801d000001', '$BUYER_UUID', 5, 'Exactly as described', 'Super prompt seller! The iPhone was exactly as described, highly recommend John!', 1, NOW(), NOW()),
+('a2222222-2222-2222-2222-222222222222', '664cb3f928e4fb801d000002', '$BUYER_UUID', 5, 'Great headphones', 'Excellent product, fast delivery, very friendly communication.', 1, NOW(), NOW());
 EOF
 
 # ── 6. ClickHouse: Analytics Database ────────────────────────
 echo "🗄️  Seeding Analytics Database (ClickHouse)..."
+docker exec polymarket-clickhouse clickhouse-client --user polymarket --password "$CLICKHOUSE_PASSWORD" --database polymarket_analytics --query "TRUNCATE TABLE events"
 docker exec -i polymarket-clickhouse clickhouse-client --user polymarket --password "$CLICKHOUSE_PASSWORD" --database polymarket_analytics <<EOF
-TRUNCATE TABLE listing_events;
-
-INSERT INTO listing_events (event_id, event_type, listing_id, user_id, ip_address, user_agent, timestamp) VALUES
+INSERT INTO events (event_id, event_type, listing_id, user_id, ip_address, user_agent, created_at) VALUES
 (generateUUIDv4(), 'view', '664cb3f928e4fb801d000001', '$BUYER_UUID', '192.168.1.50', 'Mozilla/5.0 Chrome/120.0', now() - INTERVAL 1 HOUR),
 (generateUUIDv4(), 'favorite', '664cb3f928e4fb801d000001', '$BUYER_UUID', '192.168.1.50', 'Mozilla/5.0 Chrome/120.0', now() - INTERVAL 50 MINUTE),
 (generateUUIDv4(), 'view', '664cb3f928e4fb801d000002', '$BUYER_UUID', '192.168.1.50', 'Mozilla/5.0 Chrome/120.0', now() - INTERVAL 30 MINUTE);
@@ -194,7 +195,7 @@ EOF
 
 # ── 8. SurrealDB: Social/Feed Database ───────────────────────
 echo "🗄️  Seeding Social/Feed Database (SurrealDB)..."
-docker exec -i polymarket-surrealdb surreal sql \
+docker exec -i polymarket-surrealdb /surreal sql \
   --conn http://127.0.0.1:8000 \
   --user polymarket \
   --pass "$SURREALDB_PASSWORD" \

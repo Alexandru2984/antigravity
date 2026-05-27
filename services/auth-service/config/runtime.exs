@@ -32,10 +32,10 @@ jwt_private_key =
       end
   end
 
-config :auth_service, AuthService.Guardian,
-  secret_key: %{
-    "pem" => jwt_private_key
-  }
+# Build the RS256 signing key as a proper JOSE JWK from the PEM. Passing
+# %{"pem" => ...} is not parsed as PEM by this Guardian/JOSE version and fails
+# token creation with a missing-kty error.
+config :auth_service, AuthService.Guardian, secret_key: JOSE.JWK.from_pem(jwt_private_key)
 
 if prod? do
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -61,8 +61,7 @@ if prod? do
 
   config :auth_service, AuthService.Repo,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: [:inet6]
+    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
 
   # Redis configuration
   redis_url = System.get_env("REDIS_URL") || "redis://redis:6379"

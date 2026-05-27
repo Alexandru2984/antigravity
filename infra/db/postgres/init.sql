@@ -11,14 +11,18 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'polymarket_auth')\gex
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Schema mirrors the auth-service Ecto migration (priv/repo/migrations):
+-- email_verified, last_login_at, and Ecto's inserted_at/updated_at timestamps.
 CREATE TABLE IF NOT EXISTS users (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email         VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    roles         TEXT[]       NOT NULL DEFAULT '{user}',
-    is_active     BOOLEAN      NOT NULL DEFAULT true,
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email          VARCHAR(255) NOT NULL UNIQUE,
+    password_hash  VARCHAR(255) NOT NULL,
+    roles          TEXT[]       NOT NULL DEFAULT '{user}',
+    is_active      BOOLEAN      NOT NULL DEFAULT true,
+    email_verified BOOLEAN      NOT NULL DEFAULT false,
+    last_login_at  TIMESTAMPTZ,
+    inserted_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (

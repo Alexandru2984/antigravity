@@ -27,6 +27,9 @@ async function bootstrap() {
       bodyLimit: gatewayBodyLimitBytes(),
       logger: false,
     }),
+    // Capture the raw request body so proxyRequest can forward it upstream.
+    // Without this, Fastify consumes the parsed body and piping req.raw hangs.
+    { rawBody: true },
   );
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({

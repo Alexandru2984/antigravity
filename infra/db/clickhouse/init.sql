@@ -21,13 +21,15 @@ CREATE TABLE IF NOT EXISTS events (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(created_at)
 ORDER BY (event_type, created_at, user_id)
-TTL created_at + INTERVAL 90 DAY;
+TTL toDateTime(created_at) + INTERVAL 90 DAY
+SETTINGS allow_nullable_key = 1;
 
 -- Daily aggregates materialized view
 CREATE MATERIALIZED VIEW IF NOT EXISTS daily_stats
 ENGINE = SummingMergeTree()
 PARTITION BY toYYYYMM(date)
 ORDER BY (date, event_type, category)
+SETTINGS allow_nullable_key = 1
 AS SELECT
     toDate(created_at) AS date,
     event_type,
@@ -45,7 +47,7 @@ CREATE TABLE IF NOT EXISTS listing_views (
     viewed_at   DateTime64(3)
 ) ENGINE = MergeTree()
 ORDER BY (listing_id, viewed_at)
-TTL viewed_at + INTERVAL 30 DAY;
+TTL toDateTime(viewed_at) + INTERVAL 30 DAY;
 
 -- Payment events for revenue analytics
 CREATE TABLE IF NOT EXISTS payment_events (

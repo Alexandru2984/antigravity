@@ -13,11 +13,11 @@ const listingValidator = {
       properties: {
         title:       { bsonType: 'string', minLength: 3, maxLength: 200 },
         description: { bsonType: 'string', maxLength: 5000 },
-        price:       { bsonType: 'int', minimum: 0 },
+        price:       { bsonType: ['int', 'long'], minimum: 0 },
         currency:    { enum: ['RON', 'EUR', 'USD'] },
         category:    { bsonType: 'string' },
         subcategory: { bsonType: 'string' },
-        seller_id:   { bsonType: 'string' },  // UUID from auth service
+        seller_id:   { bsonType: ['string', 'binData'] },  // UUID (binData) from listing-service; string for legacy seeds
         images:      {
           bsonType: 'array',
           items: {
@@ -49,7 +49,7 @@ const listingValidator = {
         },
         attributes: { bsonType: 'object' },   // category-specific: mileage, rooms, etc.
         status:     { enum: ['draft', 'active', 'sold', 'expired', 'deleted'] },
-        views:      { bsonType: 'int', minimum: 0 },
+        views:      { bsonType: ['int', 'long'], minimum: 0 },
         created_at: { bsonType: 'date' },
         updated_at: { bsonType: 'date' },
         expires_at: { bsonType: 'date' }

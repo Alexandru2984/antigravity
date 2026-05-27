@@ -54,8 +54,13 @@ pub struct Listing {
     pub attributes: serde_json::Value,
     pub status: ListingStatus,
     pub views: i64,
+    // Persist as native BSON dates (not RFC3339 strings) so the MongoDB schema
+    // validator (bsonType: date) and date-range queries work correctly.
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     pub created_at: DateTime<Utc>,
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     pub expires_at: DateTime<Utc>,
+    #[serde(with = "bson::serde_helpers::chrono_datetime_as_bson_datetime")]
     pub updated_at: DateTime<Utc>,
 }
 

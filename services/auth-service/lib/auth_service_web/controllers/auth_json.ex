@@ -1,13 +1,13 @@
-defmodule AuthService.AuthJSON do
+defmodule AuthServiceWeb.AuthJSON do
   alias AuthService.Accounts.User
 
   def auth_response(%{user: user, tokens: tokens}) do
     %{
-      access_token:  tokens.access_token,
+      access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      token_type:    tokens.token_type,
-      expires_in:    tokens.expires_in,
-      user:          render_user(user)
+      token_type: tokens.token_type,
+      expires_in: tokens.expires_in,
+      user: render_user(user)
     }
   end
 
@@ -29,10 +29,10 @@ defmodule AuthService.AuthJSON do
 
   defp render_user(%User{} = user) do
     %{
-      id:         user.id,
-      email:      user.email,
-      roles:      user.roles,
-      is_active:  user.is_active,
+      id: user.id,
+      email: user.email,
+      roles: user.roles,
+      is_active: user.is_active,
       created_at: user.inserted_at
     }
   end
