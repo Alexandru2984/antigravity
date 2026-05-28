@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "ListingEvent",
+  "namespace": "com.polymarket.listings",
+  "doc": "Lifecycle events on the polymarket.listings.* topics (created/updated/deleted/sold/expired).",
+  "fields": [
+    {"name": "event", "type": "string", "doc": "e.g. listing.created"},
+    {"name": "id", "type": "string", "doc": "Mongo ObjectId hex"},
+    {"name": "seller_id", "type": ["null", "string"], "default": null},
+    {"name": "category", "type": ["null", "string"], "default": null},
+    {"name": "price", "type": ["null", "long"], "default": null, "doc": "bani (smallest RON unit)"},
+    {"name": "ts", "type": "string", "doc": "RFC3339 timestamp"}
+  ]
+}

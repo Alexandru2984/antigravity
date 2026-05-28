@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "UserEvent",
+  "namespace": "com.polymarket.users",
+  "doc": "Events on the users.* topics (registered/updated/deleted/logged_in).",
+  "fields": [
+    {"name": "event", "type": "string"},
+    {"name": "user_id", "type": "string"},
+    {"name": "email", "type": ["null", "string"], "default": null},
+    {"name": "ts", "type": "string"}
+  ]
+}

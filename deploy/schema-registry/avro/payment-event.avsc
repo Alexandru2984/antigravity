@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "PaymentEvent",
+  "namespace": "com.polymarket.payments",
+  "doc": "Events on the payments.* topics (initiated/processed/failed/refunded).",
+  "fields": [
+    {"name": "event", "type": "string"},
+    {"name": "payment_id", "type": ["null", "string"], "default": null},
+    {"name": "listing_id", "type": ["null", "string"], "default": null},
+    {"name": "user_id", "type": ["null", "string"], "default": null},
+    {"name": "amount_cents", "type": ["null", "long"], "default": null},
+    {"name": "currency", "type": ["null", "string"], "default": null},
+    {"name": "status", "type": ["null", "string"], "default": null},
+    {"name": "ts", "type": "string"}
+  ]
+}

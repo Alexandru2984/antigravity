@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "ReviewEvent",
+  "namespace": "com.polymarket.reviews",
+  "doc": "Events on the reviews.* topics (created/updated).",
+  "fields": [
+    {"name": "event", "type": "string"},
+    {"name": "review_id", "type": ["null", "string"], "default": null},
+    {"name": "listing_id", "type": ["null", "string"], "default": null},
+    {"name": "reviewer_id", "type": ["null", "string"], "default": null},
+    {"name": "rating", "type": ["null", "int"], "default": null},
+    {"name": "ts", "type": "string"}
+  ]
+}
