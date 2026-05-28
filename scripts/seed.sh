@@ -111,13 +111,13 @@ db.listings.insertMany([
     _id: ObjectId("664cb3f928e4fb801d000001"),
     title: "iPhone 15 Pro Max - 256GB - Titanium",
     description: "Selling a perfect condition iPhone 15 Pro Max. Used for 2 months, 100% battery capacity. Comes with original box and invoice.",
-    price: NumberInt(480000), // 4800.00 RON in cents
+    price: NumberLong(480000), // 4800.00 RON in cents
     currency: "RON",
     category: "Electronics",
     subcategory: "Mobile Phones",
     status: "active",
-    seller_id: UUID("$SELLER_UUID"),
-    images: [{ url: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800", key: "listings/664cb3f928e4fb801d000001/main.jpg" }],
+    seller_id: HexData(0, "$SELLER_UUID".replace(/-/g, "")),
+    images: [{ url: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800", key: "listings/664cb3f928e4fb801d000001/main.jpg", thumbnail: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=200", medium: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800" }],
     location: { city: "Bucuresti", county: "Bucuresti" },
     attributes: {
       brand: "Apple",
@@ -125,22 +125,23 @@ db.listings.insertMany([
       storage: "256GB",
       condition: "Like New"
     },
-    views: NumberInt(142),
-    favorites_count: NumberInt(18),
+    views: NumberLong(142),
+    favorites_count: NumberLong(18),
     created_at: new Date(),
-    updated_at: new Date()
+    updated_at: new Date(),
+    expires_at: new Date(Date.now() + 30*24*3600*1000)
   },
   {
     _id: ObjectId("664cb3f928e4fb801d000002"),
     title: "Sony WH-1000XM5 Noise Cancelling Headphones",
     description: "Industry leading noise-canceling headphones in black. Brand new in sealed box, received as a gift. 2-year warranty.",
-    price: NumberInt(135000), // 1350.00 RON in cents
+    price: NumberLong(135000), // 1350.00 RON in cents
     currency: "RON",
     category: "Electronics",
     subcategory: "Audio",
     status: "active",
-    seller_id: UUID("$SELLER_UUID"),
-    images: [{ url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800", key: "listings/664cb3f928e4fb801d000002/main.jpg" }],
+    seller_id: HexData(0, "$SELLER_UUID".replace(/-/g, "")),
+    images: [{ url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800", key: "listings/664cb3f928e4fb801d000002/main.jpg", thumbnail: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200", medium: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800" }],
     location: { city: "Cluj-Napoca", county: "Cluj" },
     attributes: {
       brand: "Sony",
@@ -148,10 +149,11 @@ db.listings.insertMany([
       wireless: true,
       condition: "Brand New"
     },
-    views: NumberInt(89),
-    favorites_count: NumberInt(6),
+    views: NumberLong(89),
+    favorites_count: NumberLong(6),
     created_at: new Date(),
-    updated_at: new Date()
+    updated_at: new Date(),
+    expires_at: new Date(Date.now() + 30*24*3600*1000)
   }
 ]);
 EOF

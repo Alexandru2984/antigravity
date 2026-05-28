@@ -1,6 +1,7 @@
 #include <drogon/drogon.h>
 #include "ImageController.h"
 #include <cstdlib>
+#include <vips/vips8>
 
 namespace {
 constexpr long kDefaultMaxUploadMb = 10;
@@ -42,7 +43,15 @@ size_t configuredMaxRequestBodyBytes() {
 }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    // libvips must be initialized before any VImage operation, otherwise its
+    // GObject types are unregistered and image processing aborts the worker
+    // ("cannot retrieve class for invalid (unclassed) type").
+    if (VIPS_INIT(argc > 0 ? argv[0] : "image-service")) {
+        LOG_ERROR << "Failed to initialize libvips";
+        return 1;
+    }
+
     const auto port = configuredHttpPort();
     const auto maxRequestBodyBytes = configuredMaxRequestBodyBytes();
     LOG_INFO << "Starting image-service on port " << port;
@@ -52,5 +61,6 @@ int main() {
         .setUploadPath(kUploadTempPath)
         .addListener("0.0.0.0", port)
         .run();
+    vips_shutdown();
     return 0;
 }

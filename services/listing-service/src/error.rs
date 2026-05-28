@@ -24,6 +24,11 @@ pub enum AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        // Log the underlying cause for server-side errors; the client only ever
+        // sees a generic message, so without this internal failures are invisible.
+        if matches!(self, AppError::Internal(_) | AppError::Mongo(_)) {
+            tracing::error!(error = ?self, "request failed with internal error");
+        }
         let (status, message) = match &self {
             AppError::NotFound => (StatusCode::NOT_FOUND, self.to_string()),
             AppError::Forbidden => (StatusCode::FORBIDDEN, self.to_string()),

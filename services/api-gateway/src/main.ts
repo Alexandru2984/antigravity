@@ -31,6 +31,24 @@ async function bootstrap() {
     // Without this, Fastify consumes the parsed body and piping req.raw hangs.
     { rawBody: true },
   );
+
+  // Fastify has no built-in parser for binary/multipart bodies, so file uploads
+  // (multipart/form-data) and other binary content would be rejected with 415.
+  // The gateway only proxies these through to upstream services, so buffer the
+  // raw bytes verbatim and let proxyRequest forward them with the original headers.
+  const fastify = app.getHttpAdapter().getInstance() as unknown as {
+    addContentTypeParser: (
+      ct: RegExp,
+      opts: { parseAs: 'buffer'; bodyLimit: number },
+      handler: (req: unknown, body: Buffer, done: (e: Error | null, b: Buffer) => void) => void,
+    ) => void;
+  };
+  fastify.addContentTypeParser(
+    /^multipart\/form-data|^application\/octet-stream|^image\//,
+    { parseAs: 'buffer', bodyLimit: gatewayBodyLimitBytes() },
+    (_req, body, done) => done(null, body),
+  );
+
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
     origin: getCorsOrigins(),

@@ -296,9 +296,15 @@ export class ProxyController {
         resolve();
       });
 
+      // rawBody is set for JSON/text/urlencoded; binary/multipart bodies are
+      // buffered by the custom content-type parser and land on req.body.
       const rawBody = (req as unknown as Record<string, unknown>).rawBody;
-      if (rawBody) {
-        proxyReq.write(rawBody as Buffer);
+      const bodyBuf = Buffer.isBuffer((req as { body?: unknown }).body)
+        ? ((req as { body?: unknown }).body as Buffer)
+        : undefined;
+      const forwardBody = (rawBody as Buffer) ?? bodyBuf;
+      if (forwardBody) {
+        proxyReq.write(forwardBody);
         proxyReq.end();
         return;
       }
