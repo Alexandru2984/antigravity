@@ -1,0 +1,64 @@
+# PolyMarket umbrella chart values.
+# Each entry under `services` renders a Deployment (+ Service if it has a port).
+# Images are the locally-built infra-* images imported into K3s containerd
+# (see deploy/k8s/import-images.sh). Flip `enabled` to bring a service onto k8s.
+#
+# Migration strategy (Faza 1): stateless polyglot mesh workers move first; the
+# stateful databases stay on Docker Compose and are reached via externalDatabases
+# until they are migrated to StatefulSets in a later step.
+
+global:
+  imagePullPolicy: IfNotPresent
+  secretName: polymarket-secrets
+
+services:
+  # ── Pilot set (varied languages, stateless, on k8s now) ─────
+  contract-validator:
+    enabled: true
+    image: docker.io/library/infra-contract-validator:latest
+    port: 4035
+    healthPath: /health
+    memLimit: 256Mi
+  elixir-service:
+    enabled: true
+    image: docker.io/library/infra-elixir-service:latest
+    port: 4057
+    healthPath: /health
+    env:
+      - { name: PORT, value: "4057" }
+    memLimit: 200Mi
+  zig-service:
+    enabled: true
+    image: docker.io/library/infra-zig-service:latest
+    port: 4062
+    memLimit: 64Mi
+  prolog-service:
+    enabled: true
+    image: docker.io/library/infra-prolog-service:latest
+    port: 4055
+    memLimit: 128Mi
+
+  # ── Remaining mesh workers (same pattern — flip enabled) ────
+  brainfuck-service:   { enabled: false, image: docker.io/library/infra-brainfuck-service:latest,   port: 4020, memLimit: 64Mi }
+  assembly-service:    { enabled: false, image: docker.io/library/infra-assembly-service:latest,    port: 4021, memLimit: 128Mi }
+  cobol-service:       { enabled: false, image: docker.io/library/infra-cobol-service:latest,       port: 4022, memLimit: 64Mi }
+  clojure-service:     { enabled: false, image: docker.io/library/infra-clojure-service:latest,     port: 4023, memLimit: 400Mi }
+  julia-service:       { enabled: false, image: docker.io/library/infra-julia-service:latest,       port: 4054, memLimit: 400Mi }
+  scala-service:       { enabled: false, image: docker.io/library/infra-scala-service:latest,       port: 4058, healthPath: /health, memLimit: 512Mi }
+  lua-service:         { enabled: false, image: docker.io/library/infra-lua-service:latest,         port: 4059, memLimit: 64Mi }
+  r-service:           { enabled: false, image: docker.io/library/infra-r-service:latest,           port: 4060, memLimit: 512Mi }
+  php-service:         { enabled: false, image: docker.io/library/infra-php-service:latest,         port: 4061, memLimit: 128Mi }
+  swift-service:       { enabled: false, image: docker.io/library/infra-swift-service:latest,       port: 4063, memLimit: 512Mi }
+  nim-service:         { enabled: false, image: docker.io/library/infra-nim-service:latest,         port: 4064, memLimit: 128Mi }
+  odin-service:        { enabled: false, image: docker.io/library/infra-odin-service:latest,        port: 4065, memLimit: 64Mi }
+
+  # ── App services (stateful-dependent — enable after DB wiring) ──
+  # api-gateway, auth-service, listing-service, search-service, ml-service,
+  # image-service, payment-service, profile-service, feed-service, review-service,
+  # analytics-service, chat-service, notification-service, stream-processor,
+  # config-service, admin-panel, frontend
+  # Each: image infra-<svc>, its port, envSecret entries for DB creds, healthPath.
+
+# External databases still on Docker Compose (reached during the hybrid phase).
+# Filled in when DB-dependent services are migrated; see plan Faza 1c.
+externalDatabases: {}

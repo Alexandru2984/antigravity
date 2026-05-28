@@ -1,0 +1,62 @@
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "polymarket.labels" $ | nindent 4 }}
+    app: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      securityContext:
+        runAsNonRoot: {{ $svc.runAsNonRoot | default false }}
+      containers:
+        - name: {{ $name }}
+          image: {{ $svc.image }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          {{- if $svc.port }}
+          ports:
+            - containerPort: {{ $svc.port }}
+          {{- end }}
+          {{- if or $svc.env $svc.envSecret }}
+          env:
+            {{- range $svc.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- range $svc.envSecret }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.secretName | default "polymarket-secrets" }}
+                  key: {{ .key }}
+            {{- end }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ $svc.cpuRequest | default "25m" }}
+              memory: {{ $svc.memRequest | default "64Mi" }}
+            limits:
+              memory: {{ $svc.memLimit | default "256Mi" }}
+          {{- if $svc.healthPath }}
+          readinessProbe:
+            httpGet: { path: {{ $svc.healthPath }}, port: {{ $svc.port }} }
+            initialDelaySeconds: {{ $svc.healthDelay | default 10 }}
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: {{ $svc.healthPath }}, port: {{ $svc.port }} }
+            initialDelaySeconds: {{ $svc.healthDelay | default 20 }}
+            periodSeconds: 20
+          {{- end }}
+{{- end }}
+{{- end }}
