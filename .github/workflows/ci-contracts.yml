@@ -1,0 +1,105 @@
+name: Contracts — OpenAPI / Avro / Proto
+
+# Central contract gate: validates the API and event-spine contracts so a
+# malformed or incompatible schema can never reach the polyglot services.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - 'deploy/schema-registry/**'
+      - '.github/workflows/ci-contracts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - 'deploy/schema-registry/**'
+
+permissions:
+  contents: read
+
+jobs:
+  openapi:
+    name: OpenAPI specs valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "openapi-spec-validator==0.7.1"
+      - name: Validate OpenAPI documents
+        run: |
+          set -e
+          for f in contracts/openapi/*.yml contracts/openapi/*.yaml; do
+            [ -e "$f" ] || continue
+            echo "::group::$f"
+            python -m openapi_spec_validator "$f"
+            echo "::endgroup::"
+          done
+
+  avro:
+    name: Avro schemas valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "fastavro==1.9.5"
+      - name: Parse every .avsc
+        run: |
+          python - <<'PY'
+          import glob, sys
+          from fastavro.schema import load_schema, parse_schema
+          import json
+          bad = 0
+          for f in glob.glob("deploy/schema-registry/avro/*.avsc"):
+              try:
+                  parse_schema(json.load(open(f)))
+                  print(f"ok   {f}")
+              except Exception as e:
+                  print(f"FAIL {f}: {e}"); bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+  proto:
+    name: Protobuf compiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - name: protoc compile check
+        run: |
+          for f in contracts/proto/*.proto; do
+            [ -e "$f" ] || continue
+            protoc --proto_path=contracts/proto "$f" -o /dev/null && echo "ok $f"
+          done
+
+  registry-compat:
+    name: Schemas register under BACKWARD rule
+    runs-on: ubuntu-latest
+    services:
+      apicurio:
+        image: apicurio/apicurio-registry-mem:2.6.5.Final
+        ports: ['8080:8080']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Apicurio + enforce BACKWARD rule
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8080/health/ready && break || sleep 2
+          done
+          curl -fsS -X POST http://localhost:8080/apis/registry/v2/admin/rules \
+            -H 'Content-Type: application/json' \
+            -d '{"type":"COMPATIBILITY","config":"BACKWARD"}'
+      - name: Register all schemas (fails on invalid/incompatible)
+        env:
+          REGISTRY_URL: http://localhost:8080
+        run: |
+          set -e
+          sh deploy/schema-registry/register.sh | tee /tmp/out
+          # Any non-2xx HTTP code in register output fails the gate.
+          if grep -E 'HTTP (4|5)[0-9][0-9]' /tmp/out; then
+            echo "::error::schema registration returned an error code"; exit 1
+          fi
