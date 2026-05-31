@@ -27,6 +27,9 @@ spec:
       labels:
         app: {{ $name }}
     spec:
+      # Avoid Docker-link-style {SVC}_PORT/{SVC}_SERVICE_* env injection clashing
+      # with app config; services discover each other via DNS.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: {{ $svc.runAsNonRoot | default false }}
       containers:
@@ -39,16 +42,17 @@ spec:
           {{- end }}
           {{- if or $svc.env $svc.envSecret }}
           env:
-            {{- range $svc.env }}
-            - name: {{ .name }}
-              value: {{ .value | quote }}
-            {{- end }}
+            {{- /* secret-sourced vars first so plain values can reference them via $(VAR) */}}
             {{- range $svc.envSecret }}
             - name: {{ .name }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.global.secretName | default "polymarket-secrets" }}
                   key: {{ .key }}
+            {{- end }}
+            {{- range $svc.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
             {{- end }}
           {{- end }}
           resources:

@@ -38,7 +38,9 @@ clickhouse() {
   docker exec polymarket-clickhouse clickhouse-client --query \
     "SELECT name FROM system.tables WHERE database='$db' AND name NOT LIKE '.inner%'" | while read -r t; do
     [ -z "$t" ] && continue
-    docker exec polymarket-clickhouse clickhouse-client --query "SHOW CREATE TABLE \`$db\`.\`$t\`" > "$DEST/clickhouse/$t.sql" || rc=1
+    # TabSeparatedRaw: emit real newlines in the DDL (default format escapes them
+    # as literal \n, which then can't be replayed).
+    docker exec polymarket-clickhouse clickhouse-client --query "SHOW CREATE TABLE \`$db\`.\`$t\` FORMAT TabSeparatedRaw" > "$DEST/clickhouse/$t.sql" || rc=1
     docker exec polymarket-clickhouse clickhouse-client --query "SELECT * FROM \`$db\`.\`$t\` FORMAT Native" | gzip > "$DEST/clickhouse/$t.native.gz" || rc=1
   done
   return $rc; }

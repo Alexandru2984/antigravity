@@ -56,6 +56,154 @@ databases:
       - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
     readinessExec: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
 
+  # ── Wave B: event spine + remaining stores ─────────────────
+  zookeeper:
+    enabled: true
+    image: confluentinc/cp-zookeeper:7.6.1
+    dataPath: /var/lib/zookeeper
+    pvcSize: 1Gi
+    memLimit: 400Mi
+    ports: [{ name: zk, port: 2181 }]
+    dataPort: 2181
+    # Event spine excluded from the mesh: Kafka's protocol + ClusterIP
+    # self-connection don't survive Linkerd's sidecar; app->kafka still works.
+    annotations: { linkerd.io/inject: disabled }
+    env:
+      - { name: ZOOKEEPER_CLIENT_PORT, value: "2181" }
+      - { name: ZOOKEEPER_TICK_TIME, value: "2000" }
+  kafka:
+    enabled: true
+    image: confluentinc/cp-kafka:7.6.1
+    dataPath: /var/lib/kafka/data
+    pvcSize: 4Gi
+    memLimit: 1200Mi
+    cpuRequest: 100m
+    ports: [{ name: internal, port: 29092 }, { name: host, port: 9092 }]
+    annotations: { linkerd.io/inject: disabled }
+    # Headless: the broker advertises kafka:29092 and must reach itself there;
+    # a ClusterIP VIP self-connection (hairpin) fails, a direct pod IP works.
+    headless: true
+    env:
+      - { name: KAFKA_BROKER_ID, value: "1" }
+      - { name: KAFKA_ZOOKEEPER_CONNECT, value: "zookeeper:2181" }
+      - { name: KAFKA_ADVERTISED_LISTENERS, value: "PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092" }
+      - { name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP, value: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT" }
+      - { name: KAFKA_INTER_BROKER_LISTENER_NAME, value: "PLAINTEXT" }
+      - { name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, value: "1" }
+      - { name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, value: "1" }
+      - { name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR, value: "1" }
+      - { name: KAFKA_LOG_RETENTION_HOURS, value: "168" }
+      - { name: KAFKA_AUTO_CREATE_TOPICS_ENABLE, value: "false" }
+    readinessExec: ["kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+    readyDelay: 30
+  mysql:
+    enabled: true
+    image: mysql:8.3
+    dataPath: /var/lib/mysql
+    pvcSize: 2Gi
+    memLimit: 700Mi
+    ports: [{ name: mysql, port: 3306 }]
+    envSecret:
+      - { name: MYSQL_ROOT_PASSWORD, key: MYSQL_ROOT_PASSWORD }
+      - { name: MYSQL_PASSWORD, key: MYSQL_PASSWORD }
+    env:
+      - { name: MYSQL_DATABASE, value: polymarket_reviews }
+      - { name: MYSQL_USER, value: polymarket }
+    readinessExec: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -u root -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+    readyDelay: 20
+  clickhouse:
+    enabled: true
+    image: clickhouse/clickhouse-server:24.3-alpine
+    dataPath: /var/lib/clickhouse
+    pvcSize: 2Gi
+    memLimit: 1Gi
+    ports: [{ name: http, port: 8123 }, { name: native, port: 9000 }]
+    envSecret:
+      - { name: CLICKHOUSE_PASSWORD, key: CLICKHOUSE_PASSWORD }
+    env:
+      - { name: CLICKHOUSE_USER, value: polymarket }
+      - { name: CLICKHOUSE_DB, value: polymarket_analytics }
+      - { name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT, value: "1" }
+    readinessExec: ["sh", "-c", "clickhouse-client --user polymarket --password \"$CLICKHOUSE_PASSWORD\" --query 'SELECT 1'"]
+    readyDelay: 15
+  timescale:
+    enabled: true
+    image: timescale/timescaledb:2.27.1-pg16
+    dataPath: /var/lib/postgresql/data
+    pvcSize: 2Gi
+    memLimit: 700Mi
+    ports: [{ name: pg, port: 5432 }]
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: TIMESCALE_PASSWORD }
+    env:
+      - { name: POSTGRES_USER, value: polymarket }
+      - { name: POSTGRES_DB, value: polymarket_metrics }
+      - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+    readinessExec: ["pg_isready", "-U", "polymarket"]
+  neo4j:
+    enabled: true
+    image: neo4j:5.18-community
+    dataPath: /data
+    pvcSize: 2Gi
+    memLimit: 1Gi
+    ports: [{ name: http, port: 7474 }, { name: bolt, port: 7687 }]
+    # Password var is NOT NEO4J_-prefixed: neo4j parses any NEO4J_* env as a
+    # config setting and rejects unknown ones. GRAPH_PW feeds NEO4J_AUTH via $(VAR).
+    envSecret:
+      - { name: GRAPH_PW, key: NEO4J_PASSWORD }
+    env:
+      - { name: NEO4J_AUTH, value: "neo4j/$(GRAPH_PW)" }
+      - { name: NEO4J_PLUGINS, value: "[\"apoc\"]" }
+      - { name: NEO4J_server_memory_heap_initial__size, value: "256m" }
+      - { name: NEO4J_server_memory_heap_max__size, value: "512m" }
+    readinessExec: ["sh", "-c", "cypher-shell -u neo4j -p \"$GRAPH_PW\" 'RETURN 1'"]
+    readyDelay: 25
+  surrealdb:
+    enabled: true
+    image: surrealdb/surrealdb:v1.5.4
+    dataPath: /data
+    pvcSize: 1Gi
+    memLimit: 256Mi
+    ports: [{ name: ws, port: 8000 }]
+    dataPort: 8000
+    # surreal runs as uid 65532; fsGroup makes the local-path PVC writable for it.
+    securityContext: { runAsUser: 65532, runAsGroup: 65532, fsGroup: 65532 }
+    command: ["/surreal"]
+    args: ["start", "--auth", "--user", "polymarket", "--pass", "$(SURREALDB_PASSWORD)", "file:/data/polymarket.db"]
+    envSecret:
+      - { name: SURREALDB_PASSWORD, key: SURREALDB_PASSWORD }
+    readyDelay: 10
+  minio:
+    enabled: true
+    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    dataPath: /data
+    pvcSize: 3Gi
+    memLimit: 512Mi
+    ports: [{ name: s3, port: 9000 }, { name: console, port: 9001 }]
+    dataPort: 9000
+    command: ["sh", "-c"]
+    args: ["minio server /data --console-address ':9001'"]
+    envSecret:
+      - { name: MINIO_ROOT_USER, key: MINIO_ROOT_USER }
+      - { name: MINIO_ROOT_PASSWORD, key: MINIO_ROOT_PASSWORD }
+  opensearch:
+    enabled: true
+    image: opensearchproject/opensearch:2.13.0
+    dataPath: /usr/share/opensearch/data
+    pvcSize: 3Gi
+    memLimit: 1600Mi
+    cpuRequest: 100m
+    ports: [{ name: http, port: 9200 }, { name: perf, port: 9600 }]
+    securityContext: { fsGroup: 1000 }
+    envSecret:
+      - { name: OPENSEARCH_INITIAL_ADMIN_PASSWORD, key: OPENSEARCH_INITIAL_ADMIN_PASSWORD }
+    env:
+      - { name: discovery.type, value: single-node }
+      - { name: OPENSEARCH_JAVA_OPTS, value: "-Xms512m -Xmx512m" }
+      - { name: DISABLE_INSTALL_DEMO_CONFIG, value: "false" }
+    dataPort: 9200
+    readyDelay: 30
+
 services:
   # ── Pilot set (varied languages, stateless, on k8s now) ─────
   contract-validator:

@@ -16,6 +16,12 @@ metadata:
     {{- include "polymarket.labels" $ | nindent 4 }}
     app: {{ $name }}
 spec:
+  {{- if $db.headless }}
+  clusterIP: None   # resolve {{ $name }} straight to the pod IP (no VIP hairpin)
+  # Publish the address before readiness, else the broker can't resolve its own
+  # advertised name during startup (no ready endpoint) and never becomes ready.
+  publishNotReadyAddresses: true
+  {{- end }}
   selector:
     app: {{ $name }}
   ports:
@@ -42,7 +48,15 @@ spec:
     metadata:
       labels:
         app: {{ $name }}
+      {{- if $db.annotations }}
+      annotations:
+        {{- toYaml $db.annotations | nindent 8 }}
+      {{- end }}
     spec:
+      # Don't inject Docker-link-style {SVC}_PORT/{SVC}_SERVICE_* env vars: images
+      # like kafka and neo4j treat any KAFKA_*/NEO4J_* env as config and break.
+      # In-cluster discovery is via DNS, so these are unnecessary anyway.
+      enableServiceLinks: false
       {{- with $db.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -63,16 +77,17 @@ spec:
             {{- end }}
           {{- if or $db.env $db.envSecret }}
           env:
-            {{- range $db.env }}
-            - name: {{ .name }}
-              value: {{ .value | quote }}
-            {{- end }}
+            {{- /* secret-sourced vars first so plain values can reference them via $(VAR) */}}
             {{- range $db.envSecret }}
             - name: {{ .name }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.global.secretName | default "polymarket-secrets" }}
                   key: {{ .key }}
+            {{- end }}
+            {{- range $db.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
             {{- end }}
           {{- end }}
           resources:
