@@ -1,0 +1,41 @@
+{{- /*
+HorizontalPodAutoscaler for the hot-path services (gateway / listing / search).
+Opt in per service with an `hpa` block in values:
+  hpa: { min: 2, max: 6, cpu: 70 }
+When hpa is set the Deployment omits a static replica count (see deployment.yaml)
+so the HPA owns scaling. Requires metrics — kube-state-metrics + the metrics
+pipeline from Faza 3 (kube-prometheus-stack) / metrics-server.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (hasKey $svc "hpa") }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "polymarket.labels" $ | nindent 4 }}
+    app: {{ $name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}
+  minReplicas: {{ $svc.hpa.min | default 2 }}
+  maxReplicas: {{ $svc.hpa.max | default 6 }}
+  metrics:
+    # ContainerResource (not Resource): scale on the app container's CPU only.
+    # The injected Linkerd proxy has no CPU request, which would make a pod-level
+    # Resource metric report <unknown>.
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: {{ $name }}
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.cpu | default 70 }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300   # avoid flapping on brief dips
+{{- end }}
+{{- end }}

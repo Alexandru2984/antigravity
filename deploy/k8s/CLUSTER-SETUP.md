@@ -121,6 +121,51 @@ sudo bash deploy/k8s/base/vault/compose-db-relay.sh        # one-off / manual
 sudo systemctl enable --now compose-db-relay.service       # persist across reboot
 ```
 
+## 8. Hardening (Faza 5)
+The chart carries production-grade controls, enabled per service from `values.yaml`:
+- **Zero-downtime rollouts** — every Deployment uses `RollingUpdate` with
+  `maxUnavailable: 0, maxSurge: 1` (a new pod goes Ready before the old retires;
+  verified live: ready replicas never dropped during a `rollout restart`).
+- **PodDisruptionBudget** — auto-rendered (`minAvailable: 1`) for any service
+  with >1 replica or an HPA, so node drains/rollouts never take the last pod.
+- **HPA** — opt in with `hpa: { min, max, cpu }`. Uses `ContainerResource` CPU
+  on the app container (the injected Linkerd proxy has no CPU request, which
+  would otherwise make a pod-level metric read `<unknown>`). Needs metrics-server
+  (bundled with K3s). When `hpa` is set the Deployment drops its static replica
+  count so the HPA owns scaling.
+```bash
+helm upgrade polymarket deploy/k8s -n polymarket \
+  --set services.<svc>.hpa.min=2 --set services.<svc>.hpa.max=6 --set services.<svc>.hpa.cpu=70
+```
+
+### Backups (pre-cutover safety net)
+Daily logical dumps of the Compose databases — see `deploy/backup/README.md`.
+Restore is smoke-tested (Postgres + Mongo into throwaway containers). The cutover
+must not proceed until a fresh backup exists and restores cleanly.
+```bash
+sudo systemctl enable --now polymarket-backup.timer    # 03:30 daily, keeps 7 days
+```
+
+## 9. Cutover & rollback runbook (NOT yet executed)
+**Gate:** the cutover stops the live Compose stack and is irreversible in the
+moment — run it only on an explicit go, and only after Faza 1c (all app services
++ databases actually serving on k8s). Order:
+1. **Backup** — `sudo bash deploy/backup/backup-databases.sh`; confirm `ALL OK`.
+2. **Bring up all services on k8s** (Faza 1c): flip remaining `services.*.enabled`,
+   migrate DBs to StatefulSets (restore from the dumps above), retire the
+   `compose-db-relay` once Postgres is in-cluster.
+3. **WAF at edge** — install ingress-nginx + ModSecurity/OWASP-CRS as the Ingress
+   (keep the anti-redirect-loop fix: serve HTTP, no 301). Validate a SQLi payload → 403.
+4. **Validate on k8s** behind the WAF without moving DNS (host header / local curl):
+   listings 200, mesh 18/18 `SUCCESS_PERSISTED`, `linkerd viz stat` mTLS=100%.
+5. **Cutover** — point the host nginx / Cloudflare origin at the k8s ingress.
+6. **Stop Compose** — `docker compose -f infra/docker-compose.*.yml down` (app first,
+   DBs last, only after k8s is verified healthy on real traffic).
+
+**Rollback** (at any step): repoint the edge back to the Compose nginx and
+`docker compose up -d`. Compose stays running in parallel until step 6, so
+rollback is a single edge switch.
+
 ## Notes
 - WAF (ingress-nginx + ModSecurity/OWASP-CRS) is intentionally deployed at the
   **edge cutover** step, once application services serve real traffic on k8s —

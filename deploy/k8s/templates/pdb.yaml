@@ -1,0 +1,23 @@
+{{- /*
+PodDisruptionBudget for services that run more than one replica (or opt in via
+`pdb: true`). Keeps at least one pod serving during voluntary disruptions
+(node drain, rollout), so the mesh never sees the service disappear.
+Single-replica services are skipped — a PDB there would block node drains.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (or $svc.pdb (gt (int ($svc.replicas | default 1)) 1) (hasKey $svc "hpa")) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "polymarket.labels" $ | nindent 4 }}
+    app: {{ $name }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+{{- end }}
+{{- end }}
