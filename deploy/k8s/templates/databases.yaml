@@ -1,0 +1,111 @@
+{{- /*
+Stateful backing stores for the parallel k8s stack. Each entry under
+`databases` renders a StatefulSet (with a PVC via volumeClaimTemplates) plus a
+headless-friendly ClusterIP Service. These are the k8s-owned databases — the
+cluster runs its OWN copies (restored from backup), independent of the Compose
+databases that keep serving live traffic. No shared state == no interference.
+*/ -}}
+{{- range $name, $db := .Values.databases }}
+{{- if $db.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "polymarket.labels" $ | nindent 4 }}
+    app: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    {{- range $db.ports }}
+    - name: {{ .name }}
+      port: {{ .port }}
+      targetPort: {{ .port }}
+    {{- end }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "polymarket.labels" $ | nindent 4 }}
+    app: {{ $name }}
+spec:
+  serviceName: {{ $name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      {{- with $db.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: {{ $db.image }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          {{- with $db.command }}
+          command: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $db.args }}
+          args: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            {{- range $db.ports }}
+            - containerPort: {{ .port }}
+            {{- end }}
+          {{- if or $db.env $db.envSecret }}
+          env:
+            {{- range $db.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+            {{- range $db.envSecret }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.secretName | default "polymarket-secrets" }}
+                  key: {{ .key }}
+            {{- end }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ $db.cpuRequest | default "50m" }}
+              memory: {{ $db.memRequest | default "128Mi" }}
+            limits:
+              memory: {{ $db.memLimit | default "512Mi" }}
+          {{- if $db.readinessExec }}
+          readinessProbe:
+            exec:
+              command: {{ toYaml $db.readinessExec | nindent 16 }}
+            initialDelaySeconds: {{ $db.readyDelay | default 10 }}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          {{- else if $db.dataPort }}
+          readinessProbe:
+            tcpSocket: { port: {{ $db.dataPort }} }
+            initialDelaySeconds: {{ $db.readyDelay | default 10 }}
+            periodSeconds: 10
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ $db.dataPath }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: {{ $db.pvcSize | default "2Gi" }}
+{{- end }}
+{{- end }}

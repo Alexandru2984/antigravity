@@ -11,6 +11,51 @@ global:
   imagePullPolicy: IfNotPresent
   secretName: polymarket-secrets
 
+# k8s-owned stateful backing stores (StatefulSets + PVCs). The cluster runs its
+# OWN databases, restored from backup — independent of the Compose databases
+# still serving live traffic. Brought up in waves (Faza 1c). Mirrors the env in
+# infra/docker-compose.yml. Flip `enabled` per store.
+databases:
+  postgres:
+    enabled: true
+    image: postgres:16-alpine
+    dataPath: /var/lib/postgresql/data
+    pvcSize: 3Gi
+    memLimit: 512Mi
+    ports: [{ name: pg, port: 5432 }]
+    env:
+      - { name: POSTGRES_USER, value: polymarket }
+      - { name: POSTGRES_DB, value: polymarket }
+      - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+    readinessExec: ["pg_isready", "-U", "polymarket"]
+  mongo:
+    enabled: true
+    image: mongo:7
+    dataPath: /data/db
+    pvcSize: 3Gi
+    memLimit: 512Mi
+    ports: [{ name: mongo, port: 27017 }]
+    env:
+      - { name: MONGO_INITDB_ROOT_USERNAME, value: polymarket }
+      - { name: MONGO_INITDB_DATABASE, value: polymarket }
+    envSecret:
+      - { name: MONGO_INITDB_ROOT_PASSWORD, key: MONGO_PASSWORD }
+    readinessExec: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+  redis:
+    enabled: true
+    image: redis:7.2-alpine
+    dataPath: /data
+    pvcSize: 1Gi
+    memLimit: 300Mi
+    ports: [{ name: redis, port: 6379 }]
+    command: ["sh", "-c"]
+    args: ["redis-server --appendonly yes --requirepass \"$REDIS_PASSWORD\""]
+    envSecret:
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+    readinessExec: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
+
 services:
   # ── Pilot set (varied languages, stateless, on k8s now) ─────
   contract-validator:
@@ -38,19 +83,20 @@ services:
     port: 4055
     memLimit: 128Mi
 
-  # ── Remaining mesh workers (same pattern — flip enabled) ────
-  brainfuck-service:   { enabled: false, image: docker.io/library/infra-brainfuck-service:latest,   port: 4020, memLimit: 64Mi }
-  assembly-service:    { enabled: false, image: docker.io/library/infra-assembly-service:latest,    port: 4021, memLimit: 128Mi }
-  cobol-service:       { enabled: false, image: docker.io/library/infra-cobol-service:latest,       port: 4022, memLimit: 64Mi }
-  clojure-service:     { enabled: false, image: docker.io/library/infra-clojure-service:latest,     port: 4023, memLimit: 400Mi }
-  julia-service:       { enabled: false, image: docker.io/library/infra-julia-service:latest,       port: 4054, memLimit: 400Mi }
-  scala-service:       { enabled: false, image: docker.io/library/infra-scala-service:latest,       port: 4058, healthPath: /health, memLimit: 512Mi }
-  lua-service:         { enabled: false, image: docker.io/library/infra-lua-service:latest,         port: 4059, memLimit: 64Mi }
-  r-service:           { enabled: false, image: docker.io/library/infra-r-service:latest,           port: 4060, memLimit: 512Mi }
-  php-service:         { enabled: false, image: docker.io/library/infra-php-service:latest,         port: 4061, memLimit: 128Mi }
-  swift-service:       { enabled: false, image: docker.io/library/infra-swift-service:latest,       port: 4063, memLimit: 512Mi }
-  nim-service:         { enabled: false, image: docker.io/library/infra-nim-service:latest,         port: 4064, memLimit: 128Mi }
-  odin-service:        { enabled: false, image: docker.io/library/infra-odin-service:latest,        port: 4065, memLimit: 64Mi }
+  # ── Remaining mesh workers (stateless; flip enabled) ────────
+  brainfuck-service:   { enabled: true, image: docker.io/library/infra-brainfuck-service:latest,   port: 4020, memLimit: 64Mi }
+  assembly-service:    { enabled: true, image: docker.io/library/infra-assembly-service:latest,    port: 4021, memLimit: 128Mi }
+  cobol-service:       { enabled: true, image: docker.io/library/infra-cobol-service:latest,       port: 4022, memLimit: 64Mi }
+  clojure-service:     { enabled: true, image: docker.io/library/infra-clojure-service:latest,     port: 4023, memLimit: 400Mi }
+  julia-service:       { enabled: true, image: docker.io/library/infra-julia-service:latest,       port: 4054, memLimit: 400Mi }
+  scala-service:       { enabled: true, image: docker.io/library/infra-scala-service:latest,       port: 4058, healthPath: /health, memLimit: 512Mi }
+  lua-service:         { enabled: true, image: docker.io/library/infra-lua-service:latest,         port: 4059, memLimit: 64Mi }
+  r-service:           { enabled: true, image: docker.io/library/infra-r-service:latest,           port: 4060, memLimit: 512Mi }
+  php-service:         { enabled: true, image: docker.io/library/infra-php-service:latest,         port: 4061, memLimit: 128Mi }
+  swift-service:       { enabled: true, image: docker.io/library/infra-swift-service:latest,       port: 4063, memLimit: 512Mi }
+  nim-service:         { enabled: true, image: docker.io/library/infra-nim-service:latest,         port: 4064, memLimit: 128Mi }
+  odin-service:        { enabled: true, image: docker.io/library/infra-odin-service:latest,        port: 4065, memLimit: 64Mi }
+  haskell-service:     { enabled: true, image: docker.io/library/infra-haskell-service:latest,     port: 4051, memLimit: 128Mi }
 
   # ── App services (stateful-dependent — enable after DB wiring) ──
   # api-gateway, auth-service, listing-service, search-service, ml-service,
