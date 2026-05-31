@@ -1,0 +1,44 @@
+# Slim, disk-aware kube-prometheus-stack for the K3s node.
+# eBPF (Hubble/Tetragon) carries most observability; this is the metrics backbone
+# + Grafana. Retention and storage are capped tightly (host disk is ~89% full).
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: true
+  adminPassword: ${GRAFANA_ADMIN_PASSWORD}
+  defaultDashboardsTimezone: browser
+  persistence:
+    enabled: false        # emptyDir — dashboards are provisioned, no PVC needed
+  resources:
+    requests: { cpu: 25m, memory: 96Mi }
+    limits: { memory: 256Mi }
+
+prometheus:
+  prometheusSpec:
+    retention: 2d
+    retentionSize: 1500MB
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+      limits: { memory: 1200Mi }
+    # emptyDir storage (no provisioner dependency); capped by retention above.
+    storageSpec: {}
+    # Scrape Cilium/Hubble eBPF metrics (enabled on the agent at :9965).
+    additionalScrapeConfigs:
+      - job_name: hubble
+        kubernetes_sd_configs: [{ role: pod, namespaces: { names: [kube-system] } }]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+            action: keep
+            regex: cilium
+          - source_labels: [__address__]
+            action: replace
+            regex: (.+):\d+
+            replacement: ${1}:9965
+            target_label: __address__
+
+# Cluster exporters. The host already runs its own node_exporter on :9100,
+# so the bundled one is disabled to avoid the hostPort conflict.
+nodeExporter: { enabled: false }
+kubeStateMetrics: { enabled: true }

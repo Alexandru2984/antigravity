@@ -1,0 +1,45 @@
+# HashiCorp Vault — standalone (single-node K3s), file storage backend.
+# Provides dynamic, short-lived DB credentials so services stop carrying static
+# passwords. SOPS still owns bootstrap (the unseal/root tokens) — they are
+# complementary: SOPS secures Vault's own keys, Vault secures everything else.
+#
+# Standalone + file storage (not raft/consul) keeps RAM/disk small for a single
+# node. Auto-unseal is not configured (no cloud KMS on a self-hosted VPS), so
+# unseal is manual after a restart — keys come from SOPS. See CLUSTER-SETUP.md.
+
+global:
+  tlsDisable: true        # mTLS is provided by the Linkerd mesh, not Vault's own TLS
+
+injector:
+  enabled: false          # using the Vault Secrets Operator (VSO), not the sidecar injector
+
+server:
+  image:
+    repository: hashicorp/vault
+    tag: "1.21.2"
+  logLevel: info
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+  dataStorage:
+    enabled: true
+    size: 1Gi
+    storageClass: local-path   # K3s built-in provisioner
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+      listener "tcp" {
+        address     = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = 1
+      }
+      storage "file" {
+        path = "/vault/data"
+      }
+  # Single node: one replica, no anti-affinity.
+  affinity: ""
+
+ui:
+  enabled: true
+  serviceType: ClusterIP    # reach via `kubectl port-forward`, not exposed at edge

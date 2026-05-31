@@ -19,6 +19,7 @@ secrets/
 !deploy/secrets/
 deploy/secrets/*
 !deploy/secrets/secrets.env
+!deploy/secrets/vault-bootstrap.env
 infra/keys/
 infra/nginx/ssl/
 

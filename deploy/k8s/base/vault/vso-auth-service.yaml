@@ -1,0 +1,53 @@
+# Vault Secrets Operator wiring for the auth-service: materialize short-lived,
+# auto-rotated Postgres credentials from Vault into a native K8s Secret. The app
+# consumes the Secret normally (envFrom) — no Vault SDK, no static password.
+#
+# Chain:  SA auth-service --(k8s auth)--> Vault role auth-service
+#         --> database/creds/auth-service (dynamic, 1h TTL)
+#         --> Secret auth-service-db (refreshed before lease expiry by VSO)
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auth-service
+  namespace: polymarket
+---
+# How VSO reaches the Vault server (in the vault namespace).
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault
+  namespace: polymarket
+spec:
+  address: http://vault.vault.svc.cluster.local:8200
+---
+# How VSO authenticates to Vault: Kubernetes auth using the SA token.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: auth-service
+  namespace: polymarket
+spec:
+  vaultConnectionRef: vault
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: auth-service
+    serviceAccount: auth-service
+---
+# The dynamic secret itself. VSO renews/rotates before the lease expires and
+# keeps the K8s Secret auth-service-db in sync.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultDynamicSecret
+metadata:
+  name: auth-service-db
+  namespace: polymarket
+spec:
+  vaultAuthRef: auth-service
+  mount: database
+  path: creds/auth-service
+  destination:
+    create: true
+    name: auth-service-db
+  # Rotate when ~30% of the lease remains.
+  renewalPercent: 67
