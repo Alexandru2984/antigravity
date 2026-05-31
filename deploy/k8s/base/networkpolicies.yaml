@@ -33,7 +33,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-dns-egress
+  name: scoped-egress
   namespace: polymarket
 spec:
   podSelector: {}
@@ -47,5 +47,19 @@ spec:
       ports:
         - { protocol: UDP, port: 53 }
         - { protocol: TCP, port: 53 }
-    # All other egress (DBs on Compose, upstreams) — tighten per-service later.
-    - {}
+    # Linkerd control plane (each pod's proxy needs identity/destination).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: linkerd
+    # East-west within the namespace: app services <-> in-cluster DBs/Kafka.
+    - to:
+        - podSelector: {}
+    # External HTTPS only (e.g. Stripe). No arbitrary-port egress -> no exfil
+    # channel; cluster CIDRs excluded so internal traffic uses the rules above.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.42.0.0/16, 10.43.0.0/16]
+      ports:
+        - { protocol: TCP, port: 443 }

@@ -185,3 +185,7 @@ Desktop.ini
 !services/review-service/storage/framework/views/
 !services/review-service/storage/logs/
 !services/review-service/storage/**/.gitkeep
+
+# plaintext env backups must never be tracked (security)
+.env.bak*
+*.env.bak

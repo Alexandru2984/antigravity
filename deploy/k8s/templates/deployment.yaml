@@ -30,12 +30,23 @@ spec:
       # Avoid Docker-link-style {SVC}_PORT/{SVC}_SERVICE_* env injection clashing
       # with app config; services discover each other via DNS.
       enableServiceLinks: false
+      # App pods don't talk to the k8s API — don't mount a stealable SA token.
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: {{ $svc.runAsNonRoot | default false }}
       containers:
         - name: {{ $name }}
           image: {{ $svc.image }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" }}
+          # Restores the hardening the Compose stack had (cap_drop: ALL +
+          # no-new-privileges); readOnlyRootFilesystem opt-in per service.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: {{ $svc.readOnlyRootFilesystem | default false }}
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           {{- if $svc.port }}
           ports:
             - containerPort: {{ $svc.port }}

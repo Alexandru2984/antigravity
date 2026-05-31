@@ -34,11 +34,17 @@ flush nat PREROUTING  'compose postgres relay'
 flush nat POSTROUTING 'compose postgres SNAT'
 flush filter DOCKER-USER 'compose postgres'
 
-iptables -t nat -I PREROUTING -p tcp -d "$NODE_IP" --dport "$RELAY_PORT" \
+# SOURCE-RESTRICTED to the k8s pod CIDR. Without this, the PREROUTING DNAT on the
+# public IP + the DOCKER-USER ACCEPT would expose the Compose Postgres to the
+# internet (DNAT runs before ufw's INPUT, and an ACCEPT in DOCKER-USER short-
+# circuits ufw's FORWARD deny). Pods reach the node with their 10.42.x source IP
+# pre-masquerade, so this match still admits them and nothing else.
+POD_CIDR="${POD_CIDR:-10.42.0.0/16}"
+iptables -t nat -I PREROUTING -s "$POD_CIDR" -p tcp -d "$NODE_IP" --dport "$RELAY_PORT" \
   -j DNAT --to-destination "${PG_IP}:${PG_PORT}" \
   -m comment --comment "k8s -> compose postgres relay (Vault)"
-iptables -t nat -I POSTROUTING -s 10.42.0.0/16 -d "${PG_IP}/32" -p tcp --dport "$PG_PORT" \
+iptables -t nat -I POSTROUTING -s "$POD_CIDR" -d "${PG_IP}/32" -p tcp --dport "$PG_PORT" \
   -j MASQUERADE -m comment --comment "k8s pods -> compose postgres SNAT (Vault)"
-iptables -I DOCKER-USER -p tcp -d "${PG_IP}/32" --dport "$PG_PORT" \
+iptables -I DOCKER-USER -s "$POD_CIDR" -p tcp -d "${PG_IP}/32" --dport "$PG_PORT" \
   -j ACCEPT -m comment --comment "k8s cluster -> compose postgres (Vault dyn creds)"
 echo "done"
