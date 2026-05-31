@@ -58,6 +58,51 @@ helm upgrade --install polymarket deploy/k8s -n polymarket --create-namespace
 kubectl apply -f deploy/k8s/base/networkpolicies.yaml   # default-deny + allow
 ```
 
+### 5b. Full parallel stack (Faza 1c)
+The cluster runs the WHOLE app (35 services + 12 databases) with its OWN
+databases restored from backup — independent of the Compose stack still serving
+live traffic. `databases:` and `services:` in values.yaml are data-driven; flip
+`enabled` per item. Bring-up order: databases → mesh workers → app services.
+```bash
+# 1) Secret from the SOPS-decrypted .env. IMPORTANT: strip surrounding quotes —
+#    `kubectl --from-env-file` keeps them (Docker Compose strips them), which
+#    corrupts quoted values like JWT_PUBLIC_KEY. Compose-equivalent parse:
+bash scripts/secrets-decrypt.sh   # regenerates .env from deploy/secrets
+python3 - <<'PY'
+out=[]
+for l in open('.env'):
+    l=l.rstrip('\n')
+    if not l or l[0]=='#' or '=' not in l: continue
+    k,v=l.split('=',1)
+    if len(v)>=2 and v[0]==v[-1] and v[0] in '"\'': v=v[1:-1]
+    out.append(f"{k}={v}")
+open('/tmp/k8s-secret.env','w').write('\n'.join(out)+'\n')
+PY
+kubectl -n polymarket create secret generic polymarket-secrets \
+  --from-env-file=/tmp/k8s-secret.env --dry-run=client -o yaml | kubectl apply -f -
+rm -f /tmp/k8s-secret.env
+
+# 2) Images + deploy (databases come up as StatefulSets with local-path PVCs)
+sudo deploy/k8s/import-images.sh        # all infra-* images
+helm upgrade polymarket deploy/k8s -n polymarket
+
+# 3) Restore data into the k8s databases from the latest backup, e.g. Postgres:
+D=$(ls -dt /var/backups/polymarket/*/ | head -1)
+sudo zcat "$D/postgres-all.sql.gz" | kubectl -n polymarket exec -i postgres-0 -c postgres -- psql -U polymarket
+# (mongo: mongorestore --archive --gzip --drop; mysql/clickhouse similar — see deploy/backup/README.md)
+
+# 4) Kafka topics
+kubectl -n polymarket exec kafka-0 -- bash -c 'for t in listings.created payments.processed ...; do \
+  kafka-topics --bootstrap-server localhost:9092 --create --topic $t --partitions 3 --replication-factor 1 --if-not-exists; done'
+```
+Notes baked into the chart for this to work:
+- `enableServiceLinks: false` on every pod (the `{SVC}_PORT` env injection breaks
+  kafka/neo4j, which parse such env as config).
+- Kafka is **un-meshed** + a **headless** Service + `publishNotReadyAddresses`
+  (broker must resolve its own advertised listener at startup).
+- envSecret renders before env so composite values (DB URLs, `NEO4J_AUTH`)
+  interpolate secrets via `$(VAR)`; neo4j's password var is non-`NEO4J_`-prefixed.
+
 ## 6. Observability (eBPF-first, low overhead)
 ```bash
 # Hubble eBPF flow metrics -> Prometheus

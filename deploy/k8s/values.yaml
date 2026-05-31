@@ -244,14 +244,328 @@ services:
   swift-service:       { enabled: true, image: docker.io/library/infra-swift-service:latest,       port: 4063, memLimit: 512Mi }
   nim-service:         { enabled: true, image: docker.io/library/infra-nim-service:latest,         port: 4064, memLimit: 128Mi }
   odin-service:        { enabled: true, image: docker.io/library/infra-odin-service:latest,        port: 4065, memLimit: 64Mi }
-  haskell-service:     { enabled: true, image: docker.io/library/infra-haskell-service:latest,     port: 4051, memLimit: 128Mi }
+  haskell-service:     { enabled: true, image: docker.io/library/infra-haskell-service:latest,     port: 4065, memLimit: 128Mi }
 
-  # ── App services (stateful-dependent — enable after DB wiring) ──
-  # api-gateway, auth-service, listing-service, search-service, ml-service,
-  # image-service, payment-service, profile-service, feed-service, review-service,
-  # analytics-service, chat-service, notification-service, stream-processor,
-  # config-service, admin-panel, frontend
-  # Each: image infra-<svc>, its port, envSecret entries for DB creds, healthPath.
+  # ── App services (point at the in-cluster databases) ────────
+  # Secret-sourced vars come first (envSecret) so composite values interpolate
+  # them via $(VAR). k8s Service names match the Compose hostnames, so URLs are
+  # unchanged from infra/docker-compose.services.yml.
+  api-gateway:
+    enabled: true
+    image: docker.io/library/infra-api-gateway:latest
+    port: 4000
+    healthPath: /health
+    healthDelay: 25
+    memLimit: 320Mi
+    envSecret:
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+      - { name: FRONTEND_URL, key: FRONTEND_URL }
+      - { name: CORS_ORIGINS, key: CORS_ORIGINS }
+      - { name: POLYGLOT_MESH_ENABLED, key: POLYGLOT_MESH_ENABLED }
+      - { name: POLYGLOT_MESH_MAX_CONCURRENCY, key: POLYGLOT_MESH_MAX_CONCURRENCY }
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+    env:
+      - { name: PORT, value: "4000" }
+      - { name: NODE_ENV, value: production }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: AUTH_SERVICE_URL, value: "http://auth-service:4001" }
+      - { name: LISTING_SERVICE_URL, value: "http://listing-service:4002" }
+      - { name: SEARCH_SERVICE_URL, value: "http://search-service:4003" }
+      - { name: IMAGE_SERVICE_URL, value: "http://image-service:4004" }
+      - { name: NOTIFICATION_SERVICE_URL, value: "http://notification-service:4005" }
+      - { name: PAYMENT_SERVICE_URL, value: "http://payment-service:4006" }
+      - { name: PROFILE_SERVICE_URL, value: "http://profile-service:4007" }
+      - { name: FEED_SERVICE_URL, value: "http://feed-service:4008" }
+      - { name: REVIEW_SERVICE_URL, value: "http://review-service:4009" }
+      - { name: ANALYTICS_SERVICE_URL, value: "http://analytics-service:4010" }
+      - { name: CHAT_SERVICE_URL, value: "http://chat-service:4011" }
+      - { name: ML_SERVICE_URL, value: "http://ml-service:4012" }
+      - { name: CONTRACT_VALIDATOR_URL, value: "http://contract-validator:4035" }
+      - { name: BRAINFUCK_SERVICE_URL, value: "http://brainfuck-service:4020" }
+      - { name: ASSEMBLY_SERVICE_URL, value: "http://assembly-service:4021" }
+      - { name: COBOL_SERVICE_URL, value: "http://cobol-service:4022" }
+      - { name: CLOJURE_SERVICE_URL, value: "http://clojure-service:4023" }
+      - { name: JULIA_SERVICE_URL, value: "http://julia-service:4054" }
+      - { name: PROLOG_SERVICE_URL, value: "http://prolog-service:4055" }
+      - { name: ELIXIR_SERVICE_URL, value: "http://elixir-service:4057" }
+      - { name: LUA_SERVICE_URL, value: "http://lua-service:4059" }
+      - { name: R_SERVICE_URL, value: "http://r-service:4060" }
+      - { name: PHP_SERVICE_URL, value: "http://php-service:4061" }
+      - { name: ZIG_SERVICE_URL, value: "http://zig-service:4062" }
+      - { name: SWIFT_SERVICE_URL, value: "http://swift-service:4063" }
+      - { name: NIM_SERVICE_URL, value: "http://nim-service:4064" }
+      - { name: ODIN_SERVICE_URL, value: "http://odin-service:4065" }
+      - { name: SCALA_SERVICE_URL, value: "http://scala-service:4058" }
+      - { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://otel-collector:4318" }
+      - { name: OTEL_SERVICE_NAME, value: api-gateway }
+  auth-service:
+    enabled: true
+    image: docker.io/library/infra-auth-service:latest
+    port: 4001
+    healthPath: /health/ready
+    healthDelay: 25
+    memLimit: 320Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+      - { name: JWT_PRIVATE_KEY, key: JWT_PRIVATE_KEY }
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+      - { name: FRONTEND_URL, key: FRONTEND_URL }
+      - { name: SECRET_KEY_BASE, key: SECRET_KEY_BASE }
+    env:
+      - { name: PORT, value: "4001" }
+      - { name: DATABASE_URL, value: "postgresql://polymarket:$(POSTGRES_PASSWORD)@postgres:5432/polymarket_auth" }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: MIX_ENV, value: prod }
+  listing-service:
+    enabled: true
+    image: docker.io/library/infra-listing-service:latest
+    port: 4002
+    healthPath: /health
+    memLimit: 320Mi
+    envSecret:
+      - { name: MONGO_PASSWORD, key: MONGO_PASSWORD }
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+      - { name: CORS_ORIGINS, key: CORS_ORIGINS }
+      - { name: IMAGE_PUBLIC_PATH_PREFIX, key: IMAGE_PUBLIC_PATH_PREFIX }
+    env:
+      - { name: PORT, value: "4002" }
+      - { name: MONGO_URI, value: "mongodb://polymarket:$(MONGO_PASSWORD)@mongo:27017/polymarket?authSource=admin" }
+      - { name: MONGO_DB, value: polymarket }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: RUST_LOG, value: info }
+  search-service:
+    enabled: true
+    image: docker.io/library/infra-search-service:latest
+    port: 4003
+    healthPath: /api/search/health
+    healthDelay: 45
+    memLimit: 720Mi
+    envSecret:
+      - { name: OPENSEARCH_INITIAL_ADMIN_PASSWORD, key: OPENSEARCH_INITIAL_ADMIN_PASSWORD }
+    env:
+      - { name: PORT, value: "4003" }
+      - { name: SPRING_PROFILES_ACTIVE, value: prod }
+      - { name: OPENSEARCH_URI, value: "https://opensearch:9200" }
+      - { name: OPENSEARCH_USERNAME, value: admin }
+      - { name: OPENSEARCH_PASSWORD, value: "$(OPENSEARCH_INITIAL_ADMIN_PASSWORD)" }
+      - { name: OPENSEARCH_SSL_TRUST_ALL, value: "true" }
+      - { name: SPRING_KAFKA_BOOTSTRAP_SERVERS, value: "kafka:29092" }
+      - { name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE, value: "health,info,prometheus" }
+  image-service:
+    enabled: true
+    image: docker.io/library/infra-image-service:latest
+    port: 4004
+    healthPath: /health
+    memLimit: 400Mi
+    envSecret:
+      - { name: MINIO_ACCESS_KEY, key: MINIO_ROOT_USER }
+      - { name: MINIO_SECRET_KEY, key: MINIO_ROOT_PASSWORD }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+      - { name: IMAGE_PUBLIC_PATH_PREFIX, key: IMAGE_PUBLIC_PATH_PREFIX }
+    env:
+      - { name: HTTP_PORT, value: "4004" }
+      - { name: MINIO_ENDPOINT, value: "minio:9000" }
+      - { name: MINIO_BUCKET_IMAGES, value: listings-images }
+      - { name: MINIO_BUCKET_AVATARS, value: avatars }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: MAX_UPLOAD_SIZE_MB, value: "10" }
+  notification-service:
+    enabled: true
+    image: docker.io/library/infra-notification-service:latest
+    port: 4005
+    healthPath: /health
+    healthDelay: 25
+    memLimit: 320Mi
+    envSecret:
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+      - { name: SECRET_KEY_BASE, key: NOTIFICATION_SECRET_KEY_BASE }
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+    env:
+      - { name: PORT, value: "4005" }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: MIX_ENV, value: prod }
+  payment-service:
+    enabled: true
+    image: docker.io/library/infra-payment-service:latest
+    port: 4006
+    memLimit: 320Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+      - { name: Stripe__SecretKey, key: STRIPE_SECRET_KEY }
+      - { name: Stripe__WebhookSecret, key: STRIPE_WEBHOOK_SECRET }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+    env:
+      - { name: ASPNETCORE_ENVIRONMENT, value: Development }
+      - { name: ASPNETCORE_URLS, value: "http://+:4006" }
+      - { name: PORT, value: "4006" }
+      - { name: DATABASE_URL, value: "Host=postgres;Database=polymarket_payments;Username=polymarket;Password=$(POSTGRES_PASSWORD)" }
+      - { name: Kafka__BootstrapServers, value: "kafka:29092" }
+  profile-service:
+    enabled: true
+    image: docker.io/library/infra-profile-service:latest
+    port: 4007
+    memLimit: 600Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+      - { name: FRONTEND_URL, key: FRONTEND_URL }
+      - { name: CORS_ORIGINS, key: CORS_ORIGINS }
+    env:
+      - { name: PORT, value: "4007" }
+      - { name: PROFILE_DATABASE_URL, value: "jdbc:postgresql://postgres:5432/polymarket_profiles" }
+      - { name: POSTGRES_USER, value: polymarket }
+      - { name: IMAGE_SERVICE_URL, value: "http://image-service:4004" }
+  feed-service:
+    enabled: true
+    image: docker.io/library/infra-feed-service:latest
+    port: 4008
+    memLimit: 200Mi
+    envSecret:
+      - { name: SURREALDB_PASS, key: SURREALDB_PASSWORD }
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+    env:
+      - { name: PORT, value: "4008" }
+      - { name: SURREALDB_URL, value: "ws://surrealdb:8000/rpc" }
+      - { name: SURREALDB_USER, value: polymarket }
+      - { name: SURREALDB_NS, value: polymarket }
+      - { name: SURREALDB_DB, value: feed }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+  review-service:
+    enabled: true
+    image: docker.io/library/infra-review-service:latest
+    port: 4009
+    healthPath: /api/health
+    healthDelay: 20
+    memLimit: 320Mi
+    envSecret:
+      - { name: APP_KEY, key: REVIEW_APP_KEY }
+      - { name: DB_PASSWORD, key: MYSQL_PASSWORD }
+      - { name: INTERNAL_SERVICE_TOKEN, key: INTERNAL_SERVICE_TOKEN }
+    env:
+      - { name: APP_ENV, value: local }
+      - { name: DB_CONNECTION, value: mysql }
+      - { name: DB_HOST, value: mysql }
+      - { name: DB_PORT, value: "3306" }
+      - { name: DB_DATABASE, value: polymarket_reviews }
+      - { name: DB_USERNAME, value: polymarket }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: PORT, value: "4009" }
+  analytics-service:
+    enabled: true
+    image: docker.io/library/infra-analytics-service:latest
+    port: 4010
+    healthPath: /health
+    memLimit: 320Mi
+    envSecret:
+      - { name: CLICKHOUSE_PASSWORD, key: CLICKHOUSE_PASSWORD }
+    env:
+      - { name: PORT, value: "4010" }
+      - { name: CLICKHOUSE_HOST, value: clickhouse }
+      - { name: CLICKHOUSE_PORT, value: "8123" }
+      - { name: CLICKHOUSE_USER, value: polymarket }
+      - { name: CLICKHOUSE_DB, value: polymarket_analytics }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+  chat-service:
+    enabled: true
+    image: docker.io/library/infra-chat-service:latest
+    port: 4011
+    healthPath: /health
+    healthDelay: 25
+    memLimit: 420Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+      - { name: REDIS_PASSWORD, key: REDIS_PASSWORD }
+      - { name: SECRET_KEY_BASE, key: CHAT_SECRET_KEY_BASE }
+      - { name: JWT_PUBLIC_KEY, key: JWT_PUBLIC_KEY }
+      - { name: FRONTEND_URL, key: FRONTEND_URL }
+    env:
+      - { name: PORT, value: "4011" }
+      - { name: DATABASE_URL, value: "postgresql://polymarket:$(POSTGRES_PASSWORD)@postgres:5432/polymarket_chat" }
+      - { name: REDIS_URL, value: "redis://:$(REDIS_PASSWORD)@redis:6379" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: MIX_ENV, value: prod }
+  ml-service:
+    enabled: true
+    image: docker.io/library/infra-ml-service:latest
+    port: 4012
+    healthPath: /health
+    memLimit: 600Mi
+    envSecret:
+      - { name: NEO4J_PASSWORD, key: NEO4J_PASSWORD }
+    env:
+      - { name: PORT, value: "4012" }
+      - { name: NEO4J_URI, value: "bolt://neo4j:7687" }
+      - { name: NEO4J_USER, value: neo4j }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+  stream-processor:
+    enabled: true
+    image: docker.io/library/infra-stream-processor:latest
+    port: 4013
+    healthPath: /health
+    healthDelay: 40
+    memLimit: 600Mi
+    envSecret:
+      - { name: TIMESCALE_PASSWORD, key: TIMESCALE_PASSWORD }
+    env:
+      - { name: PORT, value: "4013" }
+      - { name: HTTP_PORT, value: "4013" }
+      - { name: KAFKA_BROKERS, value: "kafka:29092" }
+      - { name: TIMESCALE_URL, value: "jdbc:postgresql://timescale:5432/polymarket_metrics" }
+      - { name: TIMESCALE_USER, value: polymarket }
+      - { name: CLICKHOUSE_HOST, value: clickhouse }
+      - { name: CLICKHOUSE_PORT, value: "8123" }
+  config-service:
+    enabled: true
+    image: docker.io/library/infra-config-service:latest
+    port: 4014
+    healthPath: /health
+    healthDelay: 20
+    memLimit: 256Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+    env:
+      - { name: ASPNETCORE_ENVIRONMENT, value: Development }
+      - { name: PORT, value: "4014" }
+      - { name: DATABASE_URL, value: "Host=postgres;Database=polymarket_config;Username=polymarket;Password=$(POSTGRES_PASSWORD)" }
+  admin-panel:
+    enabled: true
+    image: docker.io/library/infra-admin-panel:latest
+    port: 4016
+    healthPath: /health
+    healthDelay: 30
+    memLimit: 500Mi
+    envSecret:
+      - { name: POSTGRES_PASSWORD, key: POSTGRES_PASSWORD }
+      - { name: SECRET_KEY_BASE, key: ADMIN_SECRET_KEY_BASE }
+    env:
+      - { name: RAILS_ENV, value: production }
+      - { name: PORT, value: "4016" }
+      - { name: DATABASE_URL, value: "postgresql://polymarket:$(POSTGRES_PASSWORD)@postgres:5432/polymarket_admin" }
+      - { name: AUTH_SERVICE_URL, value: "http://auth-service:4001" }
+  frontend:
+    enabled: true
+    image: docker.io/library/infra-frontend:latest
+    port: 3000
+    healthPath: /
+    healthDelay: 20
+    memLimit: 400Mi
+    envSecret:
+      - { name: NEXT_PUBLIC_API_URL, key: NEXT_PUBLIC_API_URL }
+      - { name: NEXT_PUBLIC_WS_URL, key: NEXT_PUBLIC_WS_URL }
+      - { name: NEXT_PUBLIC_APP_URL, key: NEXT_PUBLIC_APP_URL }
+      - { name: NEXT_PUBLIC_STRIPE_PK, key: STRIPE_PUBLISHABLE_KEY }
+    env:
+      - { name: NODE_ENV, value: production }
+      - { name: HOSTNAME, value: "0.0.0.0" }
 
 # External databases still on Docker Compose (reached during the hybrid phase).
 # Filled in when DB-dependent services are migrated; see plan Faza 1c.
