@@ -24,19 +24,23 @@ records what was fixed and the few items that only the repo owner can complete.
   `vault operator generate-root` + the unseal key in `vault-bootstrap.env`).
 
 ## ⚠️ Residual actions — ONLY THE OWNER CAN DO THESE
-1. **Purge git history + make the repo private.** Rotation makes the leaked values
-   useless, but they remain in the *public* history of `github.com/<owner>/antigravity`
-   until purged:
+1. **(Optional, hygiene) Purge `.env.bak` from git history.** Rotation already made
+   the leaked values useless, so this is cleanup, not a security necessity. The repo
+   can safely stay **public** — SOPS-encrypted files (`secrets.env`,
+   `vault-bootstrap.env`) and the age *public* key in `.sops.yaml` are safe to expose;
+   the age *private* key lives outside the repo (`~/.config/sops/age/keys.txt`).
    ```bash
    git filter-repo --invert-paths --path .env.bak.20260527-120414   # or BFG
    git push --force --all     # rewrites remote history
    ```
-   Then make the GitHub repo **private** (Settings → Danger Zone).
+   Going forward, never commit plaintext secrets — the SOPS workflow + hardened
+   `.gitignore` enforce this.
 2. **Revoke the Stripe keys** in the Stripe dashboard (the leaked `sk_test_…` +
    webhook secret can't be rotated from here). Replace `STRIPE_*` in
    `deploy/secrets/secrets.env` afterward.
-3. **OpenSearch admin password** was NOT rotated — it's a *reserved* user requiring
-   `securityadmin.sh` + a bcrypt hash (not internet-reachable, so lower risk).
-   To rotate: hash the new password, update `internal_users.yml`, run
-   `plugins/opensearch-security/tools/securityadmin.sh`. Search-service currently
-   uses the old password (kept consistent).
+2b. *(done)* **OpenSearch admin password** was rotated on both stacks via
+   `securityadmin.sh` (hash `internal_users.yml` → push to the security index).
+   For future rotations: `hash.sh -p <pw>`, replace the `admin:` hash in
+   `config/opensearch-security/internal_users.yml` (ensure it's owned by uid 1000),
+   then `securityadmin.sh -cd <dir> -cacert root-ca.pem -cert kirk.pem -key
+   kirk-key.pem -h localhost -p 9200`.
